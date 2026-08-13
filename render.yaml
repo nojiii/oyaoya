@@ -1,0 +1,24 @@
+databases:
+  - name: oyaoya-db
+    plan: free
+
+services:
+  - type: web
+    name: oyaoya
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.6"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oyaoya-db
+          property: connectionString
+      - key: WEB_CONCURRENCY
+        value: "2"

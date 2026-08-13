@@ -29,6 +29,22 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-xb=3=bwg__n!)oe$#j72h
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+
+# Render: 各サービスに自動注入される RENDER_EXTERNAL_HOSTNAME を許可ホストに追加する
+# https://docs.render.com/environment-variables#all-runtimes
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default='')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HTTPS運用が安定して確認できてから値を増やす(いきなり長期間のHSTSを有効化すると
+    # 問題が起きた際にブラウザ側のキャッシュで切り戻しづらくなるため、既定はオフ)
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
 
 
 # Application definition
