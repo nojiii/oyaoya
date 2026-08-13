@@ -1,0 +1,13 @@
+{% extends 'learning/base.html' %}
+{% block title %}{{ subject.name }} - Oyaoya{% endblock %}
+{% block content %}
+  <nav class="breadcrumb"><a href="{% url 'learning:home' %}">ホーム</a> / {{ subject.name }}</nav>
+  <h2>{{ subject.name }}: 単元をえらんでください</h2>
+  <ul class="list">
+    {% for unit in units %}
+      <li><a href="{% url 'learning:unit_detail' subject.slug unit.slug %}">{{ unit.name }}</a></li>
+    {% empty %}
+      <li>単元がまだ登録されていません。</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

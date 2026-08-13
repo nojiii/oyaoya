@@ -1,0 +1,12 @@
+{% extends 'learning/base.html' %}
+{% block title %}Oyaoya - 教科選択{% endblock %}
+{% block content %}
+  <h2>教科をえらんでください</h2>
+  <ul class="list">
+    {% for subject in subjects %}
+      <li><a href="{% url 'learning:subject_detail' subject.slug %}">{{ subject.name }}</a></li>
+    {% empty %}
+      <li>教科がまだ登録されていません。</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

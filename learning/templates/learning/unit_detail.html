@@ -1,0 +1,17 @@
+{% extends 'learning/base.html' %}
+{% block title %}{{ unit.name }} - Oyaoya{% endblock %}
+{% block content %}
+  <nav class="breadcrumb">
+    <a href="{% url 'learning:home' %}">ホーム</a> /
+    <a href="{% url 'learning:subject_detail' unit.subject.slug %}">{{ unit.subject.name }}</a> /
+    {{ unit.name }}
+  </nav>
+  <h2>{{ unit.name }}: 問題をえらんでください</h2>
+  <ul class="list">
+    {% for problem in problems %}
+      <li><a href="{% url 'learning:problem_detail' unit.subject.slug unit.slug problem.slug %}">{{ problem.title }}</a></li>
+    {% empty %}
+      <li>問題がまだ登録されていません。</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -1,0 +1,8 @@
+Django==5.2.17
+gunicorn==26.0.0
+whitenoise==6.12.0
+psycopg2-binary==2.9.12
+dj-database-url==3.1.2
+python-decouple==3.8
+Markdown==3.10.3
+PyYAML==6.0.3
