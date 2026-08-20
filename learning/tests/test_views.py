@@ -1,9 +1,14 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from learning.models import Problem, Subject, Unit
 
-
+# home.html は {% static %} でマスコット画像を読み込む。本番用の
+# ManifestStaticFilesStorage は collectstatic 済みのマニフェストが無いと
+# 解決できずエラーになるため、テストでは素のStaticFilesStorageに切り替える。
+@override_settings(STORAGES={
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+})
 class LearningFlowTests(TestCase):
     def setUp(self):
         self.subject = Subject.objects.create(slug='math', name='算数', order=1)
