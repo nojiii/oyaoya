@@ -1,0 +1,14 @@
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.mascot {
+  width: 96px;
+}
+
+button {
+  cursor: pointer;
+}
