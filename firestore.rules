@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 教材コンテンツは誰でも閲覧可。書き込みは content/ からの取り込みスクリプト
+    // (Admin SDK経由でルール対象外)のみとし、クライアントからは一切許可しない。
+    match /subjects/{subject} {
+      allow read: if true;
+
+      match /units/{unit} {
+        allow read: if true;
+
+        match /problems/{problem} {
+          allow read: if true;
+        }
+      }
+    }
+  }
+}

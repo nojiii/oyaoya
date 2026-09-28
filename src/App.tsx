@@ -1,81 +1,44 @@
-import { useState } from 'react'
-import { subjects } from './content/data'
-import type { Problem } from './content/types'
-import './App.css'
+import { createBrowserRouter, RouterProvider } from 'react-router'
+import {
+  fetchProblem,
+  fetchSubjects,
+  fetchSubjectWithUnits,
+  fetchUnitWithProblems,
+} from './content/api'
+import { ErrorPage, Layout, Loading } from './pages/Layout'
+import Home from './pages/Home'
+import SubjectDetail from './pages/SubjectDetail'
+import UnitDetail from './pages/UnitDetail'
+import ProblemDetail from './pages/ProblemDetail'
 
-function App() {
-  const [selected, setSelected] = useState<Problem | null>(null)
+const router = createBrowserRouter([
+  {
+    element: <Layout />,
+    errorElement: <ErrorPage />,
+    hydrateFallbackElement: <Loading />,
+    children: [
+      { index: true, loader: () => fetchSubjects(), element: <Home /> },
+      {
+        path: ':subject',
+        loader: ({ params }) => fetchSubjectWithUnits(params.subject!),
+        element: <SubjectDetail />,
+      },
+      {
+        path: ':subject/:unit',
+        loader: ({ params }) =>
+          fetchUnitWithProblems(params.subject!, params.unit!),
+        element: <UnitDetail />,
+      },
+      {
+        path: ':subject/:unit/:problem',
+        loader: ({ params }) =>
+          fetchProblem(params.subject!, params.unit!, params.problem!),
+        element: <ProblemDetail />,
+      },
+    ],
+  },
+])
 
-  return (
-    <div className="app">
-      <header>
-        <img src="/mascot.png" alt="" className="mascot" />
-        <h1>おやおや</h1>
-        <p>いっしょに学ぶ、いっしょに成長。</p>
-      </header>
-
-      {selected ? (
-        <ProblemDetail problem={selected} onBack={() => setSelected(null)} />
-      ) : (
-        <ContentList onSelect={setSelected} />
-      )}
-    </div>
-  )
+export default function App() {
+  return <RouterProvider router={router} />
 }
-
-function ContentList({ onSelect }: { onSelect: (problem: Problem) => void }) {
-  return (
-    <div>
-      {subjects.map((subject) => (
-        <section key={subject.slug}>
-          <h2>{subject.name}</h2>
-          {subject.units.map((unit) => (
-            <div key={unit.slug}>
-              <h3>{unit.name}</h3>
-              <ul>
-                {unit.problems.map((problem) => (
-                  <li key={problem.slug}>
-                    <button type="button" onClick={() => onSelect(problem)}>
-                      {problem.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      ))}
-    </div>
-  )
-}
-
-function ProblemDetail({
-  problem,
-  onBack,
-}: {
-  problem: Problem
-  onBack: () => void
-}) {
-  return (
-    <div>
-      <button type="button" onClick={onBack}>
-        ← もどる
-      </button>
-      <h2>{problem.title}</h2>
-
-      <h3>もんだい</h3>
-      <p>{problem.question}</p>
-
-      <h3>とき方</h3>
-      <p>{problem.howToSolve}</p>
-
-      <h3>おうちの方へ：おしえ方</h3>
-      <p>{problem.howToTeach}</p>
-
-      <h3>おうちの方へ：声かけ例</h3>
-      <p>{problem.examplePhrases}</p>
-    </div>
-  )
-}
-
-export default App

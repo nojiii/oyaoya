@@ -1,20 +1,21 @@
-export interface Problem {
+export interface Subject {
   slug: string
-  title: string
-  question: string
-  howToSolve: string
-  howToTeach: string
-  examplePhrases: string
+  name: string
+  order: number
 }
 
 export interface Unit {
   slug: string
   name: string
-  problems: Problem[]
+  order: number
 }
 
-export interface Subject {
+export interface Problem {
   slug: string
-  name: string
-  units: Unit[]
+  title: string
+  order: number
+  question: string
+  howToSolve: string
+  howToTeach: string
+  examplePhrases: string
 }
