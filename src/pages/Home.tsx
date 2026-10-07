@@ -14,7 +14,7 @@ export default function Home() {
         <p className="tagline">
           いっしょに学ぶ、いっしょに成長。
           <br />
-          親子の「わかった!」がふえるアプリ
+          親子の「わかった!」がふえるアプリだよ
         </p>
         <img className="mascot" src="/mascot.png" alt="おやじい" />
       </section>
