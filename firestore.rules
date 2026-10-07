@@ -15,5 +15,10 @@ service cloud.firestore {
         }
       }
     }
+
+    // PRプレビュー用のコンテンツ（previews/pr-<番号>/subjects/...）。読み取りのみ
+    match /previews/{preview}/{document=**} {
+      allow read: if true;
+    }
   }
 }

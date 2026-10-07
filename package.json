@@ -16,7 +16,8 @@
     "deploy": "npm run build && firebase deploy --only hosting",
     "emulators": "firebase emulators:start",
     "content:import": "tsx scripts/import-content.ts",
-    "content:check": "tsx scripts/import-content.ts --check"
+    "content:check": "tsx scripts/import-content.ts --check",
+    "content:remove": "tsx scripts/import-content.ts --remove"
   },
   "dependencies": {
     "firebase": "^12.19.0",

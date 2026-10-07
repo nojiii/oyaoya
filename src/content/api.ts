@@ -8,6 +8,11 @@ import {
 import { db } from '../firebase'
 import type { Problem, Subject, Unit } from './types'
 
+// PRプレビューのビルドでは previews/pr-<番号> が入り、そのPR専用のデータを読む
+const ROOT = import.meta.env.VITE_CONTENT_ROOT
+  ? `${import.meta.env.VITE_CONTENT_ROOT}/`
+  : ''
+
 function notFound(): never {
   throw new Response('Not Found', { status: 404 })
 }
@@ -17,7 +22,7 @@ function byOrder<T extends { order: number; slug: string }>(a: T, b: T) {
 }
 
 async function getOne<T>(path: string): Promise<T> {
-  const snap = await getDoc(doc(db, path))
+  const snap = await getDoc(doc(db, ROOT + path))
   if (!snap.exists()) notFound()
   return { slug: snap.id, ...snap.data() } as T
 }
@@ -25,7 +30,7 @@ async function getOne<T>(path: string): Promise<T> {
 async function getAll<T extends { order: number; slug: string }>(
   path: string,
 ): Promise<T[]> {
-  const snap = await getDocs(collection(db, path))
+  const snap = await getDocs(collection(db, ROOT + path))
   return snap.docs
     .map((d) => ({ slug: d.id, ...(d.data() as DocumentData) }) as T)
     .sort(byOrder)

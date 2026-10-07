@@ -67,13 +67,27 @@ Firestore 上は `subjects/{教科}/units/{単元}/problems/{問題}` に同じ�
 ```bash
 npm run content:check                               # 検証のみ（Firestoreに書き込まない。CI向け）
 npm run content:import                              # エミュレータへ取り込み
-npm run content:import -- --production              # 本番Firestoreへ取り込み（要 gcloud 認証）
+npm run content:import -- --root previews/pr-1      # エミュレータの previews/pr-1/ 配下へ取り込み
+npm run content:remove -- --root previews/pr-1      # previews/pr-1/ 配下を削除
 ```
+
+取り込みは同期方式で、`content/` から消したドキュメントは Firestore からも削除される。`--production` を付けると本番 Firebase プロジェクトに接続する（通常は CI のみが使う）。
+
+## デプロイとプレビューの仕組み
+
+| タイミング   | Firestore（コンテンツ）                       | Hosting                                                       |
+| ------------ | --------------------------------------------- | ------------------------------------------------------------- |
+| PR作成・更新 | `previews/pr-<番号>/subjects/...` に取り込み  | プレビューURL（PRにコメントされる）。そのPR専用のデータを読む |
+| mainへマージ | ルール反映 → `subjects/...`（本番）に取り込み | 本番URL（`https://oyaoya-844ea.web.app`）                     |
+| PRクローズ   | `previews/pr-<番号>/` を削除                  | プレビューURLは7日で自動失効                                  |
+
+PRごとにデータの置き場所が分かれているため、複数のPRを同時に開いてもプレビュー同士は干渉しない。クライアントが読むパスは、ビルド時の環境変数 `VITE_CONTENT_ROOT` で切り替わる（未設定なら本番パス）。
 
 ## Firestore 運用方針
 
 - **ローカル開発は Firebase Local Emulator Suite を使う**（本番データには触れない）。起動後 `http://127.0.0.1:4000/` の Emulator UI でデータを自由に確認・編集できる。コラボレーターはこの環境で自由にスキーマを試行錯誤してよい
 - クライアントからは教材の読み取りのみ許可し、書き込みは取り込みスクリプト（Admin SDK）経由に限る
+- **アプリから Firestore を触るのは [src/content/api.ts](src/content/api.ts) だけ**にする。ページやコンポーネントから `firebase/firestore` を直接呼ばず、必要な関数を `api.ts` に追加して使う（パスの切り替えやデータ形式の変更をこの1ファイルに閉じ込めるため）
 - **本番Firestoreへのデータ形式変更は、必ずコードの変更 → PRレビューを経て行う**（Firebase Consoleでの直接編集はしない）
 - 本番Firebase Consoleへの招待は、通常は **閲覧者(Viewer)** 権限までに留める。直接編集が必要な運用が生じた場合のみ、限定的に編集者(Editor)権限を検討する
 - ルール定義は [firestore.rules](firestore.rules)、インデックス定義は [firestore.indexes.json](firestore.indexes.json)
