@@ -21,6 +21,12 @@ updates:
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
+      # typescript-eslint が対応する範囲（peerDependencies）を超えると npm ci が失敗する。
+      # minor / major は typescript-eslint の対応を確認してから手動で上げる
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,6 +35,8 @@ updates:
       day: monday
       time: '09:00'
       timezone: Asia/Tokyo
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns:
