@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Tokyo
+    # 公開直後のバージョンは避ける（不具合や悪意ある公開の巻き込まれ防止）
+    cooldown:
+      default-days: 7
+    # minor / patch は1つのPRにまとめる。major は個別のPRで確認する
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Tokyo
+    groups:
+      github-actions:
+        patterns:
+          - '*'

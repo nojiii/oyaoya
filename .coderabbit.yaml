@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# AIレビューは人のレビューの補助。指摘への対応はマージの必須条件にしない
+language: ja-JP
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  poem: false
+  in_progress_fortune: false
+  path_filters:
+    - '!package-lock.json'
+  path_instructions:
+    - path: firestore.rules
+      instructions: >-
+        クライアントからの書き込みは一切許可しない方針。読み取りの公開範囲が
+        意図せず広がっていないか、tests/firestore/rules.test.ts が変更に
+        追従しているかを確認する。
+    - path: src/**
+      instructions: >-
+        Firestore へのアクセスは src/content/api.ts に集約する方針。
+        ページやコンポーネントから firebase/firestore を直接呼んでいたら指摘する。
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_usernames:
+      - dependabot[bot]
+chat:
+  auto_reply: true
