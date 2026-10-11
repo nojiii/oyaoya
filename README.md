@@ -64,6 +64,8 @@ npm run lint && npm run format:check && npm run content:check && npm run build
 
 依存パッケージとGitHub Actionsは、Dependabotが週1回更新PRを作る（[dependabot.yml](.github/dependabot.yml)）。CIが通れば通常のPRと同じようにレビューしてマージする。DependabotのPRにはプレビューは作られない。
 
+workflowで使う外部のActionsは、タグ（`@v7` など）ではなくコミットSHAで固定している（タグは後から別のコードに差し替えられる可能性があるため）。行末のコメントが対応するバージョンで、SHAとコメントの更新はDependabotが行う。Actionsを追加するときも同じ形式で書く。
+
 `.github/` や `firebase.json` などCI・デプロイに関わるファイルは、[CODEOWNERS](.github/CODEOWNERS) によりオーナーのレビューが必要。
 
 ### テストについて
