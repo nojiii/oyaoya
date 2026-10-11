@@ -9,6 +9,4 @@
 ## チェックリスト
 
 - [ ] プレビューURL（PRにコメントされる）で動作を確認した
-- [ ] ロジックやFirestoreの読み書きを変えた場合、テストを追加・更新した
-- [ ] `firestore.rules` を変えた場合、`tests/firestore/rules.test.ts` を更新した
 - [ ] 開発手順や運用が変わる場合、README を更新した

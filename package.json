@@ -8,23 +8,16 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:full": "firebase emulators:exec --only firestore --ui \"npm run content:import && vite\"",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run --project unit --passWithNoTests",
-    "test:firestore": "firebase emulators:exec --only firestore \"vitest run --project firestore\"",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy --only hosting",
-    "emulators": "firebase emulators:start",
-    "content:import": "tsx scripts/import-content.ts",
-    "content:check": "tsx scripts/import-content.ts --check",
-    "content:remove": "tsx scripts/import-content.ts --remove"
+    "content:check": "tsx scripts/check-content.ts"
   },
   "dependencies": {
-    "firebase": "^12.19.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
@@ -32,7 +25,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -41,7 +33,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
-    "firebase-admin": "^14.5.0",
     "firebase-tools": "^15.30.2",
     "globals": "^17.12.0",
     "prettier": "^3.9.8",
@@ -49,7 +40,6 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.3.0",
-    "vitest": "^5.0.3",
     "yaml": "^2.9.1"
   }
 }
