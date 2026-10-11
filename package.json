@@ -14,7 +14,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "deploy": "npm run build && npx firebase-tools deploy --only hosting",
     "content:check": "tsx scripts/check-content.ts"
   },
   "dependencies": {
