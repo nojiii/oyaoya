@@ -52,6 +52,7 @@ npm run build
 `main` へは直接pushせず、ブランチを切ってPull Requestを作る。
 
 1. `main` から作業ブランチを作って変更し、pushしてPRを作成する（[テンプレート](.github/pull_request_template.md)に沿って記入）
+   - ブランチ名は機能名を英語で付ける（例: `problem-search`）。`feature/` などの接頭辞は付けない
 2. 自動で次が走る
    - **CI**（[ci.yml](.github/workflows/ci.yml)）: `lint`（ESLint・Prettier・コンテンツ検証）/ `typecheck` / `build`。すべて成功しないとマージできない
    - **プレビュー**: そのPRの内容をビルドしたプレビューURLがコメントされる（7日で自動失効）
