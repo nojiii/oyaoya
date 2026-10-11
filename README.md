@@ -11,6 +11,9 @@
   - 通知が出ない場合は、拡張機能タブの「推奨」欄からESLint・Prettierを手動でインストールしてください
   - **これらの拡張機能を有効化しないと、保存時の自動フォーマット・自動修正は動作しません**
 - 保存時にPrettierでの自動フォーマット、ESLintの自動修正が有効（`.vscode/settings.json`。上記拡張機能のインストールが前提）
+  - 各自のVSCode設定で別のフォーマッタを指定していても、このリポジトリではPrettierが使われる
+  - VSCodeの自動保存（Auto Save）を `afterDelay` にしていると、保存時の整形は走らない（VSCodeの仕様）。その場合は `Ctrl+S` で保存するか、`npm run format` を実行する
+  - 整形漏れはCIの `lint` で検出される。落ちたら `npm run format` を実行してコミットする
 
 ## 開発
 
