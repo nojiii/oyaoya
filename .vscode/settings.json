@@ -4,5 +4,12 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.validate": ["javascript", "typescript", "typescriptreact"]
+  "eslint.validate": ["javascript", "typescript", "typescriptreact"],
+  // 上の指定と重複して見えるが、消さないこと。各自のVSCode設定に言語別のフォーマッタ指定
+  // （例: "[json]": { "editor.defaultFormatter": ... }）があると上の指定より優先されるため、
+  // このリポジトリで使う言語は言語別に指定して、個人設定に関係なくPrettierで整形されるようにしている
+  "[javascript][typescript][typescriptreact][json][jsonc][css][html][markdown][yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  }
 }
