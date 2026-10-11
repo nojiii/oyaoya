@@ -44,9 +44,10 @@ function loadSection(path: string) {
   return readFileSync(path, 'utf-8')
 }
 
-function childDirs(dir: string, metaFile: string) {
+// メタファイルのないディレクトリも返す（置き忘れを loadMeta でエラーにするため）
+function childDirs(dir: string) {
   return readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, metaFile)))
+    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
     .map((d) => d.name)
 }
 
@@ -61,7 +62,7 @@ export function loadContent(): Content {
   }
   const content: Content = { subjects: [], units: {}, problems: {} }
 
-  for (const subject of childDirs(CONTENT_DIR, '_meta.yaml')) {
+  for (const subject of childDirs(CONTENT_DIR)) {
     const subjectDir = join(CONTENT_DIR, subject)
     const metaPath = join(subjectDir, '_meta.yaml')
     const meta = loadMeta(metaPath)
@@ -72,7 +73,7 @@ export function loadContent(): Content {
     })
     const units = (content.units[subject] = [] as Content['units'][string])
 
-    for (const unit of childDirs(subjectDir, '_meta.yaml')) {
+    for (const unit of childDirs(subjectDir)) {
       const unitDir = join(subjectDir, unit)
       const unitMetaPath = join(unitDir, '_meta.yaml')
       const unitMeta = loadMeta(unitMetaPath)
@@ -84,7 +85,7 @@ export function loadContent(): Content {
       const problems = (content.problems[`${subject}/${unit}`] =
         [] as Content['problems'][string])
 
-      for (const problem of childDirs(unitDir, 'meta.yaml')) {
+      for (const problem of childDirs(unitDir)) {
         const problemDir = join(unitDir, problem)
         const problemMetaPath = join(problemDir, 'meta.yaml')
         const problemMeta = loadMeta(problemMetaPath)
