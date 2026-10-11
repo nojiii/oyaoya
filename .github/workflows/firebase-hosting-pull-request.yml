@@ -9,7 +9,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    # フォークとDependabotのPRには本番用のsecretが渡らないため、プレビューは作らない
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     env:
       CONTENT_ROOT: previews/pr-${{ github.event.pull_request.number }}

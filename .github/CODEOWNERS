@@ -1,0 +1,5 @@
+# 権限・デプロイ・CIに関わるファイルは、変更時にオーナーのレビューを必須にする
+/firestore.rules @nojiii
+/firebase.json @nojiii
+/.firebaserc @nojiii
+/.github/ @nojiii
