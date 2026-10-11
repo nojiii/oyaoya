@@ -9,11 +9,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build_and_preview:
-    # フォークとDependabotのPRには本番用のsecretが渡らないため、プレビューは作らない
+    # フォークとDependabotのPRにはデプロイ用のsecretが渡らないため、プレビューは作らない
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
-    env:
-      CONTENT_ROOT: previews/pr-${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,13 +19,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_OYAOYA_844EA }}
-      - run: npm run content:import -- --production --root "$CONTENT_ROOT"
       - run: npm run build
-        env:
-          VITE_CONTENT_ROOT: ${{ env.CONTENT_ROOT }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
