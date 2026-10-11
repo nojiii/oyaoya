@@ -5,10 +5,43 @@
     "source.fixAll.eslint": "explicit"
   },
   "eslint.validate": ["javascript", "typescript", "typescriptreact"],
-  // 上の指定と重複して見えるが、消さないこと。各自のVSCode設定に言語別のフォーマッタ指定
-  // （例: "[json]": { "editor.defaultFormatter": ... }）があると上の指定より優先されるため、
-  // このリポジトリで使う言語は言語別に指定して、個人設定に関係なくPrettierで整形されるようにしている
-  "[javascript][typescript][typescriptreact][json][jsonc][css][html][markdown][yaml]": {
+  // 以下は上の指定と重複して見えるが、消したり1つにまとめたりしないこと。
+  // 各自のVSCode設定に言語別のフォーマッタ指定（例: "[json]": { "editor.defaultFormatter": ... }）が
+  // あると、上の指定や "[json][css]" のような複数言語まとめての指定より優先される。
+  // 言語ごとに単独で指定すれば、個人設定に関係なくこのリポジトリではPrettierで整形される
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   }
