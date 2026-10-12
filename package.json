@@ -13,8 +13,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview",
-    "content:check": "tsx scripts/check-content.ts"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.8",

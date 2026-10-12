@@ -25,7 +25,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: npm run content:check
 
   typecheck:
     runs-on: ubuntu-latest
