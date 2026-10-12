@@ -32,7 +32,6 @@ dist-ssr
 # Firebase
 .firebase/
 firebase-debug.log
-firestore-debug.log
 
 # Documents (local docs folder)
 docs/

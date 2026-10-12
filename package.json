@@ -14,7 +14,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "deploy": "npm run build && firebase deploy --only hosting",
     "content:check": "tsx scripts/check-content.ts"
   },
   "dependencies": {
@@ -33,7 +32,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
-    "firebase-tools": "^15.32.1",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "tsx": "^4.23.15",
