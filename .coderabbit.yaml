@@ -4,7 +4,7 @@ language: ja-JP
 reviews:
   profile: chill
   request_changes_workflow: false
-  poem: false
+  poem: true
   in_progress_fortune: false
   path_filters:
     - '!package-lock.json'
