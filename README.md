@@ -105,6 +105,7 @@ workflowで使う外部のActionsは、タグ（`@v7` など）ではなくコ�
 GitHubのリポジトリ設定（Settings → Advanced Security）で、次を有効にしている。ファイルには現れない設定なので、ここに記録しておく。
 
 - **Dependabot alerts**: 使っているパッケージに脆弱性が見つかると通知される。一覧はGitHubの Security タブ → Dependabot で見られる。手元では `npm audit` で確かめられる
+- **Malware alerts**: 使っているパッケージが、悪意あるコードを含むもの（乗っ取られて改ざんされたパッケージなど）だと判明すると通知される。脆弱性とは別の通知で、同じく Security タブで見られる。通知が来たら、アラートに書かれた手順に従ってそのパッケージを取り除くか安全なバージョンに戻す
 - **Dependabot security updates**: 上の脆弱性のうち修正版があるものについて、直すPRが自動で作られる（まとめ方は [dependabot.yml](.github/dependabot.yml)）
 - **Secret scanning と push protection**: GitHubが検出できる形式の秘密情報（主要なサービスのAPIキーなど）を含むコミットをpushすると、GitHubが拒否する。拒否されたら、そのコミットから秘密情報を取り除いてpushし直す。すべての秘密情報を検出できるわけではないので、これに頼らず、秘密情報はリポジトリに置かない（GitHubの Secrets に登録して使う）
 
