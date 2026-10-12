@@ -16,6 +16,14 @@ updates:
         update-types:
           - minor
           - patch
+      # 脆弱性の修正（security updates）は、週1回の更新とは別にすぐ作られる。
+      # 複数あっても1つのPRにまとめる。上の cooldown（7日待つ設定）は効かない
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+    # ここの指定（update-types）は週1回の更新にだけ効く。脆弱性の修正（security updates）では、
+    # 対象外にしたバージョンへ上げるPRも作られる。その場合はCIの結果を見て判断する
     ignore:
       # 型定義は実行するNode.js（.nvmrc）のメジャーバージョンに合わせる
       - dependency-name: '@types/node'
