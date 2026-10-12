@@ -22,6 +22,8 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
+    # ここの指定（update-types）は週1回の更新にだけ効く。脆弱性の修正（security updates）では、
+    # 対象外にしたバージョンへ上げるPRも作られる。その場合はCIの結果を見て判断する
     ignore:
       # 型定義は実行するNode.js（.nvmrc）のメジャーバージョンに合わせる
       - dependency-name: '@types/node'
