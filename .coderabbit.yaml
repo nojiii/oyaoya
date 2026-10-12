@@ -4,17 +4,24 @@ language: ja-JP
 reviews:
   profile: chill
   request_changes_workflow: false
-  poem: false
+  poem: true
   in_progress_fortune: false
   path_filters:
     - '!package-lock.json'
   path_instructions:
     - path: src/**
       instructions: >-
-        教材の読み込みは src/content/api.ts に集約する方針。
-        ページやコンポーネントから virtual:content を直接 import していたら指摘する。
+        問題は src/problems/ に1問1フォルダで置き、その問題だけで使う部品・画像・スタイルも同じフォルダに置く方針。
+        階層は src/curriculum.ts に書く。
+        ページ（src/pages/）が curriculum や problems を直接 import していたら、src/pages/loaders.ts を通すよう指摘する。
+        問題専用のスタイルを src/index.css に足していたら、問題のフォルダの *.module.css へ移すよう指摘する。
+        問題の文章はソースコードに直接書く方針のため、文言の集約や国際化対応は求めない。
         自動テストは置かない方針のため、テストの追加は求めない
         （正誤判定や採点など分岐のあるロジックを追加した場合を除く）。
+  pre_merge_checks:
+    # 関数ごとのコメント（docstring）は必須にしない。コメントは意図が読み取りにくい箇所にだけ書く
+    docstrings:
+      mode: 'off'
   auto_review:
     enabled: true
     drafts: false

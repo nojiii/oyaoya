@@ -1,14 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
-import {
-  fetchProblem,
-  fetchSubjects,
-  fetchSubjectWithUnits,
-  fetchUnitWithProblems,
-} from './content/api'
 import { ErrorPage, Layout, Loading } from './pages/Layout'
+import { loadGroup, loadHome, loadProblem } from './pages/loaders'
+import GroupDetail from './pages/GroupDetail'
 import Home from './pages/Home'
-import SubjectDetail from './pages/SubjectDetail'
-import UnitDetail from './pages/UnitDetail'
 import ProblemDetail from './pages/ProblemDetail'
 
 const router = createBrowserRouter([
@@ -17,23 +11,17 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     hydrateFallbackElement: <Loading />,
     children: [
-      { index: true, loader: () => fetchSubjects(), element: <Home /> },
+      { index: true, loader: loadHome, element: <Home /> },
       {
-        path: ':subject',
-        loader: ({ params }) => fetchSubjectWithUnits(params.subject!),
-        element: <SubjectDetail />,
-      },
-      {
-        path: ':subject/:unit',
-        loader: ({ params }) =>
-          fetchUnitWithProblems(params.subject!, params.unit!),
-        element: <UnitDetail />,
-      },
-      {
-        path: ':subject/:unit/:problem',
-        loader: ({ params }) =>
-          fetchProblem(params.subject!, params.unit!, params.problem!),
+        path: 'problems/:problemId',
+        loader: ({ params }) => loadProblem(params.problemId!),
         element: <ProblemDetail />,
+      },
+      // それ以外のURLは分類のページ。階層は何段でもよいので、残りのパス全体を渡す
+      {
+        path: '*',
+        loader: ({ params }) => loadGroup(params['*']!),
+        element: <GroupDetail />,
       },
     ],
   },

@@ -2,29 +2,31 @@
 
 親子で一緒に取り組む学習支援アプリ。React + Vite + TypeScript 製。
 
-教材コンテンツ（教科 → 単元 → 問題）は `content/` 配下の YAML + Markdown を正データとし、ビルド時にアプリへ読み込む。バックエンド（データベース）は現時点では使っていない。
+問題は1問ごとに専用の画面として `src/problems/` に置き、文章もソースコードに直接書く。バックエンド（データベース）は現時点では使っていない。
 
 ## 全体像
 
-教科 → 単元 → 問題と選んでいくと、問題文・解き方・教え方・声掛け例が表示される、読むだけのサイト。ログインや入力欄はない。大きく2つの部分でできている。
+教科 → 単元 → 問題と選んでいくと、問題ごとの画面が表示されるサイト。ログインはない。プログラムは大きく3つに分かれている。
 
-- **教材**（[content/](content/)）: 問題文などの文章を書いたテキストファイル。プログラムは書かない
-- **画面**（[src/](src/)）: 教材をどう並べて表示するかを決めるプログラム
+- **問題**（[src/problems/](src/problems/)）: 1問ごとの画面。問題文・解き方・教え方・声掛け例の文章も、ここに直接書く
+- **階層**（[src/curriculum.ts](src/curriculum.ts)）: 教科・単元などの分類と、そこに並べる問題
+- **枠**（[src/pages/](src/pages/) と [src/components/](src/components/)）: ホームや一覧のページと、複数の問題で使う部品
 
-この2つを、ブラウザで開けるファイル一式に変換する作業を「ビルド」と呼ぶ。教材はビルドのときに画面のプログラムへ埋め込まれるので、表示中にサーバーへ教材を取りに行くことはない。
+これらを、ブラウザで開けるファイル一式に変換する作業を「ビルド」と呼ぶ。問題の文章もビルドのときにプログラムへ含まれるので、表示中にサーバーへ取りに行くことはない。
 
 ### やりたいこと別：どこを触るか
 
-| やりたいこと                           | 触る場所                                                                                 |
-| -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 教科・単元・問題を追加する、文章を直す | [content/](content/)（書き方は[コンテンツ（教材）](#コンテンツ教材)）                    |
-| 画面の文言や並びを変える               | [src/pages/](src/pages/)                                                                 |
-| 色・余白・文字サイズを変える           | [src/index.css](src/index.css)                                                           |
-| 新しいページ（URL）を増やす            | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                   |
-| 教材の取り出し方を増やす（例: 検索）   | [src/content/api.ts](src/content/api.ts)                                                 |
-| 教材の項目を増やす（例: 難易度）       | [scripts/content.ts](scripts/content.ts) と [src/content/types.ts](src/content/types.ts) |
-| 画面で使う画像を置く                   | [public/](public/)                                                                       |
-| CI・デプロイの設定を変える             | `.github/` と `firebase.json`（オーナーのレビューが必要）                                |
+| やりたいこと                               | 触る場所                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------- |
+| 問題を追加する                             | [src/problems/](src/problems/)（手順は[問題を追加する](#問題を追加する)）       |
+| 問題の文章や見た目を直す                   | その問題のフォルダ（`src/problems/<問題ID>/`）                                  |
+| 教科・単元を増やす、並べ替える、段を増やす | [src/curriculum.ts](src/curriculum.ts)（書き方は[階層を変える](#階層を変える)） |
+| 複数の問題で使う部品を作る、直す           | [src/components/](src/components/)                                              |
+| ホームや一覧ページの文言・並びを変える     | [src/pages/](src/pages/)                                                        |
+| サイト全体の色・余白・文字サイズを変える   | [src/index.css](src/index.css)                                                  |
+| 新しい種類のページ（URL）を増やす          | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                          |
+| サイト全体で使う画像を置く                 | [public/](public/)                                                              |
+| CI・デプロイの設定を変える                 | `.github/` と `firebase.json`（オーナーのレビューが必要）                       |
 
 それ以外のファイル（`tsconfig*.json`、`eslint.config.js` など）は道具の設定で、普段は触らない。
 
@@ -46,7 +48,7 @@ npm install
 npm run dev   # http://localhost:5173/
 ```
 
-ソースコードも `content/` の教材も、保存すると画面に反映される。
+ソースコードを保存すると、画面に反映される。
 
 ## Lint・フォーマット・型チェック
 
@@ -78,7 +80,7 @@ npm run build
 1. `main` から作業ブランチを作って変更し、pushしてPRを作成する（[テンプレート](.github/pull_request_template.md)に沿って記入）
    - ブランチ名は機能名を英語で付ける（例: `problem-search`）。`feature/` などの接頭辞は付けない
 2. 自動で次が走る
-   - **CI**（[ci.yml](.github/workflows/ci.yml)）: `lint`（ESLint・Prettier・コンテンツ検証）/ `typecheck` / `build`。すべて成功しないとマージできない
+   - **CI**（[ci.yml](.github/workflows/ci.yml)）: `lint`（ESLint・Prettier）/ `typecheck` / `build`。すべて成功しないとマージできない
    - **プレビュー**: そのPRの内容をビルドしたプレビューURLがコメントされる（7日で自動失効）
    - **AIレビュー**（CodeRabbit）: 補助的な指摘がコメントされる。対応は必須ではなく、採否はPR作成者とレビュアーが判断する（設定は [.coderabbit.yaml](.coderabbit.yaml)）
 3. レビュアーはCI結果とコードを見て、プレビューURLで実際に操作して確認し、Approveする
@@ -87,7 +89,7 @@ npm run build
 pushする前に手元で確かめるなら:
 
 ```bash
-npm run lint && npm run format:check && npm run content:check && npm run build
+npm run lint && npm run format:check && npm run build
 ```
 
 依存パッケージとGitHub Actionsは、Dependabotが週1回更新PRを作る（[dependabot.yml](.github/dependabot.yml)）。CIが通れば通常のPRと同じようにレビューしてマージする。DependabotのPRにはプレビューは作られない。
@@ -105,115 +107,131 @@ workflowで使う外部のActionsは、タグ（`@v7` など）ではなくコ�
 - 正誤判定や採点など、分岐のあるロジックを書くとき → そのロジックだけを対象にしたユニットテスト
 - バックエンドを導入してユーザーごとのデータを扱うとき → アクセス権限（セキュリティルール）のテスト
 
-## コンテンツ（教材）
-
-フォルダの入れ子が、そのまま「教科 → 単元 → 問題」になる。
+## フォルダ構成
 
 ```text
-content/
-  math/                          # 教科
-    _meta.yaml                   #   教科の名前と並び順
-    unit-01-addition-1digit/     # 単元
-      _meta.yaml                 #   単元の名前と並び順
-      problem-01/                # 問題
-        meta.yaml                #   問題のタイトルと並び順
-        question.md              #   問題文
-        how_to_solve.md          #   解き方
-        how_to_teach.md          #   教え方（親向け）
-        example_phrases.md       #   声掛け例（親向け）
+src/
+  main.tsx                 # 起動するところ（普段は触らない）
+  App.tsx                  # URLとページの対応
+  index.css                # サイト全体の見た目
+  curriculum.ts            # 階層（分類と、そこに並べる問題）
+  problems/                # 問題。1問 = 1フォルダ
+    index.ts               #   問題の一覧
+    addition-apples/       #   フォルダ名が問題ID
+      index.tsx            #     その問題のタイトルと画面
+  components/              # 複数の問題で使う部品
+    ProblemSections.tsx    #   標準の構成（問題・解き方・教え方・声掛け例）
+  pages/                   # 問題以外のページと、全ページ共通の枠
 ```
 
-### 教材を追加する手順
+複数人で同時に開発しても変更がぶつかりにくいように、次の決まりで置く。
 
-1. 既存の問題フォルダ（例: `content/math/unit-01-addition-1digit/problem-01`）をコピーして、フォルダ名を変える
-2. `meta.yaml` の `title` と `order`、4つの `.md` を書き換える
-3. `npm run dev` で表示を確かめる
-4. `npm run content:check` で不備がないか確かめる
+- 1つの問題に関するもの（画面、文章、その問題だけで使う部品・画像・スタイル）は、すべてその問題のフォルダの中に置く。担当する問題のフォルダの中は自由に作ってよい
+- 2つ以上の問題で使うようになった部品は [src/components/](src/components/) へ移す。最初から共通化しない
+- 問題専用のスタイルは、問題のフォルダに `*.module.css`（CSS Modules）で書く。[src/index.css](src/index.css) に足すと、他の問題とクラス名が重なったり、同じファイルの編集がぶつかったりする
+- 問題専用の画像は、問題のフォルダに置いて `import` する。[public/](public/) に置くのはサイト全体で使う画像だけ
+- 問題を追加するときに触る共有のファイルは、[src/problems/index.ts](src/problems/index.ts) と [src/curriculum.ts](src/curriculum.ts) の2つだけ
 
-単元や教科を増やすときも同じで、フォルダを作って `_meta.yaml` を置く。
+## 問題を追加する
 
-### フォルダ名
+1. [src/problems/addition-apples/](src/problems/addition-apples/) をコピーして、フォルダ名を新しい問題IDにする
+2. コピーした `index.tsx` の `title` と中身を書き換える
+3. [src/problems/index.ts](src/problems/index.ts) に2行足す（アルファベット順の位置に入れる）
 
-- フォルダ名（slug と呼ぶ）がそのままURLになる（`/<教科>/<単元>/<問題>`。例: `/math/unit-01-addition-1digit/problem-01`）
-- 半角の英小文字・数字・ハイフンで付ける
-- 公開後にフォルダ名を変えるとURLも変わるので、変えない
-- `content/` の中のフォルダは、すべて教科・単元・問題として扱われる。画像用などの別のフォルダを置くと、メタファイルがないというエラーになる
+   ```ts
+   import * as subtractionCandies from './subtraction-candies'
 
-### YAMLファイル（名前と並び順）
+   export const problems = {
+     'addition-apples': additionApples,
+     'subtraction-candies': subtractionCandies,
+   }
+   ```
 
-`項目名: 値` を1行に1つずつ書く。コロンの後ろには半角スペースが必要。
+4. [src/curriculum.ts](src/curriculum.ts) で、置きたい分類の `problems` に問題IDを足す
+5. `npm run dev` で起動し、`http://localhost:5173/problems/<問題ID>` を開いて確かめる
+6. `npm run typecheck` で書き間違いがないか確かめる（CIでも走る）
 
-```yaml
-name: 算数
-order: 1
+### 問題ID
+
+- フォルダ名が問題IDで、そのまま問題のURLになる（`/problems/<問題ID>`）
+- 半角の英小文字・数字・ハイフンで、内容がわかる名前を付ける（例: `addition-apples`）
+- 教科名や単元の番号は入れない（階層が変わっても、IDを変えずに済むようにするため）
+- 公開後は変えない（URLが変わるため）
+
+### 問題の画面の書き方
+
+- 標準の構成（問題 → 解き方 → 教え方 → 声掛け例）にするときは、[ProblemSections](src/components/ProblemSections.tsx) に4つの中身を渡す。見出しは部品側が付けるので、中身だけを書く
+- 文章は、段落 `<p>`・箇条書き `<ul><li>`・番号付きリスト `<ol><li>` で書く
+- 標準の構成に収まらない問題は、`ProblemSections` を使わずに自由に組み立ててよい
+- パンくずリストとタイトルの見出しはページの枠が出すので、問題の画面には書かない
+- 文章はソースコードに直接書く。文言を1か所に集める仕組み（国際化対応など）は、必要になった時点で入れる
+- 文章は画像の中に入れず、文字で書く（将来、問題の文章を検索できるようにするため）
+
+## 階層を変える
+
+階層は [src/curriculum.ts](src/curriculum.ts) の1ファイルに書く。問題のフォルダは階層と無関係なので、動かさない。
+
+```ts
+export const curriculum: Group[] = [
+  {
+    slug: 'math',
+    name: '算数',
+    children: [
+      {
+        slug: 'unit-01-addition-1digit',
+        name: 'たし算(1けたの数)',
+        problems: ['addition-apples'],
+      },
+    ],
+  },
+]
 ```
 
-| 対象       | ファイル名                           | 必須の項目 | 任意の項目 |
-| ---------- | ------------------------------------ | ---------- | ---------- |
-| 教科・単元 | `_meta.yaml`（先頭にアンダースコア） | `name`     | `order`    |
-| 問題       | `meta.yaml`（アンダースコアなし）    | `title`    | `order`    |
+- 分類は `slug`（URLになる）と `name`（画面に出る名前）を持ち、`children`（下の分類）と `problems`（問題ID）を入れられる
+- 入れ子は何段でもよい。一覧には書いた順に並ぶ
+- 段を足す、並べ替える、問題を別の分類へ移すといった変更は、このファイルの書き換えだけでできる
+- 分類のURLは `slug` を上からつないだもの（例: `/math/unit-01-addition-1digit`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
+- `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` は使えない（問題のURLと重なるため）
+- 1つの問題は、1つの分類にだけ置く
 
-- `name` / `title` は画面に表示される名前
-- `order` は一覧での並び順。小さいほど上に出る。省略すると0になり、同じ値ならフォルダ名の順に並ぶ
-- `order` は数字で書く。`order: "1"` のように引用符で囲むとエラーになる
+### 型チェックのよくあるエラー
 
-### Markdownファイル（本文）
+書き間違いは `npm run typecheck` が見つける。CIでも走るので、エラーが残ったままではマージできない。
 
-- 4つのファイルは名前が決まっていて、すべて必須
-- 「問題」「解き方」などの見出しは画面側が付けるので、本文だけを書く（1行目を `#` の見出しにしなくてよい）
-- 使える書き方は、段落・箇条書き（`-`）・番号付きリスト（`1.`）・太字（`**太字**`）・リンク
-- 段落を分けるときは、間に空行を入れる。空行のない改行は、画面では改行されない
-- 表とHTMLタグは使えない
-- 教材の中に画像を入れる仕組みはまだない（`content/` に画像を置いても表示されない）
+| エラーメッセージ                                                               | 原因                                                                                    |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `src/curriculum.ts` で `Type '"..."' is not assignable to type ...`            | 問題IDの書き間違いか、[src/problems/index.ts](src/problems/index.ts) にまだ足していない |
+| `src/problems/index.ts` で `Property 'title' is missing ...`                   | その問題の `index.tsx` に `export const title = '...'` がない                           |
+| 問題の `index.tsx` で `Property '...' is missing ... required in type 'Props'` | `ProblemSections` に4つの中身を渡していない                                             |
 
-### 検証とよくあるエラー
+## 表示の仕組み
 
-```bash
-npm run content:check   # content/ に不備がないか検証する
-```
+[src/App.tsx](src/App.tsx) がURLを見て、どのページを出すかを決める。
 
-同じ検証がCIと `npm run build` でも走るので、不備のある教材はマージもデプロイもされない。
+| URL                                             | 出るページ                                                 | 中身の探し方                           |
+| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| `/`                                             | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
+| `/problems/<問題ID>`                            | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
+| それ以外（例: `/math/unit-01-addition-1digit`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
 
-| エラーメッセージ                                         | 原因                                                                                                     |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `meta file not found: ...`                               | `_meta.yaml` / `meta.yaml` がないか、ファイル名が違う。`content/` に教材以外のフォルダを置いたときも出る |
-| `"name" is missing in ...` / `"title" is missing in ...` | 必須の項目が書かれていないか、値が空                                                                     |
-| `"order" must be a number in ...`                        | `order` が数字になっていない                                                                             |
-| `required content file not found: ...`                   | 4つの `.md` のどれかがないか、ファイル名が違う                                                           |
+探す処理は [src/pages/loaders.ts](src/pages/loaders.ts) にある。見つからなければ「ページが見つかりませんでした。」と表示される。
 
-### 読み込みの仕組み
+ページ（`src/pages/` の各ファイル）は `curriculum.ts` と `problems/index.ts` を直接読まず、`loaders.ts` の関数が返すデータだけを使う（階層や問題の一覧の形を変えたときに、直す場所を `loaders.ts` に限るため）。
 
-教材が画面に表示されるまでの流れ。
+問題のページでは、枠（`ProblemDetail.tsx`）がパンくずリストとタイトルを出し、その下にその問題の画面（`src/problems/<問題ID>/index.tsx`）を表示する。
 
-```text
-content/ のファイル
-   ↓ 1. 読み込んで検証し、1つのデータにまとめる            scripts/content.ts
-   ↓ 2. そのデータを画面のプログラムから読めるようにする    vite.config.ts
-   ↓ 3. 必要な部分だけを取り出す関数を用意する              src/content/api.ts
-   ↓ 4. URLに応じて、どの関数とどのページを使うかを決める   src/App.tsx
-   ↓ 5. 受け取ったデータを表示する                          src/pages/*.tsx
-ブラウザの画面
-```
-
-たとえば `/math/unit-01-addition-1digit/problem-01` を開くと、次の順に動く。
-
-1. [src/App.tsx](src/App.tsx) がURLを教科・単元・問題の3つに分けて、`fetchProblem` を呼ぶ
-2. [src/content/api.ts](src/content/api.ts) の `fetchProblem` が、まとめられたデータから該当する問題を探す。見つからなければ「ページが見つかりませんでした。」と表示される
-3. [src/pages/ProblemDetail.tsx](src/pages/ProblemDetail.tsx) が問題を受け取り、4つの本文をMarkdownから見出しや箇条書きに変換して表示する
-
-上の2でできるデータは、プログラムの中では `virtual:content` という名前で読み込める（[vite.config.ts](vite.config.ts) のプラグインが用意している）。
-
-**アプリから教材を読むのは [src/content/api.ts](src/content/api.ts) だけ**にする。ページやコンポーネントから `virtual:content` を直接importせず、必要な関数を `api.ts` に追加して使う（将来バックエンドへ移すときに、この1ファイルの差し替えで済ませるため）。
-
-教材はビルドのときに埋め込まれるので、教材を直しても、`main` へマージして再デプロイされるまで本番には反映されない。開発中（`npm run dev`）は、`content/` を保存するたびに画面が自動で再読み込みされる。
+問題はビルドのときにプログラムへ含まれるので、問題を直しても、`main` へマージして再デプロイされるまで本番には反映されない。開発中（`npm run dev`）は、保存するたびに画面へ反映される。
 
 ## バックエンドについて
 
 データの置き場所は、種類によって分ける。
 
-- **教材**（全員に同じものを見せる、読み取り専用のデータ）: `content/` に書き、ビルドのときに画面へ埋め込む。バックエンドは使わない
+- **問題**（全員に同じものを見せる内容）: ソースコードに書き、ビルドのときにプログラムへ含める。バックエンドは使わない
 - **ユーザーごとのデータ**（学習履歴、ログインなど）: バックエンドで管理する。まだその機能がないので、バックエンドは導入していない。必要になった時点で導入する
 
 Firestore（データベース）とそのエミュレータは、現在は使っていない。開発で起動するのは `npm run dev` だけでよい。Firebaseで使っているのは Hosting（ビルドしたファイルを置いて公開する場所）だけで、`firebase.json` と `.firebaserc` はそのための設定。
 
-以前は教材を Firestore に取り込んで配信していたが、教材は読み取り専用でユーザーごとのデータもないため、ビルド時の読み込みに切り替えた。Firestore を使っていた頃の実装（取り込みスクリプト、セキュリティルールとそのテスト、エミュレータ設定、PRプレビュー用のデータ分離）は、`firestore.rules` を削除したコミットの差分で確認できる。
+### これまでの経緯
+
+- 最初は教材を Firestore に取り込んで配信していた。教材は読み取り専用でユーザーごとのデータもないため、ビルド時に読み込む形へ切り替えた。当時の実装（取り込みスクリプト、セキュリティルールとそのテスト、エミュレータ設定、PRプレビュー用のデータ分離）は、`firestore.rules` を削除したコミットの差分で確認できる
+- 次に、教材を `content/` 配下の YAML + Markdown で管理し、全問題を同じ見た目のページで表示していた。問題ごとに個別の開発が入り、専用の見た目が必要になるため、問題を1問ずつ画面として書く今の形へ切り替えた。当時の実装（読み込みと検証のスクリプト）は、`content/` を削除したコミットの差分で確認できる
