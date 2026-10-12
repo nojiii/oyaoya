@@ -1,35 +1,27 @@
 import { Link, useLoaderData } from 'react-router'
-import { problems } from '../problems'
 import { Breadcrumb } from './Breadcrumb'
 import type { loadGroup } from './loaders'
 import { usePageTitle } from './usePageTitle'
 
 export default function GroupDetail() {
-  const { group, url, crumbs } = useLoaderData<ReturnType<typeof loadGroup>>()
-  usePageTitle(group.name)
-
-  const children = group.children ?? []
-  const problemIds = group.problems ?? []
+  const { name, crumbs, groups, problems } =
+    useLoaderData<ReturnType<typeof loadGroup>>()
+  usePageTitle(name)
 
   return (
     <>
-      <Breadcrumb crumbs={crumbs} current={group.name} />
+      <Breadcrumb crumbs={crumbs} current={name} />
       <h2>
-        {group.name}:{' '}
-        {children.length === 0 ? '問題をえらんでください' : 'えらんでください'}
+        {name}:{' '}
+        {groups.length === 0 ? '問題をえらんでください' : 'えらんでください'}
       </h2>
       <ul className="list">
-        {children.length + problemIds.length === 0 && (
+        {groups.length + problems.length === 0 && (
           <li>まだ登録されていません。</li>
         )}
-        {children.map((child) => (
-          <li key={child.slug}>
-            <Link to={`${url}/${child.slug}`}>{child.name}</Link>
-          </li>
-        ))}
-        {problemIds.map((id) => (
-          <li key={id}>
-            <Link to={`/problems/${id}`}>{problems[id].title}</Link>
+        {[...groups, ...problems].map((link) => (
+          <li key={link.url}>
+            <Link to={link.url}>{link.name}</Link>
           </li>
         ))}
       </ul>

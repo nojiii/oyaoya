@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { ErrorPage, Layout, Loading } from './pages/Layout'
-import { loadGroup, loadProblem } from './pages/loaders'
+import { loadGroup, loadHome, loadProblem } from './pages/loaders'
 import GroupDetail from './pages/GroupDetail'
 import Home from './pages/Home'
 import ProblemDetail from './pages/ProblemDetail'
@@ -11,7 +11,7 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     hydrateFallbackElement: <Loading />,
     children: [
-      { index: true, element: <Home /> },
+      { index: true, loader: loadHome, element: <Home /> },
       {
         path: 'problems/:problemId',
         loader: ({ params }) => loadProblem(params.problemId!),

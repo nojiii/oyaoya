@@ -216,6 +216,8 @@ export const curriculum: Group[] = [
 
 探す処理は [src/pages/loaders.ts](src/pages/loaders.ts) にある。見つからなければ「ページが見つかりませんでした。」と表示される。
 
+ページ（`src/pages/` の各ファイル）は `curriculum.ts` と `problems/index.ts` を直接読まず、`loaders.ts` の関数が返すデータだけを使う（階層や問題の一覧の形を変えたときに、直す場所を `loaders.ts` に限るため）。
+
 問題のページでは、枠（`ProblemDetail.tsx`）がパンくずリストとタイトルを出し、その下にその問題の画面（`src/problems/<問題ID>/index.tsx`）を表示する。
 
 問題はビルドのときにプログラムへ含まれるので、問題を直しても、`main` へマージして再デプロイされるまで本番には反映されない。開発中（`npm run dev`）は、保存するたびに画面へ反映される。

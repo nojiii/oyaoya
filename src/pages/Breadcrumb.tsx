@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router'
-import type { Crumb } from './loaders'
+import type { PageLink } from './loaders'
 
 interface Props {
-  crumbs: Crumb[]
+  crumbs: PageLink[]
   current: string
 }
 

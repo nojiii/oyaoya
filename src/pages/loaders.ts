@@ -1,7 +1,10 @@
 import { curriculum, type Group } from '../curriculum'
 import { problems, type ProblemId } from '../problems'
 
-export interface Crumb {
+// ページは curriculum と problems を直接読まず、ここの関数が返すデータだけを使う
+// （階層や問題の一覧の形を変えたときに、直す場所をこのファイルに限るため）
+
+export interface PageLink {
   name: string
   url: string
 }
@@ -10,15 +13,32 @@ function notFound(): never {
   throw new Response('Not Found', { status: 404 })
 }
 
-// 上から順に並んだ分類を、パンくずリスト用の名前とURLにする
-function toCrumbs(groups: Group[]): Crumb[] {
-  return groups.map((group, i) => ({
+// 同じ段に並ぶ分類を、リンク用の名前とURLにする（parentUrl は1つ上の分類のURL）
+function groupLinks(groups: Group[], parentUrl: string): PageLink[] {
+  return groups.map((group) => ({
     name: group.name,
-    url: `/${groups
-      .slice(0, i + 1)
-      .map((g) => g.slug)
-      .join('/')}`,
+    url: `${parentUrl}/${group.slug}`,
   }))
+}
+
+function problemLinks(ids: ProblemId[]): PageLink[] {
+  return ids.map((id) => ({
+    name: problems[id].title,
+    url: `/problems/${id}`,
+  }))
+}
+
+// 上から順にたどった分類を、パンくずリスト用の名前とURLにする
+function toCrumbs(groups: Group[]): PageLink[] {
+  let url = ''
+  return groups.map((group) => {
+    url = `${url}/${group.slug}`
+    return { name: group.name, url }
+  })
+}
+
+export function loadHome() {
+  return { groups: groupLinks(curriculum, '') }
 }
 
 // URL（例: math/unit-01-addition-1digit）を上からたどって分類を探す
@@ -32,7 +52,13 @@ export function loadGroup(path: string) {
   }
   const crumbs = toCrumbs(groups)
   const current = crumbs.pop() ?? notFound()
-  return { group: groups[groups.length - 1], url: current.url, crumbs }
+  const group = groups[groups.length - 1]
+  return {
+    name: group.name,
+    crumbs,
+    groups: groupLinks(siblings, current.url),
+    problems: problemLinks(group.problems ?? []),
+  }
 }
 
 // その問題が置かれている分類を上から順に返す（どこにも置かれていなければ空）

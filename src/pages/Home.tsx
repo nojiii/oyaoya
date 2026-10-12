@@ -1,7 +1,9 @@
-import { Link } from 'react-router'
-import { curriculum } from '../curriculum'
+import { Link, useLoaderData } from 'react-router'
+import type { loadHome } from './loaders'
 
 export default function Home() {
+  const { groups } = useLoaderData<ReturnType<typeof loadHome>>()
+
   return (
     <>
       <section className="hero">
@@ -22,11 +24,11 @@ export default function Home() {
         <p className="card-sub">学習を始めて、できた!を増やしていこう。</p>
         <hr className="dotted" />
         <ul className="list subject-list">
-          {curriculum.length === 0 && <li>教科がまだ登録されていません。</li>}
-          {curriculum.map((subject) => (
-            <li key={subject.slug}>
-              <Link to={`/${subject.slug}`}>
-                📖 {subject.name} <span className="chevron">›</span>
+          {groups.length === 0 && <li>教科がまだ登録されていません。</li>}
+          {groups.map((group) => (
+            <li key={group.url}>
+              <Link to={group.url}>
+                📖 {group.name} <span className="chevron">›</span>
               </Link>
             </li>
           ))}
