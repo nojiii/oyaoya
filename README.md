@@ -94,9 +94,19 @@ npm run lint && npm run format:check && npm run build
 
 依存パッケージとGitHub Actionsは、Dependabotが週1回更新PRを作る（[dependabot.yml](.github/dependabot.yml)）。CIが通れば通常のPRと同じようにレビューしてマージする。DependabotのPRにはプレビューは作られない。
 
+脆弱性が見つかったパッケージは、週1回の更新とは別に、Dependabotが修正のPRをすぐに作る（複数あれば1つのPRにまとめる）。脆弱性の修正は急ぐため、公開から7日待つ設定はこのPRには効かない。扱いは通常のDependabotのPRと同じ。
+
 workflowで使う外部のActionsは、タグ（`@v7` など）ではなくコミットSHAで固定している（タグは後から別のコードに差し替えられる可能性があるため）。行末のコメントが対応するバージョンで、SHAとコメントの更新はDependabotが行う。Actionsを追加するときも同じ形式で書く。
 
 `.github/` や `firebase.json` などCI・デプロイに関わるファイルは、[CODEOWNERS](.github/CODEOWNERS) によりオーナーのレビューが必要。
+
+### セキュリティの設定
+
+GitHubのリポジトリ設定（Settings → Advanced Security）で、次を有効にしている。ファイルには現れない設定なので、ここに記録しておく。
+
+- **Dependabot alerts**: 使っているパッケージに脆弱性が見つかると通知される。一覧はGitHubの Security タブ → Dependabot で見られる。手元では `npm audit` で確かめられる
+- **Dependabot security updates**: 上の脆弱性を直すPRが自動で作られる（まとめ方は [dependabot.yml](.github/dependabot.yml)）
+- **Secret scanning と push protection**: APIキーなどの秘密情報を含むコミットをpushすると、GitHubが拒否する。拒否されたら、そのコミットから秘密情報を取り除いてpushし直す。秘密情報はリポジトリに置かず、GitHubの Secrets に登録して使う
 
 ### テストについて
 
