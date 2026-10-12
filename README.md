@@ -198,7 +198,7 @@ content/ のファイル
 たとえば `/math/unit-01-addition-1digit/problem-01` を開くと、次の順に動く。
 
 1. [src/App.tsx](src/App.tsx) がURLを教科・単元・問題の3つに分けて、`fetchProblem` を呼ぶ
-2. [src/content/api.ts](src/content/api.ts) の `fetchProblem` が、まとめられたデータから該当する問題を探す。見つからなければ「ページが見つかりませんでした」と表示される
+2. [src/content/api.ts](src/content/api.ts) の `fetchProblem` が、まとめられたデータから該当する問題を探す。見つからなければ「ページが見つかりませんでした。」と表示される
 3. [src/pages/ProblemDetail.tsx](src/pages/ProblemDetail.tsx) が問題を受け取り、4つの本文をMarkdownから見出しや箇条書きに変換して表示する
 
 上の2でできるデータは、プログラムの中では `virtual:content` という名前で読み込める（[vite.config.ts](vite.config.ts) のプラグインが用意している）。
