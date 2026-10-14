@@ -27,6 +27,11 @@ export const curriculum: Group[] = [
             name: 'たし算(1けたの数)',
             problems: ['addition-apples'],
           },
+          {
+            slug: 'unit-02-addition-carry',
+            name: 'くり上がりのたしざん',
+            problems: ['addition-carry'],
+          },
         ],
       },
     ],
