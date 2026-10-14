@@ -127,7 +127,7 @@ hr.dotted {
   border-top: 2px dotted var(--color-border);
   margin: 1.25rem 0;
 }
-.subject-list a {
+.home-list a {
   background: var(--color-accent);
   color: #fff;
   border: none;
@@ -135,7 +135,7 @@ hr.dotted {
   padding: 1rem 1.5rem;
   font-size: 1.05rem;
 }
-.subject-list .chevron {
+.home-list .chevron {
   font-size: 1.2rem;
 }
 .footer-note {

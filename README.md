@@ -6,28 +6,28 @@
 
 ## 全体像
 
-教科 → 単元 → 問題と選んでいくと、問題ごとの画面が表示されるサイト。ログインはない。プログラムは大きく3つに分かれている。
+学年 → 教科 → 単元 → 問題と選んでいくと、問題ごとの画面が表示されるサイト。ログインはない。プログラムは大きく3つに分かれている。
 
 - **問題**（[src/problems/](src/problems/)）: 1問ごとの画面。問題文・解き方・教え方・声掛け例の文章も、ここに直接書く
-- **階層**（[src/curriculum.ts](src/curriculum.ts)）: 教科・単元などの分類と、そこに並べる問題
+- **階層**（[src/curriculum.ts](src/curriculum.ts)）: 学年・教科・単元などの分類と、そこに並べる問題
 - **枠**（[src/pages/](src/pages/) と [src/components/](src/components/)）: ホームや一覧のページと、複数の問題で使う部品
 
 これらを、ブラウザで開けるファイル一式に変換する作業を「ビルド」と呼ぶ。問題の文章もビルドのときにプログラムへ含まれるので、表示中にサーバーへ取りに行くことはない。
 
 ### やりたいこと別：どこを触るか
 
-| やりたいこと                               | 触る場所                                                                                                  |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| 問題を追加する                             | [src/problems/](src/problems/)（手順は[問題を追加する](#問題を追加する)）                                 |
-| 問題の文章や見た目を直す                   | その問題のフォルダ（`src/problems/<問題ID>/`）                                                            |
-| 教科・単元を増やす、並べ替える、段を増やす | [src/curriculum.ts](src/curriculum.ts)（書き方は[階層を変える](#階層を変える)）                           |
-| 大学祭用の問題を追加する                   | [src/problems/](src/problems/) と [src/curriculum.ts](src/curriculum.ts)（[大学祭モード](#大学祭モード)） |
-| 複数の問題で使う部品を作る、直す           | [src/components/](src/components/)                                                                        |
-| ホームや一覧ページの文言・並びを変える     | [src/pages/](src/pages/)                                                                                  |
-| サイト全体の色・余白・文字サイズを変える   | [src/index.css](src/index.css)                                                                            |
-| 新しい種類のページ（URL）を増やす          | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                                    |
-| サイト全体で使う画像を置く                 | [public/](public/)                                                                                        |
-| CI・デプロイの設定を変える                 | `.github/` と `firebase.json`（オーナーのレビューが必要）                                                 |
+| やりたいこと                                     | 触る場所                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| 問題を追加する                                   | [src/problems/](src/problems/)（手順は[問題を追加する](#問題を追加する)）                                 |
+| 問題の文章や見た目を直す                         | その問題のフォルダ（`src/problems/<問題ID>/`）                                                            |
+| 学年・教科・単元を増やす、並べ替える、段を増やす | [src/curriculum.ts](src/curriculum.ts)（書き方は[階層を変える](#階層を変える)）                           |
+| 大学祭用の問題を追加する                         | [src/problems/](src/problems/) と [src/curriculum.ts](src/curriculum.ts)（[大学祭モード](#大学祭モード)） |
+| 複数の問題で使う部品を作る、直す                 | [src/components/](src/components/)                                                                        |
+| ホームや一覧ページの文言・並びを変える           | [src/pages/](src/pages/)                                                                                  |
+| サイト全体の色・余白・文字サイズを変える         | [src/index.css](src/index.css)                                                                            |
+| 新しい種類のページ（URL）を増やす                | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                                    |
+| サイト全体で使う画像を置く                       | [public/](public/)                                                                                        |
+| CI・デプロイの設定を変える                       | `.github/` と `firebase.json`（オーナーのレビューが必要）                                                 |
 
 それ以外のファイル（`tsconfig*.json`、`eslint.config.js` など）は道具の設定で、普段は触らない。
 
@@ -186,23 +186,31 @@ src/
 ```ts
 export const curriculum: Group[] = [
   {
-    slug: 'math',
-    name: '算数',
+    slug: 'grade-1',
+    name: '小学1年生',
     children: [
       {
-        slug: 'unit-01-addition-1digit',
-        name: 'たし算(1けたの数)',
-        problems: ['addition-apples'],
+        slug: 'math',
+        name: '算数',
+        children: [
+          {
+            slug: 'unit-01-addition-1digit',
+            name: 'たし算(1けたの数)',
+            problems: ['addition-apples'],
+          },
+        ],
       },
     ],
   },
+  { slug: 'grade-2', name: '小学2年生' },
 ]
 ```
 
+- 一番上の段は学年で、その下に教科・単元を置く。ホームには学年が並び、学年を選ぶと教科の一覧が出る
 - 分類は `slug`（URLになる）と `name`（画面に出る名前）を持ち、`children`（下の分類）と `problems`（問題ID）を入れられる
 - 入れ子は何段でもよい。一覧には書いた順に並ぶ
 - 段を足す、並べ替える、問題を別の分類へ移すといった変更は、このファイルの書き換えだけでできる
-- 分類のURLは `slug` を上からつないだもの（例: `/math/unit-01-addition-1digit`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
+- 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/unit-01-addition-1digit`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
 - `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題・大学祭モードのURLと重なるため）
 - 1つの問題は、1つの分類にだけ置く
 
@@ -238,11 +246,11 @@ export const curriculum: Group[] = [
 
 [src/App.tsx](src/App.tsx) がURLを見て、どのページを出すかを決める。
 
-| URL                                             | 出るページ                                                 | 中身の探し方                           |
-| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
-| `/`                                             | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
-| `/problems/<問題ID>`                            | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
-| それ以外（例: `/math/unit-01-addition-1digit`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
+| URL                                                     | 出るページ                                                 | 中身の探し方                           |
+| ------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| `/`                                                     | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
+| `/problems/<問題ID>`                                    | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
+| それ以外（例: `/grade-1/math/unit-01-addition-1digit`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
 
 URLの先頭に `/festival` を付けると、同じ3種類のページが大学祭モードで出る（[大学祭モード](#大学祭モード)）。
 
