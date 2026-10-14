@@ -6,12 +6,14 @@ import {
   useNavigation,
   useRouteError,
 } from 'react-router'
+import { useHomeUrl } from './festival'
 
 function Header() {
+  const homeUrl = useHomeUrl()
   return (
     <header className="site-header">
       <h1>
-        <Link to="/">Oyaoya</Link>
+        <Link to={homeUrl}>Oyaoya</Link>
       </h1>
     </header>
   )
@@ -20,9 +22,12 @@ function Header() {
 export function Layout() {
   const { pathname } = useLocation()
   const navigation = useNavigation()
+  const homeUrl = useHomeUrl()
+  // 末尾に / が付いたURL（/festival/）もホームとして扱う
+  const isHome = pathname === homeUrl || pathname === `${homeUrl}/`
   return (
     <>
-      {pathname !== '/' && <Header />}
+      {!isHome && <Header />}
       <main className={navigation.state === 'loading' ? 'is-loading' : ''}>
         <Outlet />
       </main>
@@ -36,6 +41,7 @@ export function Loading() {
 
 export function ErrorPage() {
   const error = useRouteError()
+  const homeUrl = useHomeUrl()
   const notFound = isRouteErrorResponse(error) && error.status === 404
   return (
     <>
@@ -47,7 +53,7 @@ export function ErrorPage() {
             : 'データの読み込みに失敗しました。'}
         </p>
         <p className="status">
-          <Link to="/">ホームへもどる</Link>
+          <Link to={homeUrl}>ホームへもどる</Link>
         </p>
       </main>
     </>
