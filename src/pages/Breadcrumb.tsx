@@ -8,17 +8,31 @@ interface Props {
   current: string
 }
 
+function Separator() {
+  return (
+    <span className="separator" aria-hidden="true">
+      ›
+    </span>
+  )
+}
+
 export function Breadcrumb({ crumbs, current }: Props) {
   const homeUrl = useHomeUrl()
   return (
-    <nav className="breadcrumb">
-      <Link to={homeUrl}>ホーム</Link> /{' '}
+    <nav className="breadcrumb" aria-label="パンくずリスト">
+      <Link to={homeUrl} viewTransition>
+        ホーム
+      </Link>
+      <Separator />
       {crumbs.map((crumb) => (
         <Fragment key={crumb.url}>
-          <Link to={crumb.url}>{crumb.name}</Link> /{' '}
+          <Link to={crumb.url} viewTransition>
+            {crumb.name}
+          </Link>
+          <Separator />
         </Fragment>
       ))}
-      {current}
+      <span aria-current="page">{current}</span>
     </nav>
   )
 }

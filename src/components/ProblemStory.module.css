@@ -1,0 +1,256 @@
+/* 章。高さは ProblemStory.tsx がステップ数から決める */
+.chapter {
+  position: relative;
+  /* パネルが固定位置からどれだけ離れているか（-1〜1）。ProblemStory.tsx がスクロールに合わせて書き換える */
+  --offset: 0;
+}
+
+/* 章をスクロールしている間、画面に固定される部分 */
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 0;
+}
+
+/* 章の中身を載せるパネル。固定位置から離れるほど薄く・小さくなる */
+.panel {
+  --away: max(var(--offset), calc(var(--offset) * -1));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 3svh, 1.5rem);
+  width: 100%;
+  /* どの章も同じ大きさのパネルに見えるように、高さをそろえる */
+  min-height: min(30rem, 100%);
+  padding: 2rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.75rem;
+  background: var(--color-bg);
+  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.1);
+  text-align: center;
+  /* 少し離れるまでは見えたままにして、そこから消していく */
+  opacity: calc(1 - (var(--away) - 0.15) * 3);
+  /* スクロールと逆向きにずらして、パネルが実際のスクロールよりゆっくり動くように見せる */
+  transform: translateY(calc(var(--offset) * 70svh))
+    scale(calc(1 - var(--away) * 0.2));
+  animation: appear 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.heading {
+  margin: 0;
+  padding: 0.15rem 1rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  color: var(--color-accent);
+}
+
+.visual {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+/* 文章は同じ場所に重ねて置き、今のステップだけを見せる */
+.steps {
+  display: grid;
+  width: 100%;
+}
+
+.step {
+  grid-area: 1 / 1;
+  align-self: start;
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1.6;
+  text-wrap: balance;
+  word-break: auto-phrase;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  pointer-events: none;
+}
+/* 読み終えた文章は上へ、これから読む文章は下から出入りする */
+.step[data-state='past'] {
+  transform: translateY(-1.5rem);
+}
+/* 前の文章が消えてから出るように、少し遅らせる */
+.step[data-state='active'] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s ease 0.2s,
+    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s;
+  pointer-events: auto;
+}
+.step p {
+  margin: 0.25em 0;
+}
+.step strong {
+  color: var(--color-accent);
+}
+
+/* 吹き出し（声掛け例） */
+.steps[data-bubble='true'] .step {
+  position: relative;
+  justify-self: center;
+  max-width: 100%;
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+  font-size: 1.1rem;
+}
+.steps[data-bubble='true'] .step::before {
+  content: '';
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* 今が何ステップ目かを示す点 */
+.dots {
+  display: flex;
+  gap: 0.5rem;
+}
+.dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition:
+    background 0.3s,
+    transform 0.3s;
+}
+.dot[data-active='true'] {
+  background: var(--color-accent);
+  transform: scale(1.5);
+}
+
+/* 教え方の図 */
+.point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  color: var(--color-muted);
+}
+.pointNumber {
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0;
+  color: var(--color-accent);
+  animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 声掛け例の図 */
+.mascot {
+  display: block;
+  width: 130px;
+  height: auto;
+  /* 画像の四角い背景が見えないように、丸く切り抜く */
+  border-radius: 50%;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* スクロールをうながす案内。下にある文章と重なっても読めるように、背景を下へ向かって白くする */
+.hint {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 6rem;
+  margin: 0;
+  padding-bottom: 1rem;
+  background: linear-gradient(transparent, var(--color-bg) 55%);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.hint[data-visible='false'] {
+  opacity: 0;
+}
+.hintArrow {
+  color: var(--color-accent);
+  animation: nudge 1.2s ease-in-out infinite;
+}
+
+/* 最後まで読んだあとの戻るボタン */
+.end {
+  margin: 0;
+  padding: 2rem 0 1rem;
+  text-align: center;
+}
+.restart {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-weight: bold;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* ページを開いたときの、最初のパネルの登場 */
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.95);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+@keyframes float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes nudge {
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* 動きを減らす設定の人には、移動や拡大をやめて切り替えだけにする */
+@media (prefers-reduced-motion: reduce) {
+  .step,
+  .step[data-state] {
+    transform: none;
+    transition: opacity 0.2s;
+  }
+  .panel {
+    transform: none;
+  }
+  .panel,
+  .pointNumber,
+  .mascot,
+  .hintArrow {
+    animation: none;
+  }
+}

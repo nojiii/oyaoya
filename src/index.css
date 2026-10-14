@@ -6,6 +6,31 @@
   --color-muted: #8a7a68;
 }
 
+/* 色分け。一番上の段の分類（学年など）ごとに、淡い背景色（--tone-bg）と濃い文字色（--tone-ink）を変える。
+   色を増やすときは、src/pages/ItemLink.tsx の TONE_COUNT も合わせる */
+[data-tone] {
+  --tone-bg: oklch(0.95 0.04 var(--tone-hue));
+  --tone-ink: oklch(0.5 0.1 var(--tone-hue));
+}
+[data-tone='0'] {
+  --tone-hue: 55;
+}
+[data-tone='1'] {
+  --tone-hue: 95;
+}
+[data-tone='2'] {
+  --tone-hue: 150;
+}
+[data-tone='3'] {
+  --tone-hue: 230;
+}
+[data-tone='4'] {
+  --tone-hue: 300;
+}
+[data-tone='5'] {
+  --tone-hue: 10;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -33,53 +58,58 @@ main.is-loading {
   transition: opacity 0.2s;
 }
 
+.accent {
+  color: var(--color-accent);
+}
+
 .site-header {
-  padding: 1.5rem 0 0.5rem;
+  padding: 1.25rem 0 0.5rem;
 }
-.site-header h1 {
+.site-logo {
   font-size: 1.25rem;
-  margin: 0;
-}
-.site-header h1 a {
+  font-weight: 800;
+  letter-spacing: 0.02em;
   color: inherit;
 }
-
-ul.list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-ul.list li {
-  margin: 0.75rem 0;
-}
-ul.list a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-  font-weight: bold;
-}
-
-section.step {
-  margin: 1.5rem 0;
-}
-section.step h2 {
-  border-left: 4px solid var(--color-accent);
-  padding-left: 0.5rem;
+.site-logo:hover {
+  text-decoration: none;
 }
 
 nav.breadcrumb {
-  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.4rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-muted);
-  margin-bottom: 1rem;
+}
+nav.breadcrumb .separator {
+  opacity: 0.6;
+}
+
+/* ページの見出し */
+.page-title {
+  width: fit-content;
+  margin: 0.5rem 0 1rem;
+  font-size: 1.75rem;
+  line-height: 1.3;
+  view-transition-name: page-title;
 }
 
 .status {
   text-align: center;
   color: var(--color-muted);
   margin-top: 2rem;
+}
+
+/* ProblemSections（動きのない問題ページ）の見出し */
+section.step {
+  margin: 1.5rem 0;
+}
+section.step h2 {
+  border-left: 4px solid var(--color-accent);
+  padding-left: 0.5rem;
 }
 
 /* Home */
@@ -92,9 +122,6 @@ nav.breadcrumb {
   font-weight: 800;
   letter-spacing: 0.02em;
 }
-.logo .accent {
-  color: var(--color-accent);
-}
 .tagline {
   font-size: 0.95rem;
   margin: 0.75rem 0 0.5rem;
@@ -105,42 +132,246 @@ nav.breadcrumb {
   height: auto;
   margin: 0.5rem auto;
 }
-.card {
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  padding: 1.5rem;
+.home-start {
   margin-top: 1.5rem;
-  box-shadow: 0 4px 16px rgba(74, 59, 42, 0.06);
 }
-.card-lead {
+.home-lead {
   font-weight: bold;
   font-size: 1.05rem;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.15rem;
 }
-.card-sub {
+.home-sub {
   color: var(--color-muted);
   font-size: 0.9rem;
   margin: 0;
-}
-hr.dotted {
-  border: none;
-  border-top: 2px dotted var(--color-border);
-  margin: 1.25rem 0;
-}
-.home-list a {
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 1rem 1.5rem;
-  font-size: 1.05rem;
-}
-.home-list .chevron {
-  font-size: 1.2rem;
 }
 .footer-note {
   text-align: center;
   font-size: 0.8rem;
   color: #a0917f;
   margin-top: 2rem;
+}
+
+/* 一覧に並べる項目。ホームではタイル（.tile）、分類のページでは行（.row）にする */
+ul.tiles,
+ul.rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+/* 上から順に、少しずつ遅れて出す（遅れは各ページが animation-delay で付ける） */
+ul.tiles li,
+ul.rows li {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.item-name {
+  width: fit-content;
+  font-weight: bold;
+}
+
+/* タイル */
+ul.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+/* 数が奇数のときは、最後の1枚を横いっぱいにする */
+ul.tiles li:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+.tile {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 6.5rem;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  background: var(--tone-bg);
+  color: var(--color-text);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.tile-number {
+  position: absolute;
+  top: -0.25rem;
+  right: 0.75rem;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--tone-ink);
+  opacity: 0.18;
+}
+.tile .item-name {
+  font-size: 1.05rem;
+}
+.tile-sub {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--tone-ink);
+}
+
+/* 行 */
+ul.rows {
+  display: grid;
+  gap: 0.75rem;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  background: var(--color-bg);
+  box-shadow: 0 4px 16px rgba(74, 59, 42, 0.06);
+  color: var(--color-text);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.row-badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--tone-bg);
+  font-weight: 800;
+  color: var(--tone-ink);
+}
+/* 問題は、分類と見分けられるように濃い色にする */
+.row-badge[data-kind='problem'] {
+  background: var(--tone-ink);
+  color: #fff;
+}
+.row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.row-sub {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.row-arrow {
+  flex: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--tone-ink);
+}
+
+/* 押せる項目は、マウスを乗せると浮き、押すと沈む */
+a.tile:hover,
+a.row:hover {
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(74, 59, 42, 0.12);
+  transform: translateY(-2px);
+}
+a.tile:active,
+a.row:active {
+  transform: scale(0.97);
+}
+
+/* 中身がまだない項目は、色を薄くして押せないことを示す */
+.tile[data-empty] {
+  background: color-mix(in oklch, var(--tone-bg) 45%, var(--color-bg));
+}
+.row[data-empty] {
+  border-style: dashed;
+  box-shadow: none;
+}
+.tile[data-empty],
+.row[data-empty],
+[data-empty] .tile-sub {
+  font-weight: normal;
+  color: var(--color-muted);
+}
+[data-empty] .item-name {
+  font-weight: normal;
+}
+[data-empty] .tile-number {
+  opacity: 0.1;
+}
+[data-empty] .row-badge {
+  opacity: 0.5;
+}
+[data-empty] .row-arrow {
+  display: none;
+}
+
+/* 分類のページの見出し */
+.group-head {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border-radius: 1.5rem;
+  background: var(--tone-bg);
+}
+/* 右上の飾りの丸 */
+.group-head::before {
+  content: '';
+  position: absolute;
+  top: -3rem;
+  right: -2rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.45;
+}
+.group-head .page-title {
+  position: relative;
+  margin: 0;
+}
+.group-head p {
+  position: relative;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--tone-ink);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+/* ページの切り替え（リンクに viewTransition を付けたもの）。
+   押した項目の名前（.item-name）が、次のページの見出し（.page-title）へ移動していく。戻るときは逆に動く */
+a[data-moving='true'] .item-name {
+  view-transition-name: page-title;
+}
+/* 同じ名前は1ページに1つしか付けられないので、項目が動く間は、そのページの見出しから名前を外す */
+main:has(a[data-moving='true']) .page-title {
+  view-transition-name: none;
+}
+::view-transition-group(page-title) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+
+/* 動きを減らす設定の人には、出入りや切り替えの動きを付けない */
+@media (prefers-reduced-motion: reduce) {
+  ul.tiles li,
+  ul.rows li {
+    animation: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

@@ -2,6 +2,7 @@ import {
   isRouteErrorResponse,
   Link,
   Outlet,
+  ScrollRestoration,
   useLocation,
   useNavigation,
   useRouteError,
@@ -12,9 +13,9 @@ function Header() {
   const homeUrl = useHomeUrl()
   return (
     <header className="site-header">
-      <h1>
-        <Link to={homeUrl}>Oyaoya</Link>
-      </h1>
+      <Link className="site-logo" to={homeUrl} viewTransition>
+        <span className="accent">O</span>ya<span className="accent">O</span>ya
+      </Link>
     </header>
   )
 }
@@ -31,6 +32,8 @@ export function Layout() {
       <main className={navigation.state === 'loading' ? 'is-loading' : ''}>
         <Outlet />
       </main>
+      {/* ページを移ったら一番上から表示し、ブラウザの「戻る」では元の位置に戻す */}
+      <ScrollRestoration />
     </>
   )
 }

@@ -131,8 +131,10 @@ src/
     index.ts               #   問題の一覧
     addition-apples/       #   フォルダ名が問題ID
       index.tsx            #     その問題のタイトルと画面
+      AppleScene.tsx       #     その問題だけで使う図
   components/              # 複数の問題で使う部品
-    ProblemSections.tsx    #   標準の構成（問題・解き方・教え方・声掛け例）
+    ProblemStory.tsx       #   標準の構成（問題・解き方・教え方・声掛け例）。スクロールで読み進める
+    ProblemSections.tsx    #   同じ構成を、動きなしで上から並べる
   pages/                   # 問題以外のページと、全ページ共通の枠
 ```
 
@@ -172,12 +174,35 @@ src/
 
 ### 問題の画面の書き方
 
-- 標準の構成（問題 → 解き方 → 教え方 → 声掛け例）にするときは、[ProblemSections](src/components/ProblemSections.tsx) に4つの中身を渡す。見出しは部品側が付けるので、中身だけを書く
-- 文章は、段落 `<p>`・箇条書き `<ul><li>`・番号付きリスト `<ol><li>` で書く
-- 標準の構成に収まらない問題は、`ProblemSections` を使わずに自由に組み立ててよい
+- 標準の構成（問題 → 解き方 → 教え方 → 声掛け例）にするときは、[ProblemStory](src/components/ProblemStory.tsx) に4つの章を渡す。見出しは部品側が付けるので、中身だけを書く（書き方は[スクロールで読み進める画面](#スクロールで読み進める画面)）
+- 動きのない画面にしたいときは、[ProblemSections](src/components/ProblemSections.tsx) に4つの中身を渡す。文章は、段落 `<p>`・箇条書き `<ul><li>`・番号付きリスト `<ol><li>` で書く
+- 標準の構成に収まらない問題は、これらの部品を使わずに自由に組み立ててよい
 - パンくずリストとタイトルの見出しはページの枠が出すので、問題の画面には書かない
 - 文章はソースコードに直接書く。文言を1か所に集める仕組み（国際化対応など）は、必要になった時点で入れる
 - 文章は画像の中に入れず、文字で書く（将来、問題の文章を検索できるようにするため）
+
+### スクロールで読み進める画面
+
+`ProblemStory` は、章（問題・解き方・教え方・声掛け例）ごとに1枚のパネルを出す。パネルはスクロールするとふわっと現れて画面に固定され、スクロールに合わせて中の文章が1つずつ入れ替わり、最後まで進むと消えて次の章のパネルに替わる。1つの文章が出ている状態を「ステップ」と呼ぶ。
+
+```tsx
+<ProblemStory
+  question={{
+    steps: ['あかい りんごが 3こ、', 'あおい りんごが 2こ あります。'],
+    visual: (step) => <AppleScene count={step === 0 ? 3 : 5} />,
+  }}
+  howToSolve={{ steps: [...] }}
+  howToTeach={{ steps: [...] }}
+  examplePhrases={{ steps: [...] }}
+/>
+```
+
+- `steps` に、ステップごとの文章を順に書く。1ステップは1〜2文にする（長いと画面に収まらない）。強調したい言葉は `<strong>` で囲む
+- `visual` は図で、省略できる。今のステップ番号（0始まり）を受け取るので、ステップごとに見た目を変える。図はその問題のフォルダに作る（例: [AppleScene.tsx](src/problems/addition-apples/AppleScene.tsx)）
+- 図の動きは、ステップに応じて `data-*` 属性やクラスを切り替え、CSSの `transition` で付ける。スクロール量を自分で調べる必要はない
+- 教え方と声掛け例は、`visual` を省略すると標準の図（ポイントの番号、おやじいの吹き出し）になる
+- [addition-apples](src/problems/addition-apples/) をコピーして作るときは、`AppleScene` の2ファイルを消して、その問題の図に置き換える
+- 画面の高さやブラウザの幅を変えて、文章が図や画面の端に重ならないか確かめる
 
 ## 階層を変える
 
@@ -213,6 +238,8 @@ export const curriculum: Group[] = [
 - 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/unit-01-addition-1digit`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
 - `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題・大学祭モードのURLと重なるため）
 - 1つの問題は、1つの分類にだけ置く
+- 一覧には、分類ごとに中の問題の数（下の段も含む）が出る。問題が1つもない分類は「じゅんび中」と表示され、押せない
+- 一番上の段の分類には、並び順に色が付く（6色を順に使い、7つ目からは最初の色に戻る）。その分類の下のページも同じ色になる。色は [src/index.css](src/index.css) の `[data-tone]` で決めている
 
 ### 型チェックのよくあるエラー
 
@@ -222,7 +249,7 @@ export const curriculum: Group[] = [
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | `src/curriculum.ts` で `Type '"..."' is not assignable to type ...`            | 問題IDの書き間違いか、[src/problems/index.ts](src/problems/index.ts) にまだ足していない |
 | `src/problems/index.ts` で `Property 'title' is missing ...`                   | その問題の `index.tsx` に `export const title = '...'` がない                           |
-| 問題の `index.tsx` で `Property '...' is missing ... required in type 'Props'` | `ProblemSections` に4つの中身を渡していない                                             |
+| 問題の `index.tsx` で `Property '...' is missing ... required in type 'Props'` | `ProblemStory`（または `ProblemSections`）に4つの中身を渡していない                     |
 
 ## 大学祭モード
 

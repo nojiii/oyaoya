@@ -11,7 +11,7 @@ export default function ProblemDetail() {
   return (
     <>
       <Breadcrumb crumbs={crumbs} current={title} />
-      <h1>{title}</h1>
+      <h1 className="page-title">{title}</h1>
       <Component />
     </>
   )
