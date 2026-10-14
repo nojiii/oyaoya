@@ -23,8 +23,8 @@ export default function Home() {
         <p className="card-lead">🌱 今日もいっしょにがんばろう!</p>
         <p className="card-sub">学習を始めて、できた!を増やしていこう。</p>
         <hr className="dotted" />
-        <ul className="list subject-list">
-          {groups.length === 0 && <li>教科がまだ登録されていません。</li>}
+        <ul className="list home-list">
+          {groups.length === 0 && <li>まだ登録されていません。</li>}
           {groups.map((group) => (
             <li key={group.url}>
               <Link to={group.url}>
