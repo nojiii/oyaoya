@@ -1,4 +1,5 @@
-import { Link, useLoaderData } from 'react-router'
+import { useLoaderData } from 'react-router'
+import { ItemLink, TONE_COUNT } from './ItemLink'
 import type { loadHome } from './loaders'
 
 export default function Home() {
@@ -19,17 +20,32 @@ export default function Home() {
         <img className="mascot" src="/mascot.png" alt="おやじい" />
       </section>
 
-      <section className="card">
-        <p className="card-lead">🌱 今日もいっしょにがんばろう!</p>
-        <p className="card-sub">学習を始めて、できた!を増やしていこう。</p>
-        <hr className="dotted" />
-        <ul className="list home-list">
-          {groups.length === 0 && <li>まだ登録されていません。</li>}
-          {groups.map((group) => (
-            <li key={group.url}>
-              <Link to={group.url}>
-                📖 {group.name} <span className="chevron">›</span>
-              </Link>
+      <section className="home-start">
+        <p className="home-lead">🌱 今日もいっしょにがんばろう!</p>
+        <p className="home-sub">学習を始めて、できた!を増やしていこう。</p>
+        {groups.length === 0 && (
+          <p className="status">まだ登録されていません。</p>
+        )}
+        <ul className="tiles">
+          {groups.map((group, i) => (
+            <li
+              key={group.url}
+              data-tone={i % TONE_COUNT}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <ItemLink
+                className="tile"
+                to={group.url}
+                empty={group.count === 0}
+              >
+                <span className="tile-number" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span className="item-name">{group.name}</span>
+                <span className="tile-sub">
+                  {group.count === 0 ? 'じゅんび中' : `${group.count}問 ›`}
+                </span>
+              </ItemLink>
             </li>
           ))}
         </ul>
