@@ -26,5 +26,10 @@ export const curriculum: Group[] = [
   },
 ]
 
-// 大学祭モード（/festival 以下）の階層。大学祭用の問題はこちらにだけ置く。書き方は curriculum と同じ
-export const festivalCurriculum: Group[] = []
+// 大学祭モード（/festival 以下）の階層。大学祭用の問題はこちらにだけ置く。書き方は curriculum と同じ。
+// 一番上の段は3段階の難易度
+export const festivalCurriculum: Group[] = [
+  { slug: 'easy', name: 'かんたん' },
+  { slug: 'normal', name: 'ふつう' },
+  { slug: 'hard', name: 'むずかしい' },
+]

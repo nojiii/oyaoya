@@ -220,9 +220,11 @@ export const curriculum: Group[] = [
 
 大学祭の展示用に、通常とは別の問題を出すモード。URLの先頭に `/festival` を付けると大学祭モードになる（例: `/festival`、`/festival/problems/<問題ID>`）。ページの構成は通常モードと同じで、違うのは使う階層だけ。通常モードは [src/curriculum.ts](src/curriculum.ts) の `curriculum` を、大学祭モードは同じファイルの `festivalCurriculum` を使う。
 
+大学祭モードの一番上の段は、難易度（かんたん・ふつう・むずかしいの3段階）。大学祭モードのホームには難易度が並ぶ。
+
 大学祭用の問題は、通常の問題と同じ手順で作る（[問題を追加する](#問題を追加する)）。違うのは手順4と5だけ。
 
-- 手順4: `curriculum` ではなく `festivalCurriculum` に問題IDを足す。書き方は `curriculum` と同じ
+- 手順4: `curriculum` ではなく `festivalCurriculum` の、置きたい難易度の `problems` に問題IDを足す。書き方は `curriculum` と同じで、難易度の下に `children` で教科などの段を足してもよい
 - 手順5: `http://localhost:5173/festival/problems/<問題ID>` を開いて確かめる
 
 そのほかの決まり:
