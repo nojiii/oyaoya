@@ -1,0 +1,74 @@
+.choices,
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.choices button,
+.buttons button,
+.detail button,
+.reset {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #d7c4af;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  background: #fffcf7;
+  color: #593724;
+  min-height: 48px;
+}
+.choices button[aria-pressed='true'] {
+  background: #f1e5d8;
+  border-color: #795039;
+  font-weight: bold;
+}
+.choices button:focus-visible,
+.buttons button:focus-visible,
+.detail button:focus-visible,
+.reset:focus-visible {
+  outline: 3px solid #795039;
+  outline-offset: 3px;
+}
+.detail {
+  margin-top: 1.5rem;
+}
+.action {
+  background: #faeadd;
+  padding: 1rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+.action h3,
+.columns h3 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+.action blockquote {
+  margin: 0.5rem 0;
+  border-left: 3px solid #985538;
+  padding-left: 1rem;
+  font-weight: bold;
+}
+.columns > div {
+  padding: 1rem;
+  background: #f7f1e9;
+  border-radius: 12px;
+}
+.columns ul {
+  padding-left: 1.2rem;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.reset {
+  margin-top: 1rem;
+}
+@media (max-width: 540px) {
+  .choices,
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
