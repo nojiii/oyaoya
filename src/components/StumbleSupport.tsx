@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import styles from './StumbleSupport.module.css'
 
 interface SupportAction {
@@ -19,11 +20,31 @@ export interface StumbleState {
 function SupportSession({ state }: { state: StumbleState }) {
   const [level, setLevel] = useState(0)
   const [completed, setCompleted] = useState(false)
+  const doneButton = useRef<HTMLButtonElement>(null)
+  const retryButton = useRef<HTMLButtonElement>(null)
+
+  // 押したボタンが消えるときは、残るボタンへフォーカスを移して、キーボードで操作している人の位置を保つ
+  const complete = () => {
+    flushSync(() => setCompleted(true))
+    retryButton.current?.focus()
+  }
+  const showNextHint = () => {
+    flushSync(() => setLevel(level + 1))
+    if (level + 1 === state.hints.length) doneButton.current?.focus()
+  }
+  const retry = () => {
+    flushSync(() => {
+      setCompleted(false)
+      setLevel(0)
+    })
+    doneButton.current?.focus()
+  }
 
   return (
     <div className={styles.detail}>
       <p>{state.situation}</p>
-      <div aria-live="polite" aria-atomic="true">
+      {/* 追加された部分だけを読み上げる（aria-atomic を付けると、それまでの手順も毎回読み直される） */}
+      <div aria-live="polite">
         {completed ? (
           <p className={styles.action}>
             できました。お子さんの考え方を認めて、次の問題へ進みましょう。
@@ -68,11 +89,11 @@ function SupportSession({ state }: { state: StumbleState }) {
             </div>
           </div>
           <div className={styles.buttons}>
-            <button type="button" onClick={() => setCompleted(true)}>
+            <button type="button" ref={doneButton} onClick={complete}>
               できた！
             </button>
             {level < state.hints.length && (
-              <button type="button" onClick={() => setLevel(level + 1)}>
+              <button type="button" onClick={showNextHint}>
                 まだ難しそう
               </button>
             )}
@@ -80,13 +101,7 @@ function SupportSession({ state }: { state: StumbleState }) {
         </>
       )}
       {completed && (
-        <button
-          type="button"
-          onClick={() => {
-            setCompleted(false)
-            setLevel(0)
-          }}
-        >
+        <button type="button" ref={retryButton} onClick={retry}>
           もう一度確認する
         </button>
       )}
@@ -97,12 +112,20 @@ function SupportSession({ state }: { state: StumbleState }) {
 export function StumbleSupport({ states }: { states: StumbleState[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = states.find((state) => state.id === selectedId)
+  const choices = useRef<HTMLDivElement>(null)
+
+  // 選び直すときは、さっき選んでいた選択肢へフォーカスを戻す
+  const reset = () => {
+    const index = states.findIndex((state) => state.id === selectedId)
+    flushSync(() => setSelectedId(null))
+    choices.current?.querySelectorAll('button')[index]?.focus()
+  }
 
   return (
     <section className="step">
       <h2>つまずいたとき</h2>
       <p>今のお子さんの様子を選んでください。</p>
-      <div className={styles.choices}>
+      <div className={styles.choices} ref={choices}>
         {states.map((state) => (
           <button
             type="button"
@@ -116,11 +139,7 @@ export function StumbleSupport({ states }: { states: StumbleState[] }) {
       </div>
       {selected && <SupportSession key={selected.id} state={selected} />}
       {selected && (
-        <button
-          className={styles.reset}
-          type="button"
-          onClick={() => setSelectedId(null)}
-        >
+        <button className={styles.reset} type="button" onClick={reset}>
           別の状態を選ぶ
         </button>
       )}

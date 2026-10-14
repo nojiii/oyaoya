@@ -163,8 +163,6 @@
   display: block;
   width: 130px;
   height: auto;
-  /* 画像の四角い背景が見えないように、丸く切り抜く */
-  border-radius: 50%;
   animation: float 3s ease-in-out infinite;
 }
 
