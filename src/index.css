@@ -103,6 +103,11 @@ nav.breadcrumb .separator {
   margin-top: 2rem;
 }
 
+/* 台本（TeachingScript）を進めている間は、画面の情報を減らすため、パンくずリストと見出しを隠す */
+main:has([data-script-running]) :is(nav.breadcrumb, .page-title) {
+  display: none;
+}
+
 /* ProblemSections（動きのない問題ページ）の見出し */
 section.step {
   margin: 1.5rem 0;
