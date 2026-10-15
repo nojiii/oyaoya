@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useBlocker } from 'react-router'
 import styles from './TeachingScript.module.css'
 
 // つまずいたときに出すヒント。上から順に、少しずつ手助けを大きくする
@@ -90,14 +91,15 @@ const START: Position = { turn: 0, phase: { kind: 'ask' }, beat: 0 }
 function useWakeLock(active: boolean) {
   useEffect(() => {
     if (!active || !('wakeLock' in navigator)) return
-    let lock: WakeLockSentinel | undefined
+    // 取り直しが重なると、取れた分だけ解除用の札（sentinel）が届く。1つでも残ると画面が消えなくなるので、すべて覚えておく
+    const locks = new Set<WakeLockSentinel>()
     let cancelled = false
     const request = () => {
       if (document.visibilityState !== 'visible') return
       navigator.wakeLock.request('screen').then(
         (sentinel) => {
           if (cancelled) sentinel.release()
-          else lock = sentinel
+          else locks.add(sentinel)
         },
         // 電池が少ないときなどは断られる。画面が消えるだけなので、何もしない
         () => {},
@@ -109,7 +111,8 @@ function useWakeLock(active: boolean) {
     return () => {
       cancelled = true
       document.removeEventListener('visibilitychange', request)
-      lock?.release()
+      for (const lock of locks) lock.release()
+      locks.clear()
     }
   }, [active])
 }
@@ -226,13 +229,33 @@ function PrepareView({
   )
 }
 
-// 画面の見出し。何をする画面かを、アイコンと短い言葉で示す
+// 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
 const HEADINGS = {
-  do: '✋ すること',
-  say: '💬 声をかける',
-  show: '📱 画面を見せる',
-  wait: '⏳ 待つ',
-  finish: '🎉 おしまい',
+  do: ['✋', 'すること'],
+  say: ['💬', '声をかける'],
+  show: ['📱', '画面を見せる'],
+  wait: ['⏳', '待つ'],
+  finish: ['🎉', 'おしまい'],
+} as const
+
+// 画面が替わったときに読み上げる文。正解のめやすは入れない
+// （読み上げ機能を使っていると、考えているお子さんに答えが聞こえてしまうため）
+function announcement(beat: Beat) {
+  const heading = HEADINGS[beat.kind][1]
+  switch (beat.kind) {
+    case 'do':
+      return `${heading}。${beat.text}`
+    case 'say':
+      return `${heading}。${beat.label ? `${beat.label}。` : ''}${beat.say}`
+    case 'show':
+      return beat.say
+        ? `${heading}。見せながら、こう声をかける。${beat.say}`
+        : `${heading}。いっしょに確かめる`
+    case 'wait':
+      return `${heading}。答えるまで だまって待つ`
+    case 'finish':
+      return heading
+  }
 }
 
 // 1画面の中身。行動は1つだけにして、それ以外の情報は出さない
@@ -291,13 +314,35 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   // 画面を、進むときは下から、戻るときは上から入れる
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
   const dialog = useRef<HTMLDialogElement>(null)
-  useWakeLock(started)
+  const actions = useRef<HTMLDivElement>(null)
 
   const position = history[history.length - 1]
   const { turn: index, phase } = position
   const turn = turns[index]
   const beats = turn ? beatsOf(turn, phase) : checkBeats(check)
   const beat = beats[position.beat]
+  // おしまいの画面まで来たら、画面が自動で消えるように戻す
+  useWakeLock(started && beat.kind !== 'finish')
+
+  // 台本の途中でページを離れると（iOS のスワイプで戻る など）はじめからになるので、離れる前に確かめる
+  const blocker = useBlocker(started && beat.kind !== 'finish')
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    if (
+      window.confirm(
+        '台本の途中です。このページを離れると、はじめからになります。離れますか？',
+      )
+    )
+      blocker.proceed()
+    else blocker.reset()
+  }, [blocker])
+
+  // 押したボタンが次の画面で消えたとき（「つまずいた」など）は、
+  // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
+  useEffect(() => {
+    if (document.activeElement === document.body)
+      actions.current?.querySelector('button')?.focus()
+  }, [history, started])
 
   const go = (next: Position) => {
     // 中身のない場面（ほめ言葉も見せる画面もない、など）は飛ばして、次のステップへ
@@ -339,17 +384,21 @@ export function TeachingScript({ prepare, turns, check }: Props) {
     // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
     <div className={styles.script} data-script-running>
       <Progress count={turns.length} current={index} onBack={back} />
-      {/* ボタンは押したまま残したいので、入れ替わるパネルの外に置く。
-          読み上げの範囲は、パネルが入れ替わっても残るように外側に付ける */}
-      <div aria-live="polite">
-        <div
-          className={styles.panel}
-          key={history.length}
-          data-direction={direction}
-        >
-          <p className={styles.heading}>{HEADINGS[beat.kind]}</p>
-          <BeatView beat={beat} />
-        </div>
+      {/* 画面が替わったことを、読み上げで伝える */}
+      <p className={styles.srOnly} aria-live="polite">
+        {announcement(beat)}
+      </p>
+      {/* ボタンは押したまま残したいので、入れ替わるパネルの外に置く */}
+      <div
+        className={styles.panel}
+        key={history.length}
+        data-direction={direction}
+      >
+        <h2 className={styles.heading}>
+          <span aria-hidden="true">{HEADINGS[beat.kind][0]}</span>{' '}
+          {HEADINGS[beat.kind][1]}
+        </h2>
+        <BeatView beat={beat} />
       </div>
       {beat.kind === 'show' && (
         // お子さんに見せる画面。親向けの文字が目に入らないように、画面全体をおおう。
@@ -370,7 +419,7 @@ export function TeachingScript({ prepare, turns, check }: Props) {
           </button>
         </dialog>
       )}
-      <div className={styles.actions}>
+      <div className={styles.actions} ref={actions}>
         {/* 押したボタンが消えてフォーカスを失わないように、主なボタンは同じ key で残す */}
         {beat.kind === 'wait' ? (
           <>

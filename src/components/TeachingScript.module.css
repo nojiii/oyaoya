@@ -90,6 +90,16 @@
   animation-name: enter-back;
 }
 
+/* 画面には出さず、読み上げだけで伝える文 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* 何をする画面か（✋ すること・💬 声をかける など） */
 .heading {
   align-self: center;
@@ -135,8 +145,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 1.5rem;
+}
+/* 上下の余白を自動で取って中央に置く（justify-content: center だと、
+   横向きのスマホなどで画面からはみ出したとき、上の部分までスクロールできなくなる） */
+.childPanel {
+  margin-top: auto;
+}
+.close {
+  margin-bottom: auto;
 }
 /* 見せるものを載せるパネル（スクロールで読み進める画面のパネルと同じ見た目） */
 .childPanel {
