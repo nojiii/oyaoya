@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useBlocker } from 'react-router'
 import styles from './TeachingScript.module.css'
 
@@ -305,6 +305,47 @@ function BeatView({ beat }: { beat: Beat }) {
   }
 }
 
+// 台本の途中でページを離れようとしたときの確認。ブラウザの confirm() ではなく、アプリの見た目で聞く。
+// 「続ける」を押すか、Esc などで閉じたら、ページに残る
+function LeaveConfirm({
+  onStay,
+  onLeave,
+}: {
+  onStay: () => void
+  onLeave: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  useEffect(() => {
+    dialog.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      className={styles.confirm}
+      ref={dialog}
+      aria-labelledby={titleId}
+      onClose={onStay}
+    >
+      <h2 id={titleId}>台本の途中です</h2>
+      <p>このページを離れると、はじめからになります。</p>
+      <div className={styles.confirmButtons}>
+        {/* 何も考えずに押しても進み具合が消えないよう、続けるほうを先に置く（開いたときに選ばれる） */}
+        <button
+          className={styles.primary}
+          type="button"
+          onClick={() => dialog.current?.close()}
+        >
+          続ける
+        </button>
+        <button type="button" onClick={onLeave}>
+          離れる
+        </button>
+      </div>
+    </dialog>
+  )
+}
+
 // 教えている最中に使う台本。親の行動を1画面に1つずつ出し、
 // お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える
 export function TeachingScript({ prepare, turns, check }: Props) {
@@ -326,16 +367,6 @@ export function TeachingScript({ prepare, turns, check }: Props) {
 
   // 台本の途中でページを離れると（iOS のスワイプで戻る など）はじめからになるので、離れる前に確かめる
   const blocker = useBlocker(started && beat.kind !== 'finish')
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return
-    if (
-      window.confirm(
-        '台本の途中です。このページを離れると、はじめからになります。離れますか？',
-      )
-    )
-      blocker.proceed()
-    else blocker.reset()
-  }, [blocker])
 
   // 押したボタンが次の画面で消えたとき（「つまずいた」など）は、
   // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
@@ -418,6 +449,12 @@ export function TeachingScript({ prepare, turns, check }: Props) {
             おうちの人の画面にもどる
           </button>
         </dialog>
+      )}
+      {blocker.state === 'blocked' && (
+        <LeaveConfirm
+          onStay={() => blocker.reset()}
+          onLeave={() => blocker.proceed()}
+        />
       )}
       <div className={styles.actions} ref={actions}>
         {/* 押したボタンが消えてフォーカスを失わないように、主なボタンは同じ key で残す */}

@@ -252,6 +252,33 @@
   color: var(--color-accent);
 }
 
+/* ページを離れる前の確認 */
+.confirm {
+  max-width: min(22rem, calc(100% - 2rem));
+  padding: 1.5rem 1.25rem 1.25rem;
+  border: none;
+  border-radius: 1.5rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.2);
+  text-align: center;
+}
+.confirm::backdrop {
+  background: rgba(74, 59, 42, 0.35);
+}
+.confirm h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+.confirm p {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+}
+.confirmButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* 反応のボタン。片手で押せるように、画面の下に固定する。
    縦の長さを使わないよう、ボタンが2つのときは横に並べる */
 .actions {
@@ -263,7 +290,8 @@
   padding: 1.5rem 0 max(1rem, env(safe-area-inset-bottom));
   background: linear-gradient(transparent, var(--color-bg) 1.25rem);
 }
-.actions button {
+.actions button,
+.confirmButtons button {
   flex: 1;
   min-height: 3.25rem;
   border: 1px solid var(--color-border);
@@ -274,7 +302,8 @@
   color: var(--color-text);
   cursor: pointer;
 }
-.actions .primary {
+.actions .primary,
+.confirmButtons .primary {
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: #fff;
