@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { useBlocker } from 'react-router'
+import { Link, useBlocker, useLoaderData } from 'react-router'
+import { useHomeUrl } from '../pages/festival'
+import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 
 // つまずいたときに出すヒント。上から順に、少しずつ手助けを大きくする
@@ -305,6 +307,16 @@ function BeatView({ beat }: { beat: Beat }) {
   }
 }
 
+// おしまいの後に戻る先。この問題が置かれている分類（一覧）のページで、どこにも置かれていなければホーム
+function useMenuLink() {
+  const { crumbs } = useLoaderData<ReturnType<typeof loadProblem>>()
+  const homeUrl = useHomeUrl()
+  const parent = crumbs.at(-1)
+  return parent
+    ? { url: parent.url, label: '一覧にもどる' }
+    : { url: homeUrl, label: 'ホームにもどる' }
+}
+
 // 台本の途中でページを離れようとしたときの確認。ブラウザの confirm() ではなく、アプリの見た目で聞く。
 // 「続ける」を押すか、Esc などで閉じたら、ページに残る
 function LeaveConfirm({
@@ -356,6 +368,7 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
   const dialog = useRef<HTMLDialogElement>(null)
   const actions = useRef<HTMLDivElement>(null)
+  const menu = useMenuLink()
 
   const position = history[history.length - 1]
   const { turn: index, phase } = position
@@ -372,7 +385,7 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
   useEffect(() => {
     if (document.activeElement === document.body)
-      actions.current?.querySelector('button')?.focus()
+      actions.current?.querySelector<HTMLElement>('button, a')?.focus()
   }, [history, started])
 
   const go = (next: Position) => {
@@ -456,7 +469,12 @@ export function TeachingScript({ prepare, turns, check }: Props) {
           onLeave={() => blocker.proceed()}
         />
       )}
-      <div className={styles.actions} ref={actions}>
+      {/* おしまいの画面は、ボタンの文字が長いので縦に並べる */}
+      <div
+        className={styles.actions}
+        ref={actions}
+        data-stack={beat.kind === 'finish'}
+      >
         {/* 押したボタンが消えてフォーカスを失わないように、主なボタンは同じ key で残す */}
         {beat.kind === 'wait' ? (
           <>
@@ -482,14 +500,20 @@ export function TeachingScript({ prepare, turns, check }: Props) {
             お子さんに見せる
           </button>
         ) : beat.kind === 'finish' ? (
-          <button
-            className={styles.primary}
-            type="button"
-            key="primary"
-            onClick={start}
-          >
-            もういちど はじめから
-          </button>
+          <>
+            {/* 次の問題を選ぶことが多いので、一覧へ戻るほうを主なボタンにする */}
+            <Link
+              className={styles.primary}
+              to={menu.url}
+              key="primary"
+              viewTransition
+            >
+              {menu.label}
+            </Link>
+            <button type="button" onClick={start}>
+              もういちど はじめから
+            </button>
+          </>
         ) : (
           <button
             className={styles.primary}

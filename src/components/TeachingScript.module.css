@@ -290,7 +290,7 @@
   padding: 1.5rem 0 max(1rem, env(safe-area-inset-bottom));
   background: linear-gradient(transparent, var(--color-bg) 1.25rem);
 }
-.actions button,
+.actions :is(button, a),
 .confirmButtons button {
   flex: 1;
   min-height: 3.25rem;
@@ -302,13 +302,26 @@
   color: var(--color-text);
   cursor: pointer;
 }
+/* 一覧へ戻るリンクも、ボタンと同じ見た目にする */
+.actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.actions a,
+.actions a:hover {
+  text-decoration: none;
+}
+.actions[data-stack='true'] {
+  flex-direction: column;
+}
 .actions .primary,
 .confirmButtons .primary {
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: #fff;
 }
-.actions button:active {
+.actions :is(button, a):active {
   transform: scale(0.98);
 }
 
