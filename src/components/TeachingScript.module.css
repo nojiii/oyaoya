@@ -28,8 +28,16 @@
   padding-left: 1.25rem;
 }
 .flow {
-  margin: 0.5rem 0 0;
+  margin: 0.25rem 0 0;
   padding-left: 1.5rem;
+}
+/* 声掛けの流れの、区切りの見出しと問題の文 */
+.flowLabel {
+  margin: 0.75rem 0 0;
+  font-weight: bold;
+}
+.flowText {
+  margin: 0.25rem 0 0 1.5rem;
 }
 
 /* 台本 */
@@ -55,9 +63,17 @@
   color: var(--color-accent);
   cursor: pointer;
 }
-.dots {
+/* 今どの区切りか（問題・いっしょに解く・確かめ） */
+.where {
   display: flex;
   flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: bold;
+}
+.dots {
+  display: flex;
   justify-content: center;
   gap: 0.4rem;
 }

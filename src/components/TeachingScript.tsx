@@ -50,11 +50,27 @@ interface Prepare {
   avoid: string[]
 }
 
+// 答えを待つステップ（問題と確かめ）。正解のめやすは必ず書く
+type Asked = Turn & { expect: string }
+
 interface Props {
   prepare: Prepare
+  // 最初に出す問題。お子さんがすぐ答えられたら、確かめ（check）へ進む
+  question: Asked
+  // 問題がむずかしそうなときに、いっしょに解く手順
   turns: Turn[]
-  // 最後に、わかったかを確かめる声掛け
-  check: string[]
+  // わかったかを確かめる声掛け。すぐ答えられたのに確かめで答えられなければ、いっしょに解く手順（turns）へ進む
+  check: Asked[]
+}
+
+// 台本の中の区切り。問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい
+type Section = 'question' | 'guide' | 'check' | 'finish'
+
+// 待つ画面のボタンの文字
+const REACTIONS = {
+  question: { done: '答えられた！', stuck: 'むずかしそう' },
+  guide: { done: 'できた！', stuck: 'つまずいた' },
+  check: { done: '答えられた！', stuck: 'むずかしそう' },
 }
 
 // ステップの中で、今どの場面か
@@ -77,9 +93,17 @@ type Beat =
       say?: string
       why?: ReactNode
     }
-  | { kind: 'wait'; expect: string; retry: boolean }
+  // done・stuck は反応のボタンの文字。retry は、ヒントを出した後にもう一度待つとき
+  | {
+      kind: 'wait'
+      expect: string
+      retry: boolean
+      done: string
+      stuck: string
+    }
   | { kind: 'finish' }
 
+// turn は台本の何ステップ目か（問題・いっしょに解く手順・確かめを順につないだ番号）、
 // beat は、その場面の何画面目か
 interface Position {
   turn: number
@@ -132,7 +156,11 @@ function speak(
 }
 
 // 1つの場面を、親の行動ごとの画面に分ける
-function beatsOf(turn: Turn, phase: Phase): Beat[] {
+function beatsOf(
+  turn: Turn,
+  phase: Phase,
+  section: Exclude<Section, 'finish'>,
+): Beat[] {
   const beats: Beat[] = []
   const stuck = turn.stuck ?? []
   const reveal = () => {
@@ -140,8 +168,15 @@ function beatsOf(turn: Turn, phase: Phase): Beat[] {
       beats.push({ kind: 'show', content: turn.reveal })
   }
   const wait = (retry: boolean) => {
+    const { done, stuck } = REACTIONS[section]
     if (turn.expect !== undefined)
-      beats.push({ kind: 'wait', expect: turn.expect, retry })
+      beats.push({
+        kind: 'wait',
+        expect: turn.expect,
+        retry,
+        done,
+        stuck: retry ? 'まだ むずかしそう' : stuck,
+      })
   }
 
   if (phase.kind === 'ask') {
@@ -166,7 +201,7 @@ function beatsOf(turn: Turn, phase: Phase): Beat[] {
       })
       beats.push({
         kind: 'do',
-        text: `手を動かしながら、答え（${turn.expect}）を いっしょに確かめる`,
+        text: `手を動かしながら、いっしょに確かめる（めやす：${turn.expect}）`,
       })
       reveal()
     }
@@ -174,27 +209,13 @@ function beatsOf(turn: Turn, phase: Phase): Beat[] {
   return beats
 }
 
-// 最後の確かめ。1つずつ声をかけて、おしまいの画面で終わる
-function checkBeats(check: string[]): Beat[] {
-  return [
-    ...check.map((say): Beat => ({
-      kind: 'say',
-      label: 'さいごに 確かめる',
-      say,
-    })),
-    { kind: 'finish' },
-  ]
-}
-
 function PrepareView({
   prepare,
+  question,
   turns,
+  check,
   onStart,
-}: {
-  prepare: Prepare
-  turns: Turn[]
-  onStart: () => void
-}) {
+}: Props & { onStart: () => void }) {
   return (
     <div className={styles.prepare}>
       <h2 className={styles.prepareTitle}>はじめる前に</h2>
@@ -215,12 +236,23 @@ function PrepareView({
         </dd>
       </dl>
       <details className={styles.why}>
-        <summary>声掛けの流れを見る（{turns.length}ステップ）</summary>
+        <summary>声掛けの流れを見る</summary>
+        <p className={styles.flowLabel}>1. 問題を出す</p>
+        <p className={styles.flowText}>{question.say}</p>
+        <p className={styles.flowLabel}>
+          2. むずかしそうなら、いっしょに解く（すぐ答えられたら とばす）
+        </p>
         <ol className={styles.flow}>
           {turns.map((turn) => (
             <li key={turn.say}>{turn.say}</li>
           ))}
         </ol>
+        <p className={styles.flowLabel}>3. わかったかを確かめる</p>
+        <ul className={styles.flow}>
+          {check.map((turn) => (
+            <li key={turn.say}>{turn.say}</li>
+          ))}
+        </ul>
       </details>
       <div className={styles.actions}>
         <button className={styles.primary} type="button" onClick={onStart}>
@@ -359,8 +391,10 @@ function LeaveConfirm({
 }
 
 // 教えている最中に使う台本。親の行動を1画面に1つずつ出し、
-// お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える
-export function TeachingScript({ prepare, turns, check }: Props) {
+// お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える。
+// 流れは「問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい」。
+// すぐ答えられたお子さんは、いっしょに解く手順をとばして確かめへ進み、早く終われる
+export function TeachingScript({ prepare, question, turns, check }: Props) {
   const [started, setStarted] = useState(false)
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>([START])
@@ -370,10 +404,31 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   const actions = useRef<HTMLDivElement>(null)
   const menu = useMenuLink()
 
+  // 問題・いっしょに解く手順・確かめを1列に並べる。GUIDE からがいっしょに解く手順、
+  // CHECK からが確かめ、FINISH がおしまいの画面
+  const script: Turn[] = [question, ...turns, ...check]
+  const GUIDE = 1
+  const CHECK = GUIDE + turns.length
+  const FINISH = script.length
+  const sectionOf = (turn: number): Section =>
+    turn < GUIDE
+      ? 'question'
+      : turn < CHECK
+        ? 'guide'
+        : turn < FINISH
+          ? 'check'
+          : 'finish'
+  const beatsAt = ({ turn, phase }: Position): Beat[] => {
+    const section = sectionOf(turn)
+    return section === 'finish'
+      ? [{ kind: 'finish' }]
+      : beatsOf(script[turn], phase, section)
+  }
+
   const position = history[history.length - 1]
   const { turn: index, phase } = position
-  const turn = turns[index]
-  const beats = turn ? beatsOf(turn, phase) : checkBeats(check)
+  const section = sectionOf(index)
+  const beats = beatsAt(position)
   const beat = beats[position.beat]
   // おしまいの画面まで来たら、画面が自動で消えるように戻す
   useWakeLock(started && beat.kind !== 'finish')
@@ -388,27 +443,39 @@ export function TeachingScript({ prepare, turns, check }: Props) {
       actions.current?.querySelector<HTMLElement>('button, a')?.focus()
   }, [history, started])
 
+  const ask = (turn: number): Position => ({
+    turn,
+    phase: { kind: 'ask' },
+    beat: 0,
+  })
+  // ステップを終えた後の行き先。問題に答えられたら、いっしょに解く手順をとばして確かめへ
+  const after = (turn: number) => (turn < GUIDE ? CHECK : turn + 1)
   const go = (next: Position) => {
     // 中身のない場面（ほめ言葉も見せる画面もない、など）は飛ばして、次のステップへ
     const target =
-      next.turn < turns.length &&
-      beatsOf(turns[next.turn], next.phase).length === 0
-        ? { turn: next.turn + 1, phase: { kind: 'ask' } as const, beat: 0 }
+      next.turn < FINISH && beatsAt(next).length === 0
+        ? ask(after(next.turn))
         : next
     setHistory([...history, target])
     setDirection('forward')
   }
-  const nextTurn = () =>
-    go({ turn: index + 1, phase: { kind: 'ask' }, beat: 0 })
   // 場面の最後の画面なら、次のステップへ（待つ画面は、反応のボタンで進む）
   const advance = () =>
     position.beat < beats.length - 1
       ? go({ ...position, beat: position.beat + 1 })
-      : nextTurn()
+      : go(ask(after(index)))
   const done = () => go({ turn: index, phase: { kind: 'praise' }, beat: 0 })
   const level = phase.kind === 'hint' ? phase.level : -1
+  // いっしょに解く手順を、まだ通っていないか（問題にすぐ答えられて、とばしてきたか）
+  const skippedGuide = !history.some((p) => sectionOf(p.turn) === 'guide')
+  // 問題がむずかしそうなとき、または、すぐ答えられたのに確かめで答えられないとき
+  // （たまたま当たった など）は、いっしょに解く手順へ。それ以外はヒントを出す
   const stuck = () =>
-    go({ turn: index, phase: { kind: 'hint', level: level + 1 }, beat: 0 })
+    section !== 'guide' && skippedGuide && turns.length > 0
+      ? go(ask(GUIDE))
+      : go({ turn: index, phase: { kind: 'hint', level: level + 1 }, beat: 0 })
+  // わかったところで、いつでも終われるようにする
+  const finish = () => go(ask(FINISH))
 
   const start = () => {
     setHistory([START])
@@ -422,12 +489,26 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   }
 
   if (!started)
-    return <PrepareView prepare={prepare} turns={turns} onStart={start} />
+    return (
+      <PrepareView
+        prepare={prepare}
+        question={question}
+        turns={turns}
+        check={check}
+        onStart={start}
+      />
+    )
 
   return (
     // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
     <div className={styles.script} data-script-running>
-      <Progress count={turns.length} current={index} onBack={back} />
+      <Progress
+        section={section}
+        count={turns.length}
+        current={index - GUIDE}
+        onBack={back}
+        onFinish={finish}
+      />
       {/* 画面が替わったことを、読み上げで伝える */}
       <p className={styles.srOnly} aria-live="polite">
         {announcement(beat)}
@@ -484,10 +565,10 @@ export function TeachingScript({ prepare, turns, check }: Props) {
               key="primary"
               onClick={done}
             >
-              できた！
+              {beat.done}
             </button>
             <button type="button" onClick={stuck}>
-              {beat.retry ? 'まだ むずかしそう' : 'つまずいた'}
+              {beat.stuck}
             </button>
           </>
         ) : beat.kind === 'show' ? (
@@ -529,28 +610,48 @@ export function TeachingScript({ prepare, turns, check }: Props) {
   )
 }
 
+// 区切りの名前（いっしょに解く手順のときだけ、進み具合を点で出す）
+const SECTION_NAMES = {
+  question: '問題',
+  guide: 'いっしょに解く',
+  check: '確かめ',
+  finish: 'おしまい',
+}
+
 function Progress({
+  section,
   count,
   current,
   onBack,
+  onFinish,
 }: {
+  section: Section
   count: number
   current: number
   onBack: () => void
+  onFinish: () => void
 }) {
   return (
     <div className={styles.progress}>
       <button className={styles.back} type="button" onClick={onBack}>
         ← もどる
       </button>
-      <span className={styles.dots} aria-hidden="true">
-        {Array.from({ length: count }, (_, i) => (
-          <span className={styles.dot} key={i} data-done={i < current} />
-        ))}
+      <span className={styles.where}>
+        {SECTION_NAMES[section]}
+        {section === 'guide' && (
+          <span className={styles.dots} aria-hidden="true">
+            {Array.from({ length: count }, (_, i) => (
+              <span className={styles.dot} key={i} data-done={i <= current} />
+            ))}
+          </span>
+        )}
       </span>
-      <span className={styles.count}>
-        {Math.min(current + 1, count)} / {count}
-      </span>
+      {/* わかったところで終われるように、おしまいの画面以外では いつでも出しておく */}
+      {section !== 'finish' && (
+        <button className={styles.back} type="button" onClick={onFinish}>
+          おわる
+        </button>
+      )}
     </div>
   )
 }
