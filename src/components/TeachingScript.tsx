@@ -1,0 +1,657 @@
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Link, useBlocker, useLoaderData } from 'react-router'
+import { useHomeUrl } from '../pages/festival'
+import type { loadProblem } from '../pages/loaders'
+import styles from './TeachingScript.module.css'
+
+// つまずいたときに出すヒント。上から順に、少しずつ手助けを大きくする
+interface Hint {
+  // 声をかける前に、親がすること
+  do?: string
+  // 親が言うこと
+  say: string
+  // このヒントで、お子さんに見せる画面
+  show?: ReactNode
+}
+
+// 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
+// 画面には、ここから「する → 声をかける（見せる）→ 待つ」の順に、1画面に1つずつ出す
+export interface Turn {
+  // 親がお子さんに言うこと
+  say: string
+  // 声をかける前に、親がすること（準備）
+  do?: string
+  // 声をかけるときに、お子さんに見せる画面（図や、問題の文）。
+  // 書いたステップでは、台本が「画面を見せながら声をかける」と指示する。
+  // お子さんが実物（おはじきなど）や自分の頭で考える場面では書かない。答えがわかるものは入れない
+  show?: ReactNode
+  // できた後（ほめた後、または、いっしょにやった後）にお子さんに見せる画面。答えの入った図など
+  reveal?: ReactNode
+  // お子さんの正しい答えのめやす。書くと「待つ」画面と「できた／つまずいた」のボタンが出る。
+  // 書かないステップ（問題を読み聞かせるだけ、など）は、声をかけたら次へ進む
+  expect?: string
+  // なぜこう言うのか（教え方）。声をかける画面で、押したときだけ出す
+  why?: ReactNode
+  // つまずいたときのヒント。使い切ったら「いっしょにやってみよう」になる
+  stuck?: Hint[]
+  // できたときのほめ言葉
+  praise?: string
+}
+
+// 始める前に読む内容。30秒ほどで読める量にする
+interface Prepare {
+  // この問題で、お子さんができるようになること
+  goal: ReactNode
+  // 用意するもの
+  materials: string[]
+  // いちばん大事なこと（1つだけ）
+  point: ReactNode
+  // 言わないようにしたいこと
+  avoid: string[]
+}
+
+// 答えを待つステップ（問題と確かめ）。正解のめやすは必ず書く
+type Asked = Turn & { expect: string }
+
+interface Props {
+  prepare: Prepare
+  // 最初に出す問題。お子さんがすぐ答えられたら、確かめ（check）へ進む
+  question: Asked
+  // 問題がむずかしそうなときに、いっしょに解く手順
+  turns: Turn[]
+  // わかったかを確かめる声掛け。すぐ答えられたのに確かめで答えられなければ、いっしょに解く手順（turns）へ進む
+  check: Asked[]
+}
+
+// 台本の中の区切り。問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい
+type Section = 'question' | 'guide' | 'check' | 'finish'
+
+// 待つ画面のボタンの文字
+const REACTIONS = {
+  question: { done: '答えられた！', stuck: 'むずかしそう' },
+  guide: { done: 'できた！', stuck: 'つまずいた' },
+  check: { done: '答えられた！', stuck: 'むずかしそう' },
+}
+
+// ステップの中で、今どの場面か
+type Phase =
+  | { kind: 'ask' }
+  // level がヒントの番号。ヒントを使い切ると level === stuck.length になり、いっしょにやる
+  | { kind: 'hint'; level: number }
+  | { kind: 'praise' }
+
+// 1画面に出す、親の1つの行動
+type Beat =
+  | { kind: 'do'; text: string }
+  // label は、ふつうの声掛け以外（ヒント・ほめる など）のときだけ、吹き出しの上に出す
+  | { kind: 'say'; label?: string; say: string; why?: ReactNode }
+  // say がなければ、見せて確かめるだけ
+  | {
+      kind: 'show'
+      content: ReactNode
+      label?: string
+      say?: string
+      why?: ReactNode
+    }
+  // done・stuck は反応のボタンの文字。retry は、ヒントを出した後にもう一度待つとき
+  | {
+      kind: 'wait'
+      expect: string
+      retry: boolean
+      done: string
+      stuck: string
+    }
+  | { kind: 'finish' }
+
+// turn は台本の何ステップ目か（問題・いっしょに解く手順・確かめを順につないだ番号）、
+// beat は、その場面の何画面目か
+interface Position {
+  turn: number
+  phase: Phase
+  beat: number
+}
+
+const START: Position = { turn: 0, phase: { kind: 'ask' }, beat: 0 }
+
+// 教えている間は、スマホの画面が自動で消えないようにする
+function useWakeLock(active: boolean) {
+  useEffect(() => {
+    if (!active || !('wakeLock' in navigator)) return
+    // 取り直しが重なると、取れた分だけ解除用の札（sentinel）が届く。1つでも残ると画面が消えなくなるので、すべて覚えておく
+    const locks = new Set<WakeLockSentinel>()
+    let cancelled = false
+    const request = () => {
+      if (document.visibilityState !== 'visible') return
+      navigator.wakeLock.request('screen').then(
+        (sentinel) => {
+          if (cancelled) sentinel.release()
+          else locks.add(sentinel)
+        },
+        // 電池が少ないときなどは断られる。画面が消えるだけなので、何もしない
+        () => {},
+      )
+    }
+    request()
+    // 別のアプリに切り替えると解除されるので、戻ってきたら取り直す
+    document.addEventListener('visibilitychange', request)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', request)
+      for (const lock of locks) lock.release()
+      locks.clear()
+    }
+  }, [active])
+}
+
+// 声をかける画面。見せるものがあれば、見せながら声をかける画面にする
+function speak(
+  label: string | undefined,
+  say: string,
+  show: ReactNode,
+  why?: ReactNode,
+): Beat {
+  return show == null || show === false
+    ? { kind: 'say', label, say, why }
+    : { kind: 'show', content: show, label, say, why }
+}
+
+// 1つの場面を、親の行動ごとの画面に分ける
+function beatsOf(
+  turn: Turn,
+  phase: Phase,
+  section: Exclude<Section, 'finish'>,
+): Beat[] {
+  const beats: Beat[] = []
+  const stuck = turn.stuck ?? []
+  const reveal = () => {
+    if (turn.reveal != null && turn.reveal !== false)
+      beats.push({ kind: 'show', content: turn.reveal })
+  }
+  const wait = (retry: boolean) => {
+    const { done, stuck } = REACTIONS[section]
+    if (turn.expect !== undefined)
+      beats.push({
+        kind: 'wait',
+        expect: turn.expect,
+        retry,
+        done,
+        stuck: retry ? 'まだ むずかしそう' : stuck,
+      })
+  }
+
+  if (phase.kind === 'ask') {
+    if (turn.do) beats.push({ kind: 'do', text: turn.do })
+    beats.push(speak(undefined, turn.say, turn.show, turn.why))
+    wait(false)
+  } else if (phase.kind === 'praise') {
+    if (turn.praise)
+      beats.push({ kind: 'say', label: 'ほめる', say: turn.praise })
+    reveal()
+  } else {
+    const hint = stuck[phase.level]
+    if (hint) {
+      if (hint.do) beats.push({ kind: 'do', text: hint.do })
+      beats.push(speak(`ヒント${phase.level + 1}`, hint.say, hint.show))
+      wait(true)
+    } else {
+      beats.push({
+        kind: 'say',
+        label: 'いっしょにやる',
+        say: 'いっしょに やってみよう',
+      })
+      beats.push({
+        kind: 'do',
+        text: `手を動かしながら、いっしょに確かめる（めやす：${turn.expect}）`,
+      })
+      reveal()
+    }
+  }
+  return beats
+}
+
+function PrepareView({
+  prepare,
+  question,
+  turns,
+  check,
+  onStart,
+}: Props & { onStart: () => void }) {
+  return (
+    <div className={styles.prepare}>
+      <h2 className={styles.prepareTitle}>はじめる前に</h2>
+      <dl className={styles.facts}>
+        <dt>ねらい</dt>
+        <dd>{prepare.goal}</dd>
+        <dt>用意するもの</dt>
+        <dd>{prepare.materials.join('・')}</dd>
+        <dt>いちばん大事なこと</dt>
+        <dd>{prepare.point}</dd>
+        <dt>言わないようにしたいこと</dt>
+        <dd>
+          <ul>
+            {prepare.avoid.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </dd>
+      </dl>
+      <details className={styles.why}>
+        <summary>声掛けの流れを見る</summary>
+        <p className={styles.flowLabel}>1. 問題を出す</p>
+        <p className={styles.flowText}>{question.say}</p>
+        <p className={styles.flowLabel}>
+          2. むずかしそうなら、いっしょに解く（すぐ答えられたら とばす）
+        </p>
+        <ol className={styles.flow}>
+          {turns.map((turn) => (
+            <li key={turn.say}>{turn.say}</li>
+          ))}
+        </ol>
+        <p className={styles.flowLabel}>3. わかったかを確かめる</p>
+        <ul className={styles.flow}>
+          {check.map((turn) => (
+            <li key={turn.say}>{turn.say}</li>
+          ))}
+        </ul>
+      </details>
+      <div className={styles.actions}>
+        <button className={styles.primary} type="button" onClick={onStart}>
+          はじめる
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
+const HEADINGS = {
+  do: ['✋', 'すること'],
+  say: ['💬', '声をかける'],
+  show: ['📱', '画面を見せる'],
+  wait: ['⏳', '待つ'],
+  finish: ['🎉', 'おしまい'],
+} as const
+
+// 画面が替わったときに読み上げる文。正解のめやすは入れない
+// （読み上げ機能を使っていると、考えているお子さんに答えが聞こえてしまうため）
+function announcement(beat: Beat) {
+  const heading = HEADINGS[beat.kind][1]
+  switch (beat.kind) {
+    case 'do':
+      return `${heading}。${beat.text}`
+    case 'say':
+      return `${heading}。${beat.label ? `${beat.label}。` : ''}${beat.say}`
+    case 'show':
+      return beat.say
+        ? `${heading}。見せながら、こう声をかける。${beat.say}`
+        : `${heading}。いっしょに確かめる`
+    case 'wait':
+      return `${heading}。答えるまで だまって待つ`
+    case 'finish':
+      return heading
+  }
+}
+
+// 1画面の中身。行動は1つだけにして、それ以外の情報は出さない
+function BeatView({ beat }: { beat: Beat }) {
+  switch (beat.kind) {
+    case 'do':
+      return <p className={styles.main}>{beat.text}</p>
+    case 'say':
+    case 'show':
+      return (
+        <>
+          {beat.kind === 'show' && (
+            <p className={styles.main}>
+              {beat.say ? '見せながら、こう声をかける' : 'いっしょに確かめる'}
+            </p>
+          )}
+          {beat.say && (
+            <div className={styles.speech}>
+              <img className={styles.mascot} src="/mascot.png" alt="" />
+              <div>
+                {beat.label && <p className={styles.label}>{beat.label}</p>}
+                <p className={styles.bubble}>{beat.say}</p>
+              </div>
+            </div>
+          )}
+          {beat.why && (
+            <details className={styles.why}>
+              <summary>なぜ？</summary>
+              {beat.why}
+            </details>
+          )}
+        </>
+      )
+    case 'wait':
+      return (
+        <>
+          <p className={styles.main}>
+            {beat.retry ? 'もう一度、' : ''}答えるまで だまって待つ
+          </p>
+          <p className={styles.expect}>正解のめやす：{beat.expect}</p>
+        </>
+      )
+    case 'finish':
+      return (
+        <p className={styles.main}>今日はおしまいです。おつかれさまでした。</p>
+      )
+  }
+}
+
+// おしまいの後に戻る先。この問題が置かれている分類（一覧）のページで、どこにも置かれていなければホーム
+function useMenuLink() {
+  const { crumbs } = useLoaderData<ReturnType<typeof loadProblem>>()
+  const homeUrl = useHomeUrl()
+  const parent = crumbs.at(-1)
+  return parent
+    ? { url: parent.url, label: '一覧にもどる' }
+    : { url: homeUrl, label: 'ホームにもどる' }
+}
+
+// 台本の途中でページを離れようとしたときの確認。ブラウザの confirm() ではなく、アプリの見た目で聞く。
+// 「続ける」を押すか、Esc などで閉じたら、ページに残る
+function LeaveConfirm({
+  onStay,
+  onLeave,
+}: {
+  onStay: () => void
+  onLeave: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  useEffect(() => {
+    dialog.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      className={styles.confirm}
+      ref={dialog}
+      aria-labelledby={titleId}
+      onClose={onStay}
+    >
+      <h2 id={titleId}>台本の途中です</h2>
+      <p>このページを離れると、はじめからになります。</p>
+      <div className={styles.confirmButtons}>
+        {/* 何も考えずに押しても進み具合が消えないよう、続けるほうを先に置く（開いたときに選ばれる） */}
+        <button
+          className={styles.primary}
+          type="button"
+          onClick={() => dialog.current?.close()}
+        >
+          続ける
+        </button>
+        <button type="button" onClick={onLeave}>
+          離れる
+        </button>
+      </div>
+    </dialog>
+  )
+}
+
+// 教えている最中に使う台本。親の行動を1画面に1つずつ出し、
+// お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える。
+// 流れは「問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい」。
+// すぐ答えられたお子さんは、いっしょに解く手順をとばして確かめへ進み、早く終われる
+export function TeachingScript({ prepare, question, turns, check }: Props) {
+  const [started, setStarted] = useState(false)
+  // 戻るボタンのために、通ってきた位置をすべて覚えておく
+  const [history, setHistory] = useState<Position[]>([START])
+  // 画面を、進むときは下から、戻るときは上から入れる
+  const [direction, setDirection] = useState<'forward' | 'back'>('forward')
+  const dialog = useRef<HTMLDialogElement>(null)
+  const actions = useRef<HTMLDivElement>(null)
+  const menu = useMenuLink()
+
+  // 問題・いっしょに解く手順・確かめを1列に並べる。GUIDE からがいっしょに解く手順、
+  // CHECK からが確かめ、FINISH がおしまいの画面
+  const script: Turn[] = [question, ...turns, ...check]
+  const GUIDE = 1
+  const CHECK = GUIDE + turns.length
+  const FINISH = script.length
+  const sectionOf = (turn: number): Section =>
+    turn < GUIDE
+      ? 'question'
+      : turn < CHECK
+        ? 'guide'
+        : turn < FINISH
+          ? 'check'
+          : 'finish'
+  const beatsAt = ({ turn, phase }: Position): Beat[] => {
+    const section = sectionOf(turn)
+    return section === 'finish'
+      ? [{ kind: 'finish' }]
+      : beatsOf(script[turn], phase, section)
+  }
+
+  const position = history[history.length - 1]
+  const { turn: index, phase } = position
+  const section = sectionOf(index)
+  const beats = beatsAt(position)
+  const beat = beats[position.beat]
+  // おしまいの画面まで来たら、画面が自動で消えるように戻す
+  useWakeLock(started && beat.kind !== 'finish')
+
+  // 台本の途中でページを離れると（iOS のスワイプで戻る など）はじめからになるので、離れる前に確かめる
+  const blocker = useBlocker(started && beat.kind !== 'finish')
+
+  // 押したボタンが次の画面で消えたとき（「つまずいた」など）は、
+  // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
+  useEffect(() => {
+    if (document.activeElement === document.body)
+      actions.current?.querySelector<HTMLElement>('button, a')?.focus()
+  }, [history, started])
+
+  const ask = (turn: number): Position => ({
+    turn,
+    phase: { kind: 'ask' },
+    beat: 0,
+  })
+  // ステップを終えた後の行き先。問題に答えられたら、いっしょに解く手順をとばして確かめへ
+  const after = (turn: number) => (turn < GUIDE ? CHECK : turn + 1)
+  const go = (next: Position) => {
+    // 中身のない場面（ほめ言葉も見せる画面もない、など）は飛ばして、次のステップへ
+    const target =
+      next.turn < FINISH && beatsAt(next).length === 0
+        ? ask(after(next.turn))
+        : next
+    setHistory([...history, target])
+    setDirection('forward')
+  }
+  // 場面の最後の画面なら、次のステップへ（待つ画面は、反応のボタンで進む）
+  const advance = () =>
+    position.beat < beats.length - 1
+      ? go({ ...position, beat: position.beat + 1 })
+      : go(ask(after(index)))
+  const done = () => go({ turn: index, phase: { kind: 'praise' }, beat: 0 })
+  const level = phase.kind === 'hint' ? phase.level : -1
+  // いっしょに解く手順を、まだ通っていないか（問題にすぐ答えられて、とばしてきたか）
+  const skippedGuide = !history.some((p) => sectionOf(p.turn) === 'guide')
+  // 問題がむずかしそうなとき、または、すぐ答えられたのに確かめで答えられないとき
+  // （たまたま当たった など）は、いっしょに解く手順へ。それ以外はヒントを出す
+  const stuck = () =>
+    section !== 'guide' && skippedGuide && turns.length > 0
+      ? go(ask(GUIDE))
+      : go({ turn: index, phase: { kind: 'hint', level: level + 1 }, beat: 0 })
+  // わかったところで、いつでも終われるようにする
+  const finish = () => go(ask(FINISH))
+
+  const start = () => {
+    setHistory([START])
+    setStarted(true)
+    window.scrollTo(0, 0)
+  }
+  const back = () => {
+    if (history.length > 1) setHistory(history.slice(0, -1))
+    else setStarted(false)
+    setDirection('back')
+  }
+
+  if (!started)
+    return (
+      <PrepareView
+        prepare={prepare}
+        question={question}
+        turns={turns}
+        check={check}
+        onStart={start}
+      />
+    )
+
+  return (
+    // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
+    <div className={styles.script} data-script-running>
+      <Progress
+        section={section}
+        count={turns.length}
+        current={index - GUIDE}
+        onBack={back}
+        onFinish={finish}
+      />
+      {/* 画面が替わったことを、読み上げで伝える */}
+      <p className={styles.srOnly} aria-live="polite">
+        {announcement(beat)}
+      </p>
+      {/* ボタンは押したまま残したいので、入れ替わるパネルの外に置く */}
+      <div
+        className={styles.panel}
+        key={history.length}
+        data-direction={direction}
+      >
+        <h2 className={styles.heading}>
+          <span aria-hidden="true">{HEADINGS[beat.kind][0]}</span>{' '}
+          {HEADINGS[beat.kind][1]}
+        </h2>
+        <BeatView beat={beat} />
+      </div>
+      {beat.kind === 'show' && (
+        // お子さんに見せる画面。親向けの文字が目に入らないように、画面全体をおおう。
+        // 閉じたら、見せ終わったものとして次の画面へ進む
+        <dialog
+          className={styles.child}
+          ref={dialog}
+          aria-label="お子さんの画面"
+          onClose={advance}
+        >
+          <div className={styles.childPanel}>{beat.content}</div>
+          <button
+            className={styles.close}
+            type="button"
+            onClick={() => dialog.current?.close()}
+          >
+            おうちの人の画面にもどる
+          </button>
+        </dialog>
+      )}
+      {blocker.state === 'blocked' && (
+        <LeaveConfirm
+          onStay={() => blocker.reset()}
+          onLeave={() => blocker.proceed()}
+        />
+      )}
+      {/* おしまいの画面は、ボタンの文字が長いので縦に並べる */}
+      <div
+        className={styles.actions}
+        ref={actions}
+        data-stack={beat.kind === 'finish'}
+      >
+        {/* 押したボタンが消えてフォーカスを失わないように、主なボタンは同じ key で残す */}
+        {beat.kind === 'wait' ? (
+          <>
+            <button
+              className={styles.primary}
+              type="button"
+              key="primary"
+              onClick={done}
+            >
+              {beat.done}
+            </button>
+            <button type="button" onClick={stuck}>
+              {beat.stuck}
+            </button>
+          </>
+        ) : beat.kind === 'show' ? (
+          <button
+            className={styles.primary}
+            type="button"
+            key="primary"
+            onClick={() => dialog.current?.showModal()}
+          >
+            お子さんに見せる
+          </button>
+        ) : beat.kind === 'finish' ? (
+          <>
+            {/* 次の問題を選ぶことが多いので、一覧へ戻るほうを主なボタンにする */}
+            <Link
+              className={styles.primary}
+              to={menu.url}
+              key="primary"
+              viewTransition
+            >
+              {menu.label}
+            </Link>
+            <button type="button" onClick={start}>
+              もういちど はじめから
+            </button>
+          </>
+        ) : (
+          <button
+            className={styles.primary}
+            type="button"
+            key="primary"
+            onClick={advance}
+          >
+            つぎへ
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// 区切りの名前（いっしょに解く手順のときだけ、進み具合を点で出す）
+const SECTION_NAMES = {
+  question: '問題',
+  guide: 'いっしょに解く',
+  check: '確かめ',
+  finish: 'おしまい',
+}
+
+function Progress({
+  section,
+  count,
+  current,
+  onBack,
+  onFinish,
+}: {
+  section: Section
+  count: number
+  current: number
+  onBack: () => void
+  onFinish: () => void
+}) {
+  return (
+    <div className={styles.progress}>
+      <button className={styles.back} type="button" onClick={onBack}>
+        ← もどる
+      </button>
+      <span className={styles.where}>
+        {SECTION_NAMES[section]}
+        {section === 'guide' && (
+          <span className={styles.dots} aria-hidden="true">
+            {Array.from({ length: count }, (_, i) => (
+              <span className={styles.dot} key={i} data-done={i <= current} />
+            ))}
+          </span>
+        )}
+      </span>
+      {/* わかったところで終われるように、おしまいの画面以外では いつでも出しておく */}
+      {section !== 'finish' && (
+        <button className={styles.back} type="button" onClick={onFinish}>
+          おわる
+        </button>
+      )}
+    </div>
+  )
+}

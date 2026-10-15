@@ -144,6 +144,33 @@
   color: var(--color-accent);
 }
 
+/* 台本の「お子さんの画面」は、隠れていた状態から開くので、変化前の見た目がない。
+   ここで変化前の見た目を決めて、開いたときにも、りんごが出る・数える・答えが出る動きを見せる */
+@starting-style {
+  .apple[data-shown='true'] {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.3);
+  }
+  .number[data-shown='true'] {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  .groupLabel[data-shown='true'] {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  .formula[data-state='question'] .question,
+  .formula[data-state='sum'] .sum,
+  .formula[data-state='answer'] .sum {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  .formula[data-state='answer'] .answer {
+    max-width: 0;
+    opacity: 0;
+  }
+}
+
 /* 動きを減らす設定の人には、移動や拡大をやめて切り替えだけにする */
 @media (prefers-reduced-motion: reduce) {
   .apple,

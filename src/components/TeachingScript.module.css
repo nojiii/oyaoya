@@ -1,0 +1,375 @@
+/* はじめる前に */
+.prepare {
+  padding-bottom: 1rem;
+}
+.prepareTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+.facts {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+}
+.facts dt {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--color-accent);
+}
+.facts dd {
+  margin: 0 0 0.75rem;
+}
+.facts dd:last-child {
+  margin-bottom: 0;
+}
+.facts ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.flow {
+  margin: 0.25rem 0 0;
+  padding-left: 1.5rem;
+}
+/* 声掛けの流れの、区切りの見出しと問題の文 */
+.flowLabel {
+  margin: 0.75rem 0 0;
+  font-weight: bold;
+}
+.flowText {
+  margin: 0.25rem 0 0 1.5rem;
+}
+
+/* 台本 */
+.script {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 戻るボタン・進み具合 */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.back {
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+/* 今どの区切りか（問題・いっしょに解く・確かめ） */
+.where {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: bold;
+}
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+.dot[data-done='true'] {
+  background: var(--color-accent);
+}
+
+/* 1画面分のパネル。画面が替わると、進むときは下から、戻るときは上から入ってくる。
+   行動は1つだけなので、中身を縦の中央に置く */
+.panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  min-height: min(24rem, 55svh);
+  padding: 1.25rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.75rem;
+  background: var(--color-bg);
+  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.1);
+  animation: enter-forward 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.panel[data-direction='back'] {
+  animation-name: enter-back;
+}
+
+/* 画面には出さず、読み上げだけで伝える文 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 何をする画面か（✋ すること・💬 声をかける など） */
+.heading {
+  align-self: center;
+  margin: 0;
+  padding: 0.15rem 1rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+}
+
+/* する・待つ 画面の本文 */
+.main {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  line-height: 1.6;
+  text-align: center;
+  word-break: auto-phrase;
+}
+.expect {
+  margin: 0;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+/* お子さんの画面。親向けの文字が残らないよう、画面全体をおおう */
+.child {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 1.25rem;
+  border: none;
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+  color: var(--color-text);
+}
+.child[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+/* 上下の余白を自動で取って中央に置く（justify-content: center だと、
+   横向きのスマホなどで画面からはみ出したとき、上の部分までスクロールできなくなる） */
+.childPanel {
+  margin-top: auto;
+}
+.close {
+  margin-bottom: auto;
+}
+/* 見せるものを載せるパネル（スクロールで読み進める画面のパネルと同じ見た目） */
+.childPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: min(100%, 40rem);
+  min-height: min(26rem, 70svh);
+  padding: 2rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1.75rem;
+  background: var(--color-bg);
+  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.1);
+  font-size: 1.5rem;
+  font-weight: bold;
+  line-height: 1.6;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  animation: appear 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.childPanel p {
+  margin: 0;
+}
+.close {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+/* おやじいと吹き出し。言うことがこの画面の主役なので、いちばん大きく出す */
+.speech {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.speech > div {
+  flex: 1;
+  min-width: 0;
+}
+.mascot {
+  flex: none;
+  width: 56px;
+  height: auto;
+  margin-top: 1.25rem;
+}
+.label {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--color-muted);
+}
+.bubble {
+  position: relative;
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg));
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1.6;
+  /* 声掛けは言葉の間に空白を入れて書くので、空白のところでだけ改行する */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  animation: pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+/* 吹き出しのしっぽ（おやじいの方へ向ける） */
+.speech .bubble::before {
+  content: '';
+  position: absolute;
+  top: 1.1rem;
+  left: -0.4rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+/* なぜこう声をかけるのか（閉じておく） */
+.why {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+.panel .why {
+  align-self: center;
+}
+.why summary {
+  cursor: pointer;
+  color: var(--color-accent);
+}
+
+/* ページを離れる前の確認 */
+.confirm {
+  max-width: min(22rem, calc(100% - 2rem));
+  padding: 1.5rem 1.25rem 1.25rem;
+  border: none;
+  border-radius: 1.5rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.2);
+  text-align: center;
+}
+.confirm::backdrop {
+  background: rgba(74, 59, 42, 0.35);
+}
+.confirm h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+.confirm p {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+}
+.confirmButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* 反応のボタン。片手で押せるように、画面の下に固定する。
+   縦の長さを使わないよう、ボタンが2つのときは横に並べる */
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 1.5rem 0 max(1rem, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--color-bg) 1.25rem);
+}
+.actions :is(button, a),
+.confirmButtons button {
+  flex: 1;
+  min-height: 3.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font: inherit;
+  font-weight: bold;
+  color: var(--color-text);
+  cursor: pointer;
+}
+/* 一覧へ戻るリンクも、ボタンと同じ見た目にする */
+.actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.actions a,
+.actions a:hover {
+  text-decoration: none;
+}
+.actions[data-stack='true'] {
+  flex-direction: column;
+}
+.actions .primary,
+.confirmButtons .primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+}
+.actions :is(button, a):active {
+  transform: scale(0.98);
+}
+
+@keyframes enter-forward {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.96);
+  }
+}
+@keyframes enter-back {
+  from {
+    opacity: 0;
+    transform: translateY(-1.5rem) scale(0.96);
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.95);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble,
+  .panel,
+  .childPanel {
+    animation: none;
+  }
+}

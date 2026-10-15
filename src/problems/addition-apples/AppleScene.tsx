@@ -11,7 +11,7 @@ interface Props {
   count: number
   // あかとあおの間をあけて、それぞれの数を出す
   split?: boolean
-  // りんごの下に 1〜5 の番号を順に出す
+  // りんごの下に 1〜5 の番号を順に出す。split と一緒に使うと、間はあけたまま、数の代わりに番号を出す
   counted?: boolean
   // りんごの下に出す式（question は「?」、sum は「3 + 2」、answer は「3 + 2 = 5」）
   formula?: 'question' | 'sum' | 'answer'
@@ -41,15 +41,27 @@ function Apple() {
   )
 }
 
+// 読み上げる名前。数え終わる前や式の答えを出す前に合計（答え）が伝わらないよう、色ごとの数で伝える
+function describe({ count, counted, formula }: Props) {
+  const red = Math.min(count, GROUPS[0].numbers.length)
+  const blue = count - red
+  const each =
+    blue > 0
+      ? `あかい りんご ${red}こと、あおい りんご ${blue}こ`
+      : `あかい りんご ${red}こ`
+  return counted || formula === 'answer' ? `${each}。あわせて ${count}こ` : each
+}
+
 // りんごの図。渡す値を変えると、りんごが出たり、分かれたり、番号が付いたりする
-export function AppleScene({ count, split, counted, formula }: Props) {
+export function AppleScene(props: Props) {
+  const { count, split, counted, formula } = props
   return (
     <div className={styles.scene}>
       <div
         className={styles.apples}
         data-split={split}
         role="img"
-        aria-label={`りんご ${count}こ`}
+        aria-label={describe(props)}
       >
         {GROUPS.map((group) => (
           <div className={styles.group} key={group.color}>
@@ -80,7 +92,8 @@ export function AppleScene({ count, split, counted, formula }: Props) {
                 </span>
               )
             })}
-            <span className={styles.groupLabel} data-shown={split}>
+            {/* 番号と同じ場所に出すので、番号を出すときは引っ込める（重なって読めなくなるため） */}
+            <span className={styles.groupLabel} data-shown={split && !counted}>
               {group.numbers.length}こ
             </span>
           </div>
