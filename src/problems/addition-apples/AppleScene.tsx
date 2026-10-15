@@ -11,7 +11,7 @@ interface Props {
   count: number
   // あかとあおの間をあけて、それぞれの数を出す
   split?: boolean
-  // りんごの下に 1〜5 の番号を順に出す
+  // りんごの下に 1〜5 の番号を順に出す。split と一緒に使うと、間はあけたまま、数の代わりに番号を出す
   counted?: boolean
   // りんごの下に出す式（question は「?」、sum は「3 + 2」、answer は「3 + 2 = 5」）
   formula?: 'question' | 'sum' | 'answer'
@@ -92,7 +92,8 @@ export function AppleScene(props: Props) {
                 </span>
               )
             })}
-            <span className={styles.groupLabel} data-shown={split}>
+            {/* 番号と同じ場所に出すので、番号を出すときは引っ込める（重なって読めなくなるため） */}
+            <span className={styles.groupLabel} data-shown={split && !counted}>
               {group.numbers.length}こ
             </span>
           </div>
