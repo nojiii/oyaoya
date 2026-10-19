@@ -1,0 +1,115 @@
+/* 区切りの色（--flow-question など）は、FlowViews.module.css で決めている */
+
+/* 横に長くなるので、はみ出した分は横にスクロールする */
+.scroller {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.board {
+  position: relative;
+  display: flex;
+  gap: 2.25rem;
+  width: max-content;
+  /* 列をとばす矢印が上を回るので、そのぶん空ける */
+  padding: 2.5rem 1.5rem 0.5rem 1rem;
+}
+
+.arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.arrow {
+  fill: none;
+  stroke-width: 1.6;
+  opacity: 0.8;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 10rem;
+}
+.columnName {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 1つの升目（画面） */
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-top: 4px solid var(--section-color);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  scroll-margin: 2rem;
+}
+.cell[data-section='question'] {
+  --section-color: var(--flow-question);
+}
+.cell[data-section='guide'] {
+  --section-color: var(--flow-guide);
+}
+.cell[data-section='check'] {
+  --section-color: var(--flow-check);
+}
+.cell[data-section='finish'] {
+  --section-color: var(--flow-finish);
+}
+.cell[data-trail='true'] {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
+}
+.cell[data-current='true'] {
+  outline: 2px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 20%, var(--color-bg));
+}
+
+/* 見出しは1行に収める（収まらない分は … にする） */
+.cellHead {
+  overflow: hidden;
+  font-weight: bold;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.phase {
+  margin-right: 0.3rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--section-color) 25%, var(--color-bg));
+}
+/* 文は2行まで（全文は升目にマウスを乗せると出る） */
+.cellText {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-muted);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.open {
+  align-self: flex-end;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.legend {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}

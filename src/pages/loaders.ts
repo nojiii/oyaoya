@@ -101,6 +101,17 @@ function isProblemId(id: string): id is ProblemId {
   return Object.hasOwn(problems, id)
 }
 
+// 動線一覧（開発中だけ開ける /debug）に並べる問題
+export function loadFlows() {
+  return {
+    problems: Object.entries(problems).map(([id, problem]) => ({
+      id,
+      title: problem.title,
+      Component: problem.default,
+    })),
+  }
+}
+
 export function loadProblem(id: string, festival: boolean) {
   if (!isProblemId(id)) notFound()
   const { base, tree } = modeOf(festival)

@@ -1,42 +1,41 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { Link, useBlocker, useLoaderData } from 'react-router'
+import {
+  lazy,
+  Suspense,
+  use,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import {
+  Link,
+  useBlocker,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
+import { FlowTreeContext } from './flowTreeContext'
+import {
+  createFlow,
+  decodeActions,
+  HEADINGS,
+  type Beat,
+  type Flow,
+  type Action,
+  type Position,
+  type Script,
+  type Section,
+} from './scriptFlow'
 import styles from './TeachingScript.module.css'
 
-// つまずいたときに出すヒント。上から順に、少しずつ手助けを大きくする
-interface Hint {
-  // 声をかける前に、親がすること
-  do?: string
-  // 親が言うこと
-  say: string
-  // このヒントで、お子さんに見せる画面
-  show?: ReactNode
-}
+export type { Turn } from './scriptFlow'
 
-// 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
-// 画面には、ここから「する → 声をかける（見せる）→ 待つ」の順に、1画面に1つずつ出す
-export interface Turn {
-  // 親がお子さんに言うこと
-  say: string
-  // 声をかける前に、親がすること（準備）
-  do?: string
-  // 声をかけるときに、お子さんに見せる画面（図や、問題の文）。
-  // 書いたステップでは、台本が「画面を見せながら声をかける」と指示する。
-  // お子さんが実物（おはじきなど）や自分の頭で考える場面では書かない。答えがわかるものは入れない
-  show?: ReactNode
-  // できた後（ほめた後、または、いっしょにやった後）にお子さんに見せる画面。答えの入った図など
-  reveal?: ReactNode
-  // お子さんの正しい答えのめやす。書くと「待つ」画面と「できた／つまずいた」のボタンが出る。
-  // 書かないステップ（問題を読み聞かせるだけ、など）は、声をかけたら次へ進む
-  expect?: string
-  // なぜこう言うのか（教え方）。声をかける画面で、押したときだけ出す
-  why?: ReactNode
-  // つまずいたときのヒント。使い切ったら「いっしょにやってみよう」になる
-  stuck?: Hint[]
-  // できたときのほめ言葉
-  praise?: string
-}
+// 動線の表示は、開発中の動線一覧（/debug）と ?debug=true でだけ使う。
+// 本番のビルドに含めないよう、開発中だけ読み込む
+const FlowViews = import.meta.env.DEV ? lazy(() => import('./FlowViews')) : null
 
 // 始める前に読む内容。30秒ほどで読める量にする
 interface Prepare {
@@ -50,68 +49,9 @@ interface Prepare {
   avoid: string[]
 }
 
-// 答えを待つステップ（問題と確かめ）。正解のめやすは必ず書く
-type Asked = Turn & { expect: string }
-
-interface Props {
+interface Props extends Script {
   prepare: Prepare
-  // 最初に出す問題。お子さんがすぐ答えられたら、確かめ（check）へ進む
-  question: Asked
-  // 問題がむずかしそうなときに、いっしょに解く手順
-  turns: Turn[]
-  // わかったかを確かめる声掛け。すぐ答えられたのに確かめで答えられなければ、いっしょに解く手順（turns）へ進む
-  check: Asked[]
 }
-
-// 台本の中の区切り。問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい
-type Section = 'question' | 'guide' | 'check' | 'finish'
-
-// 待つ画面のボタンの文字
-const REACTIONS = {
-  question: { done: '答えられた！', stuck: 'むずかしそう' },
-  guide: { done: 'できた！', stuck: 'つまずいた' },
-  check: { done: '答えられた！', stuck: 'むずかしそう' },
-}
-
-// ステップの中で、今どの場面か
-type Phase =
-  | { kind: 'ask' }
-  // level がヒントの番号。ヒントを使い切ると level === stuck.length になり、いっしょにやる
-  | { kind: 'hint'; level: number }
-  | { kind: 'praise' }
-
-// 1画面に出す、親の1つの行動
-type Beat =
-  | { kind: 'do'; text: string }
-  // label は、ふつうの声掛け以外（ヒント・ほめる など）のときだけ、吹き出しの上に出す
-  | { kind: 'say'; label?: string; say: string; why?: ReactNode }
-  // say がなければ、見せて確かめるだけ
-  | {
-      kind: 'show'
-      content: ReactNode
-      label?: string
-      say?: string
-      why?: ReactNode
-    }
-  // done・stuck は反応のボタンの文字。retry は、ヒントを出した後にもう一度待つとき
-  | {
-      kind: 'wait'
-      expect: string
-      retry: boolean
-      done: string
-      stuck: string
-    }
-  | { kind: 'finish' }
-
-// turn は台本の何ステップ目か（問題・いっしょに解く手順・確かめを順につないだ番号）、
-// beat は、その場面の何画面目か
-interface Position {
-  turn: number
-  phase: Phase
-  beat: number
-}
-
-const START: Position = { turn: 0, phase: { kind: 'ask' }, beat: 0 }
 
 // 教えている間は、スマホの画面が自動で消えないようにする
 function useWakeLock(active: boolean) {
@@ -141,72 +81,6 @@ function useWakeLock(active: boolean) {
       locks.clear()
     }
   }, [active])
-}
-
-// 声をかける画面。見せるものがあれば、見せながら声をかける画面にする
-function speak(
-  label: string | undefined,
-  say: string,
-  show: ReactNode,
-  why?: ReactNode,
-): Beat {
-  return show == null || show === false
-    ? { kind: 'say', label, say, why }
-    : { kind: 'show', content: show, label, say, why }
-}
-
-// 1つの場面を、親の行動ごとの画面に分ける
-function beatsOf(
-  turn: Turn,
-  phase: Phase,
-  section: Exclude<Section, 'finish'>,
-): Beat[] {
-  const beats: Beat[] = []
-  const stuck = turn.stuck ?? []
-  const reveal = () => {
-    if (turn.reveal != null && turn.reveal !== false)
-      beats.push({ kind: 'show', content: turn.reveal })
-  }
-  const wait = (retry: boolean) => {
-    const { done, stuck } = REACTIONS[section]
-    if (turn.expect !== undefined)
-      beats.push({
-        kind: 'wait',
-        expect: turn.expect,
-        retry,
-        done,
-        stuck: retry ? 'まだ むずかしそう' : stuck,
-      })
-  }
-
-  if (phase.kind === 'ask') {
-    if (turn.do) beats.push({ kind: 'do', text: turn.do })
-    beats.push(speak(undefined, turn.say, turn.show, turn.why))
-    wait(false)
-  } else if (phase.kind === 'praise') {
-    if (turn.praise)
-      beats.push({ kind: 'say', label: 'ほめる', say: turn.praise })
-    reveal()
-  } else {
-    const hint = stuck[phase.level]
-    if (hint) {
-      if (hint.do) beats.push({ kind: 'do', text: hint.do })
-      beats.push(speak(`ヒント${phase.level + 1}`, hint.say, hint.show))
-      wait(true)
-    } else {
-      beats.push({
-        kind: 'say',
-        label: 'いっしょにやる',
-        say: 'いっしょに やってみよう',
-      })
-      beats.push({
-        kind: 'do',
-        text: `手を動かしながら、いっしょに確かめる（めやす：${turn.expect}）`,
-      })
-      reveal()
-    }
-  }
-  return beats
 }
 
 function PrepareView({
@@ -262,15 +136,6 @@ function PrepareView({
     </div>
   )
 }
-
-// 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
-const HEADINGS = {
-  do: ['✋', 'すること'],
-  say: ['💬', '声をかける'],
-  show: ['📱', '画面を見せる'],
-  wait: ['⏳', '待つ'],
-  finish: ['🎉', 'おしまい'],
-} as const
 
 // 画面が替わったときに読み上げる文。正解のめやすは入れない
 // （読み上げ機能を使っていると、考えているお子さんに答えが聞こえてしまうため）
@@ -390,51 +255,69 @@ function LeaveConfirm({
   )
 }
 
+// 開発中だけ使う URL の指定。本番では、どちらも無いものとして扱う
+// - ?flow=：操作の並びをたどった画面から始める（動線一覧から、途中の画面を開くため）
+// - ?debug=true：PC の画面幅のとき、台本の横に動線を出す
+function useDebugOptions(flow: Flow) {
+  const [params, setParams] = useSearchParams()
+  const text = import.meta.env.DEV ? params.get('flow') : null
+  const actions = text === null ? null : decodeActions(text)
+  const side = import.meta.env.DEV && params.get('debug') === 'true'
+  // 台本の横の動線を開閉する。URL の ?debug=true も書き換えて、再読み込みや共有でも同じ状態で開けるようにする
+  const toggleSide = () => {
+    const next = new URLSearchParams(params)
+    if (side) next.delete('debug')
+    else next.set('debug', 'true')
+    setParams(next, { replace: true, preventScrollReset: true })
+  }
+  return { start: actions && flow.replay(actions), side, toggleSide }
+}
+
 // 教えている最中に使う台本。親の行動を1画面に1つずつ出し、
 // お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える。
 // 流れは「問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい」。
-// すぐ答えられたお子さんは、いっしょに解く手順をとばして確かめへ進み、早く終われる
-export function TeachingScript({ prepare, question, turns, check }: Props) {
-  const [started, setStarted] = useState(false)
+// すぐ答えられたお子さんは、いっしょに解く手順をとばして確かめへ進み、早く終われる。
+// 動線一覧（開発用）の中では、台本の代わりに、通りうる画面の動線を描く
+export function TeachingScript(props: Props) {
+  const tree = use(FlowTreeContext)
+  if (tree && FlowViews)
+    return (
+      <Suspense>
+        <FlowViews script={props} problemId={tree.problemId} />
+      </Suspense>
+    )
+  return <ScriptPlayer {...props} />
+}
+
+function ScriptPlayer({ prepare, question, turns, check }: Props) {
+  const flow = createFlow({ question, turns, check })
+  const debug = useDebugOptions(flow)
+  const { problemId = '' } = useParams()
+  const [started, setStarted] = useState(debug.start !== null)
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
-  const [history, setHistory] = useState<Position[]>([START])
+  const [history, setHistory] = useState<Position[]>(
+    debug.start ?? [flow.START],
+  )
   // 画面を、進むときは下から、戻るときは上から入れる
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
   const dialog = useRef<HTMLDialogElement>(null)
   const actions = useRef<HTMLDivElement>(null)
   const menu = useMenuLink()
 
-  // 問題・いっしょに解く手順・確かめを1列に並べる。GUIDE からがいっしょに解く手順、
-  // CHECK からが確かめ、FINISH がおしまいの画面
-  const script: Turn[] = [question, ...turns, ...check]
-  const GUIDE = 1
-  const CHECK = GUIDE + turns.length
-  const FINISH = script.length
-  const sectionOf = (turn: number): Section =>
-    turn < GUIDE
-      ? 'question'
-      : turn < CHECK
-        ? 'guide'
-        : turn < FINISH
-          ? 'check'
-          : 'finish'
-  const beatsAt = ({ turn, phase }: Position): Beat[] => {
-    const section = sectionOf(turn)
-    return section === 'finish'
-      ? [{ kind: 'finish' }]
-      : beatsOf(script[turn], phase, section)
-  }
-
   const position = history[history.length - 1]
-  const { turn: index, phase } = position
-  const section = sectionOf(index)
-  const beats = beatsAt(position)
-  const beat = beats[position.beat]
+  const section = flow.sectionOf(position.turn)
+  const beat = flow.beatsAt(position)[position.beat]
   // おしまいの画面まで来たら、画面が自動で消えるように戻す
   useWakeLock(started && beat.kind !== 'finish')
 
   // 台本の途中でページを離れると（iOS のスワイプで戻る など）はじめからになるので、離れる前に確かめる
-  const blocker = useBlocker(started && beat.kind !== 'finish')
+  // （同じページのまま URL の ? や # だけが変わるとき、例えば動線の開閉は、進み具合が消えないので確かめない）
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      started &&
+      beat.kind !== 'finish' &&
+      currentLocation.pathname !== nextLocation.pathname,
+  )
 
   // 押したボタンが次の画面で消えたとき（「つまずいた」など）は、
   // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
@@ -443,42 +326,18 @@ export function TeachingScript({ prepare, question, turns, check }: Props) {
       actions.current?.querySelector<HTMLElement>('button, a')?.focus()
   }, [history, started])
 
-  const ask = (turn: number): Position => ({
-    turn,
-    phase: { kind: 'ask' },
-    beat: 0,
-  })
-  // ステップを終えた後の行き先。問題に答えられたら、いっしょに解く手順をとばして確かめへ
-  const after = (turn: number) => (turn < GUIDE ? CHECK : turn + 1)
-  const go = (next: Position) => {
-    // 中身のない場面（ほめ言葉も見せる画面もない、など）は飛ばして、次のステップへ
-    const target =
-      next.turn < FINISH && beatsAt(next).length === 0
-        ? ask(after(next.turn))
-        : next
-    setHistory([...history, target])
+  // 操作して、次の画面へ進む（行き先は scriptFlow.ts の step が決める）
+  const act = (action: Action) => {
+    setHistory([
+      ...history,
+      flow.step(position, flow.visitedGuide(history), action),
+    ])
     setDirection('forward')
   }
-  // 場面の最後の画面なら、次のステップへ（待つ画面は、反応のボタンで進む）
-  const advance = () =>
-    position.beat < beats.length - 1
-      ? go({ ...position, beat: position.beat + 1 })
-      : go(ask(after(index)))
-  const done = () => go({ turn: index, phase: { kind: 'praise' }, beat: 0 })
-  const level = phase.kind === 'hint' ? phase.level : -1
-  // いっしょに解く手順を、まだ通っていないか（問題にすぐ答えられて、とばしてきたか）
-  const skippedGuide = !history.some((p) => sectionOf(p.turn) === 'guide')
-  // 問題がむずかしそうなとき、または、すぐ答えられたのに確かめで答えられないとき
-  // （たまたま当たった など）は、いっしょに解く手順へ。それ以外はヒントを出す
-  const stuck = () =>
-    section !== 'guide' && skippedGuide && turns.length > 0
-      ? go(ask(GUIDE))
-      : go({ turn: index, phase: { kind: 'hint', level: level + 1 }, beat: 0 })
-  // わかったところで、いつでも終われるようにする
-  const finish = () => go(ask(FINISH))
+  const advance = () => act('next')
 
   const start = () => {
-    setHistory([START])
+    setHistory([flow.START])
     setStarted(true)
     window.scrollTo(0, 0)
   }
@@ -488,26 +347,52 @@ export function TeachingScript({ prepare, question, turns, check }: Props) {
     setDirection('back')
   }
 
-  if (!started)
-    return (
-      <PrepareView
-        prepare={prepare}
-        question={question}
-        turns={turns}
-        check={check}
-        onStart={start}
-      />
-    )
+  // 開発中だけ：?debug=true なら、PC の画面幅のとき、台本の横に動線を出す。
+  // 今いる画面と通ってきた画面を目立たせ、動線の画面を押すと、台本がその画面へ移る
+  const side = debug.side && FlowViews && (
+    <aside className={styles.debugSide} aria-label="動線（開発用）">
+      <Suspense>
+        <FlowViews
+          script={{ question, turns, check }}
+          problemId={problemId}
+          // 動線一覧のこの問題の位置を、別のタブで開く（台本の進み具合を消さないため）
+          extra={
+            <a
+              href={`/debug#problem-${problemId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              一覧で見る
+            </a>
+          }
+          history={started ? history : undefined}
+          onSelect={(node) => {
+            setHistory(flow.replay(node.path))
+            setStarted(true)
+            setDirection('forward')
+          }}
+        />
+      </Suspense>
+    </aside>
+  )
 
-  return (
+  const page = !started ? (
+    <PrepareView
+      prepare={prepare}
+      question={question}
+      turns={turns}
+      check={check}
+      onStart={start}
+    />
+  ) : (
     // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
     <div className={styles.script} data-script-running>
       <Progress
         section={section}
         count={turns.length}
-        current={index - GUIDE}
+        current={position.turn - flow.GUIDE}
         onBack={back}
-        onFinish={finish}
+        onFinish={() => act('finish')}
       />
       {/* 画面が替わったことを、読み上げで伝える */}
       <p className={styles.srOnly} aria-live="polite">
@@ -563,11 +448,11 @@ export function TeachingScript({ prepare, question, turns, check }: Props) {
               className={styles.primary}
               type="button"
               key="primary"
-              onClick={done}
+              onClick={() => act('done')}
             >
               {beat.done}
             </button>
-            <button type="button" onClick={stuck}>
+            <button type="button" onClick={() => act('stuck')}>
               {beat.stuck}
             </button>
           </>
@@ -607,6 +492,24 @@ export function TeachingScript({ prepare, question, turns, check }: Props) {
         )}
       </div>
     </div>
+  )
+
+  return (
+    <>
+      {page}
+      {side}
+      {/* 開発中だけ：動線を開閉するボタン（PC の画面幅のときだけ出す） */}
+      {import.meta.env.DEV && (
+        <button
+          className={styles.debugToggle}
+          type="button"
+          aria-pressed={debug.side}
+          onClick={debug.toggleSide}
+        >
+          {debug.side ? '動線を閉じる' : '動線を見る'}
+        </button>
+      )}
+    </>
   )
 }
 

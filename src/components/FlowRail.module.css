@@ -1,0 +1,93 @@
+/* 区切りの色（--flow-question など）は、FlowViews.module.css で決めている */
+.rail {
+  position: relative;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* 線路と駅。文字の行の位置を測って、その左に重ねて描く */
+.lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+.track {
+  fill: none;
+  stroke-linecap: round;
+}
+/* 台本の横に出しているとき：今いる駅 */
+.here {
+  fill: none;
+  stroke-width: 3;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.rows {
+  position: relative;
+  margin: 0;
+  list-style: none;
+}
+.row {
+  min-height: 26px;
+  padding: 2px 0.5rem 2px 0;
+  border-radius: 0.4rem;
+  scroll-margin: 2rem;
+}
+.row[data-current='true'] {
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-bg));
+}
+.row[data-trouble='true'] .text {
+  color: var(--color-muted);
+}
+
+/* 枝の最初の駅に添える、反応のボタンの文字 */
+.branch {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-bg));
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.number {
+  display: inline-block;
+  min-width: 2.5ch;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.section {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.heading {
+  font-weight: bold;
+}
+.merge {
+  color: var(--color-muted);
+}
+.jump,
+.open {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+.open {
+  font-size: 0.75rem;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .here {
+    animation: none;
+  }
+}
