@@ -14,7 +14,7 @@ export function SideNavigation() {
   const festival = useFestival()
   const { pathname } = useLocation()
   const matches = useMatches()
-  const data = matches.at(-1)?.data as { crumbs?: PageLink[] } | undefined
+  const data = matches.at(-1)?.loaderData as { crumbs?: PageLink[] } | undefined
   const crumbs = data?.crumbs ?? []
   const groups = festival ? festivalCurriculum : curriculum
   const base = festival ? homeUrl : ''

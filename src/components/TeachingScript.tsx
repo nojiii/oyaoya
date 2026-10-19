@@ -529,7 +529,7 @@ export function TeachingScript({
           if (!event.isPrimary || event.button !== 0) return
           if (
             (event.target as Element).closest(
-              'summary, button, a, input, select, textarea',
+              'summary, button, a, input, select, textarea, [role="button"]',
             )
           )
             return
