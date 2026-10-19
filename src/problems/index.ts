@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import * as additionApples from './addition-apples'
 import * as additionCarry from './addition-carry'
+import { lesson } from './unit-lessons'
 
 // 問題のフォルダ（index.tsx）が export するもの
 interface ProblemModule {
@@ -14,6 +15,16 @@ interface ProblemModule {
 export const problems = {
   'addition-apples': additionApples,
   'addition-carry': additionCarry,
+  numbers: lesson('numbers'),
+  add: lesson('add'),
+  sub: lesson('sub'),
+  borrow: lesson('borrow'),
+  clock: lesson('clock'),
+  shape: lesson('shape'),
+  times: lesson('times'),
+  length: lesson('length'),
+  time: lesson('time'),
+  figures: lesson('figures'),
 } satisfies Record<string, ProblemModule>
 
 export type ProblemId = keyof typeof problems

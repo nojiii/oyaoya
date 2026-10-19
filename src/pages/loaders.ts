@@ -1,6 +1,7 @@
 import { curriculum, festivalCurriculum, type Group } from '../curriculum'
 import { problems, type ProblemId } from '../problems'
 import { FESTIVAL_URL } from './festival'
+import { redirect } from 'react-router'
 
 // ページは curriculum と problems を直接読まず、ここの関数が返すデータだけを使う
 // （階層や問題の一覧の形を変えたときに、直す場所をこのファイルに限るため）
@@ -35,10 +36,17 @@ function modeOf(festival: boolean) {
 }
 
 // 同じ段に並ぶ分類を、リンク用の名前とURLにする（parentUrl は1つ上の分類のURL）
-function groupLinks(groups: Group[], parentUrl: string): GroupLink[] {
+function groupLinks(
+  groups: Group[],
+  parentUrl: string,
+  base: string,
+): GroupLink[] {
   return groups.map((group) => ({
     name: group.name,
-    url: `${parentUrl}/${group.slug}`,
+    url:
+      !group.children?.length && group.problems?.length === 1
+        ? `${base}/problems/${group.problems[0]}`
+        : `${parentUrl}/${group.slug}`,
     count: countProblems(group),
   }))
 }
@@ -61,7 +69,7 @@ function toCrumbs(groups: Group[], base: string): PageLink[] {
 
 export function loadHome(festival: boolean) {
   const { base, tree } = modeOf(festival)
-  return { groups: groupLinks(tree, base) }
+  return { groups: groupLinks(tree, base, base) }
 }
 
 // URL（例: math/unit-01-addition-1digit）を上からたどって分類を探す
@@ -77,17 +85,35 @@ export function loadGroup(path: string, festival: boolean) {
   const crumbs = toCrumbs(groups, base)
   const current = crumbs.pop() ?? notFound()
   const group = groups[groups.length - 1]
+  // 教材が1つの単元は、問題一覧を挟まず準備画面を表示する。
+  const onlyProblem =
+    siblings.length === 0 && group.problems?.length === 1
+      ? group.problems[0]
+      : undefined
+  const lesson = onlyProblem
+    ? { id: onlyProblem, Component: problems[onlyProblem].default }
+    : null
   return {
+    lesson,
     name: group.name,
     // 一番上の段で何番目の分類の中にいるか（ページの色分けに使う）
     rootIndex: tree.indexOf(groups[0]),
     crumbs,
-    groups: groupLinks(siblings, current.url),
+    groups: groupLinks(siblings, current.url, base),
     problems: problemLinks(group.problems ?? [], base),
   }
 }
 
 // その問題が置かれている分類を上から順に返す（どこにも置かれていなければ空）
+export function loadGroupPage(path: string, festival: boolean) {
+  const data = loadGroup(path, festival)
+  if (data.lesson)
+    return redirect(
+      `${festival ? FESTIVAL_URL : ''}/problems/${data.lesson.id}`,
+    )
+  return data
+}
+
 function groupsOf(id: ProblemId, groups: Group[]): Group[] {
   for (const group of groups) {
     if (group.problems?.includes(id)) return [group]
@@ -105,5 +131,10 @@ export function loadProblem(id: string, festival: boolean) {
   if (!isProblemId(id)) notFound()
   const { base, tree } = modeOf(festival)
   const { title, default: Component } = problems[id]
-  return { title, Component, crumbs: toCrumbs(groupsOf(id, tree), base) }
+  const groups = groupsOf(id, tree)
+  const rootIndex = Math.max(0, tree.indexOf(groups[0]))
+  // 教材へ直接進む単元は、戻り先を1つ上の単元選択画面にする。
+  const parent = groups.at(-1)
+  if (!parent?.children?.length && parent?.problems?.length === 1) groups.pop()
+  return { title, Component, rootIndex, crumbs: toCrumbs(groups, base) }
 }

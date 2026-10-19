@@ -3,16 +3,17 @@ import {
   Link,
   Outlet,
   ScrollRestoration,
-  useLocation,
   useNavigation,
   useRouteError,
 } from 'react-router'
 import { useHomeUrl } from './festival'
+import { SideNavigation } from '../components/SideNavigation'
 
 function Header() {
   const homeUrl = useHomeUrl()
   return (
     <header className="site-header">
+      <SideNavigation />
       <Link className="site-logo" to={homeUrl} viewTransition>
         <span className="accent">O</span>ya<span className="accent">O</span>ya
       </Link>
@@ -21,14 +22,10 @@ function Header() {
 }
 
 export function Layout() {
-  const { pathname } = useLocation()
   const navigation = useNavigation()
-  const homeUrl = useHomeUrl()
-  // 末尾に / が付いたURL（/festival/）もホームとして扱う
-  const isHome = pathname === homeUrl || pathname === `${homeUrl}/`
   return (
     <>
-      {!isHome && <Header />}
+      <Header />
       <main className={navigation.state === 'loading' ? 'is-loading' : ''}>
         <Outlet />
       </main>
