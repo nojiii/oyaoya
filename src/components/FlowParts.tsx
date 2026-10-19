@@ -11,6 +11,8 @@ export interface ViewProps {
   // 台本の横に出すときだけ：今いる画面と、通ってきた画面（key）
   current?: string
   trail?: Set<string>
+  // 台本の横に出すときだけ：実際に移った「画面 → 次の画面」の組（flowGraph.ts の trailOf）
+  steps?: Set<string>
   // 台本の横に出すときだけ：画面を押したら、台本をその画面へ移す
   onSelect?: (node: GraphNode) => void
   // 見せる画面の節に、お子さんに見せる画面を縮小して出すか

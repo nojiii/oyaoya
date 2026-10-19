@@ -136,8 +136,12 @@ export function FlowMap(view: ViewProps) {
       setBoxes(next)
     }
     measure()
+    // 地図全体の大きさが変わらなくても、升目だけが伸び縮みすることがある
+    // （「お子さんの画面」の切り替えなど）ので、升目も1つずつ見張る。disconnect で、すべての見張りをやめる
     const observer = new ResizeObserver(measure)
     observer.observe(element)
+    for (const cell of element.querySelectorAll('[data-cell]'))
+      observer.observe(cell)
     return () => observer.disconnect()
   }, [columns.length])
 

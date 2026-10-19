@@ -159,12 +159,15 @@ export function openUrl(problemId: string, node: GraphNode) {
   return `/problems/${problemId}?flow=${encodeActions(node.path)}`
 }
 
-// 台本で今いる画面と、そこまでに通ってきた画面の key
+// 台本で今いる画面と、そこまでに通ってきた画面の key。
+// steps は、実際に移った「画面 → 次の画面」の組（`${前のkey}>${次のkey}`）。
+// 両端の画面をどちらも通っていても、別々の道で通っただけの線は、通った道にしない
 export function trailOf(flow: Flow, history: Position[]) {
   const keys = history.map((position, i) =>
     keyOf(position, flow.visitedGuide(history.slice(0, i + 1))),
   )
-  return { current: keys[keys.length - 1], trail: new Set(keys) }
+  const steps = new Set(keys.slice(1).map((key, i) => `${keys[i]}>${key}`))
+  return { current: keys[keys.length - 1], trail: new Set(keys), steps }
 }
 
 // 縦に1列に並べるときの行。木の順（親の後に子、待つ画面の後に1本目の枝、その後に2本目の枝）に並べる。

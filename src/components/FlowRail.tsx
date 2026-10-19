@@ -173,8 +173,9 @@ export function FlowRail(view: ViewProps) {
   const { ys, height } = layout
   const width = laneX(lanes - 1) + LANE
   const measured = ys.length === rows.length
+  // 通ってきた道の判定に使う、その行の画面の key（合流の行は、合流先の画面）
   const keyOfRow = (row: Row) =>
-    row.kind === 'screen' ? row.node.key : `merge-${row.target.key}`
+    row.kind === 'screen' ? row.node.key : row.target.key
 
   return (
     <div className={styles.rail}>
@@ -200,8 +201,10 @@ export function FlowRail(view: ViewProps) {
                 `M${x} ${y1}C${x} ${y1 + bend / 2} ${xs} ${y1 + bend / 2} ${xs} ${y1 + bend}` +
                 `V${y2 - bend}C${xs} ${y2 - bend / 2} ${x} ${y2 - bend / 2} ${x} ${y2}`
             }
-            const onTrail =
-              view.trail?.has(keyOfRow(parent)) && view.trail.has(keyOfRow(row))
+            // 実際にこの線の通りに移ったときだけ、通った道として太くする
+            const onTrail = !!view.steps?.has(
+              `${keyOfRow(parent)}>${keyOfRow(row)}`,
+            )
             return (
               <path
                 key={i}

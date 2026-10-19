@@ -66,15 +66,16 @@ export default function FlowViews({
   const flow = createFlow(script)
   const graph = buildGraph(flow)
   const { screens, merges, shortest } = statsOf(graph)
-  const { current, trail } = history
+  const { current, trail, steps } = history
     ? trailOf(flow, history)
-    : { current: undefined, trail: undefined }
+    : { current: undefined, trail: undefined, steps: undefined }
   const view: ViewProps = {
     graph,
     flow,
     problemId,
     current,
     trail,
+    steps,
     onSelect,
     previews,
   }
