@@ -373,3 +373,57 @@
     animation: none;
   }
 }
+
+/* 開発中だけ：台本の横に出す動線（?debug=true）。PC の画面幅のときだけ出す。
+   台本を左に寄せて、右の空いたところに出す */
+.debugSide {
+  display: none;
+}
+@media (min-width: 1000px) {
+  :global(body):has(.debugSide) {
+    margin-left: 2rem;
+  }
+  .debugSide {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: calc(480px + 4rem);
+    display: block;
+    overflow: auto;
+    padding: 1rem 1.25rem;
+    border-left: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+}
+
+/* 開発中だけ：動線を開閉するボタン。動線を出せる PC の画面幅のときだけ出す */
+.debugToggle {
+  display: none;
+}
+@media (min-width: 1000px) {
+  .debugToggle {
+    position: fixed;
+    top: 0.75rem;
+    right: 1rem;
+    z-index: 1;
+    display: block;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 999px;
+    background: var(--color-bg);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--color-accent);
+    cursor: pointer;
+  }
+  .debugToggle[aria-pressed='true'] {
+    background: var(--color-accent);
+    color: #fff;
+  }
+  /* 開閉のボタンと重ならないよう、動線の上を空ける */
+  .debugSide {
+    padding-top: 3rem;
+  }
+}

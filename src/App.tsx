@@ -5,7 +5,7 @@ import {
 } from 'react-router'
 import { FESTIVAL_URL } from './pages/festival'
 import { ErrorPage, Layout, Loading } from './pages/Layout'
-import { loadGroup, loadHome, loadProblem } from './pages/loaders'
+import { loadFlows, loadGroup, loadHome, loadProblem } from './pages/loaders'
 import GroupDetail from './pages/GroupDetail'
 import Home from './pages/Home'
 import ProblemDetail from './pages/ProblemDetail'
@@ -28,12 +28,29 @@ function pages(festival: boolean): RouteObject[] {
   ]
 }
 
+// 開発中だけ開けるページ。本番のビルドには含めない（import.meta.env.DEV が false になり、まるごと消える）
+const debugPages: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: 'debug',
+        loader: loadFlows,
+        lazy: async () => ({
+          Component: (await import('./pages/DebugFlows')).default,
+        }),
+      },
+    ]
+  : []
+
 const router = createBrowserRouter([
   {
     element: <Layout />,
     errorElement: <ErrorPage />,
     hydrateFallbackElement: <Loading />,
-    children: [...pages(false), { path: FESTIVAL_URL, children: pages(true) }],
+    children: [
+      ...debugPages,
+      ...pages(false),
+      { path: FESTIVAL_URL, children: pages(true) },
+    ],
   },
 ])
 
