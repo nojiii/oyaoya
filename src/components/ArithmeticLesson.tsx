@@ -6,7 +6,7 @@ import { LessonVisual } from './LessonVisual'
 
 interface Props {
   mode: ArithmeticMode
-  initial: [number, number]
+  initial: readonly [number, number]
   apples?: boolean
 }
 
@@ -137,7 +137,6 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       question={{
         say: question,
         show: <p>{question}</p>,
-        expect: String(model.answer),
         how: 'おはじきの画面を開き、問題の数を指さしながら読み上げます。',
         why: '計算する数と、何をする問題かを確認してから、解き方の説明に入ります。',
         avoid: [
@@ -146,12 +145,6 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
         ],
       }}
       turns={model.steps}
-      check={[
-        {
-          say: `${model.equation} は、どうやって考えたかな？`,
-          expect: `${model.answer}。${model.steps.map((step) => step.say).join(' ')}`,
-        },
-      ]}
     />
   )
 }

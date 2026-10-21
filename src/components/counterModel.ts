@@ -1,4 +1,4 @@
-﻿import type { ArithmeticMode } from '../problems/arithmetic'
+import type { ArithmeticMode } from '../problems/arithmetic'
 
 export interface CounterProblem {
   mode: ArithmeticMode | 'count'

@@ -50,4 +50,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # テストは build ジョブの中で走らせる（Ruleset の必須チェックのジョブ名を増やさないため）
+      - run: npm test
       - run: npm run build

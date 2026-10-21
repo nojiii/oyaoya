@@ -1,5 +1,7 @@
-﻿export function QuestionVisual({ id }: { id: string }) {
-  if (id === 'clock')
+import type { ScriptedUnitId } from './units'
+
+export function QuestionVisual({ id }: { id: ScriptedUnitId }) {
+  if (id === 'clock-reading')
     return (
       <svg viewBox="0 0 200 200" width="200" role="img" aria-label="時計">
         <circle
@@ -27,7 +29,7 @@
         />
       </svg>
     )
-  if (id === 'shape')
+  if (id === 'shape-sides')
     return (
       <svg viewBox="0 0 200 150" width="200" role="img" aria-label="三角形">
         <path
@@ -38,7 +40,7 @@
         />
       </svg>
     )
-  if (id === 'figures')
+  if (id === 'shape-corners')
     return (
       <svg viewBox="0 0 200 150" width="200" role="img" aria-label="四角形">
         <rect
@@ -52,7 +54,7 @@
         />
       </svg>
     )
-  if (id === 'length')
+  if (id === 'length-compare')
     return (
       <svg
         viewBox="0 0 240 100"

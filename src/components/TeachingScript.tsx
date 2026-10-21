@@ -1,41 +1,27 @@
-﻿import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
 
-// つまずいたときに出すヒント。上から順に、少しずつ手助けを大きくする
-interface Hint {
-  // 声をかける前に、親がすること
-  do?: string
-  // 親が言うこと
-  say: string
-  // 親がヒントを確認するための図
-  show?: ReactNode
-}
-
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
-// 「する → 声をかける」の順に台本を出す
+// 台本の画面には「声をかける →（reveal があれば）解説を確認する」の順に出す
 export interface Turn {
   // 親がお子さんに言うこと
   say: string
-  // 声をかける前に、親がすること（準備）
+  // 声をかける前に、親がすること（準備）。「声をかける前の準備」として閉じて出す
   do?: string
+  // 教え方のヒント。閉じて出す
   how?: string
+  // このステップで避けたい声かけ。閉じて出す
   avoid?: string[]
-  // 親が確認する問題や参考図。子どもには読み聞かせたり、実物で伝える
+  // 問題（question）の図や文。台本の上部に常に出す。いっしょに解く手順（turns）では使わない
   show?: ReactNode
-  // セリフに続けて親が確認する解説図
+  // 声をかけた後に、親が確認する解説図
   reveal?: ReactNode
-  // 親が確認する答えのめやす
-  expect?: string
-  // なぜこう言うのか。台本の下に表示する
+  // なぜこう言うのか。「このセリフの理由」として閉じて出す（書かなければ prepare.point を出す）
   why?: ReactNode
-  // 補足のヒント
-  stuck?: Hint[]
-  // できたときのほめ言葉
-  praise?: string
 }
 
 // 始める前に読む内容。30秒ほどで読める量にする
@@ -50,20 +36,18 @@ interface Prepare {
   avoid: string[]
 }
 
-// 答えを待つステップ（問題と確かめ）。正解のめやすは必ず書く
-type Asked = Turn & { expect: string }
-
 interface Props {
+  // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
+  // 台本の下に出す、おはじきの画面
   counters?: CounterProblem
+  // 問題の数字を変える入力欄
   editor?: ReactNode
   prepare: Prepare
   // 教える問題。台本の上部に常時表示する
-  question: Asked
+  question: Turn
   // 順番に読み上げる、解き方の台本
   turns: Turn[]
-  // 台本とは別のセクションに表示する確認・発展
-  check: Asked[]
 }
 
 type Section = 'question' | 'guide' | 'finish'
@@ -328,48 +312,63 @@ function useMenuLink() {
     : { url: homeUrl, label: 'ホームにもどる' }
 }
 
+// 保存しておいた進み具合を読む。台本を直した後などで、今の台本に合わない位置があれば使わない。
+// 最後まで終えた問題は、次に開いたときに準備の画面から始める
+function loadProgress(
+  keys: { started: string; history: string },
+  script: Turn[],
+): { started: boolean; history: Position[] } {
+  const fresh = { started: false, history: [START] }
+  try {
+    const started: unknown = JSON.parse(
+      sessionStorage.getItem(keys.started) ?? 'false',
+    )
+    const history: unknown = JSON.parse(
+      sessionStorage.getItem(keys.history) ?? 'null',
+    )
+    const valid =
+      Array.isArray(history) &&
+      history.length > 0 &&
+      history.every(
+        (position: Position) =>
+          position &&
+          Number.isInteger(position.turn) &&
+          position.turn >= 0 &&
+          position.turn <= script.length &&
+          Number.isInteger(position.beat) &&
+          position.beat >= 0 &&
+          position.beat <
+            (position.turn === script.length
+              ? 1
+              : beatsOf(script[position.turn]).length),
+      )
+    if (typeof started !== 'boolean') return fresh
+    if (!valid) return { started, history: [START] }
+    if (history.at(-1).turn === script.length) return fresh
+    return { started, history }
+  } catch {
+    // プライベートブラウズなどで読めないときは、はじめから
+    return fresh
+  }
+}
+
 // 準備や一覧を見直しても、同じタブでは台本の続きへ戻れる。
 export function TeachingScript({
   prepare,
   question,
   turns,
-  check,
   editor,
   counters,
   renderVisual,
 }: Props) {
   const location = useLocation()
-  const storageKey =
-    'teaching-progress:' + location.pathname + ':' + question.say
-  const [saved] = useState(() => {
-    try {
-      const value = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null')
-      const script = [question, ...turns]
-      if (
-        value &&
-        typeof value.started === 'boolean' &&
-        Array.isArray(value.history) &&
-        value.history.length > 0 &&
-        value.history.every(
-          (position: Position) =>
-            position &&
-            Number.isInteger(position.turn) &&
-            position.turn >= 0 &&
-            position.turn <= script.length &&
-            Number.isInteger(position.beat) &&
-            position.beat >= 0 &&
-            position.beat <
-              (position.turn === script.length
-                ? 1
-                : beatsOf(script[position.turn]).length),
-        )
-      )
-        return value as { started: boolean; history: Position[] }
-    } catch {
-      /* Storage can be unavailable in private browsing. */
-    }
-    return { started: false, history: [START] }
-  })
+  // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
+  // 台本を開いたまま問題の数字を変えたとき（部品が作り直される）に、準備の画面へ戻らず、新しい問題の台本の最初を出すため
+  const keys = {
+    started: 'teaching-started:' + location.pathname,
+    history: 'teaching-progress:' + location.pathname + ':' + question.say,
+  }
+  const [saved] = useState(() => loadProgress(keys, [question, ...turns]))
   const [started, setStarted] = useState(saved.started)
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
@@ -411,14 +410,14 @@ export function TeachingScript({
   // おしまいの画面まで来たら、画面が自動で消えるように戻す
   useWakeLock(started && beat.kind !== 'finish')
 
-  // 問題ごとに進み具合を保存する。
   useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify({ started, history }))
+      sessionStorage.setItem(keys.started, JSON.stringify(started))
+      sessionStorage.setItem(keys.history, JSON.stringify(history))
     } catch {
-      /* Storage is optional. */
+      // プライベートブラウズなどで保存できないときは、続きから再開できないだけなので何もしない
     }
-  }, [storageKey, started, history])
+  }, [keys.started, keys.history, started, history])
 
   const ask = (turn: number): Position => ({ turn, beat: 0 })
   const go = (next: Position) => {
@@ -485,7 +484,6 @@ export function TeachingScript({
           prepare={prepare}
           question={question}
           turns={turns}
-          check={check}
           onStart={() => {
             setStarted(true)
             window.scrollTo(0, 0)

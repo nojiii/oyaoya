@@ -1,50 +1,41 @@
-﻿import { QuestionVisual } from './QuestionVisual'
+import { QuestionVisual } from './QuestionVisual'
 import { TeachingScript } from '../../components/TeachingScript'
-import units from './units.json'
+import { units, type UnitId } from './units'
 import { ArithmeticLesson } from '../../components/ArithmeticLesson'
-import type { ArithmeticMode } from '../arithmetic'
 import { teaching } from './teaching'
 import { LessonVisual } from '../../components/LessonVisual'
 
-const arithmeticUnits: Record<
-  string,
-  { mode: ArithmeticMode; initial: [number, number] }
-> = {
-  add: { mode: 'add', initial: [3, 4] },
-  sub: { mode: 'sub', initial: [8, 3] },
-  borrow: { mode: 'borrow', initial: [13, 5] },
-  times: { mode: 'times', initial: [2, 3] },
-}
-
-export function lesson(id: string) {
+// units.ts の単元から、問題（タイトルと画面）を作る
+export function lesson(id: UnitId) {
   const unit = units.find((unit) => unit.id === id)
   if (!unit) throw new Error(`Unknown unit: ${id}`)
-  const question =
-    id === 'time' ? '1時間は60分だね。30分は1時間のどれくらいかな？' : unit.q
-  const answer = id === 'time' ? '1時間の半分' : unit.a
+  if ('arithmetic' in unit) {
+    const { mode, initial } = unit.arithmetic
+    function Arithmetic() {
+      return <ArithmeticLesson mode={mode} initial={initial} />
+    }
+    return { title: unit.title, default: Arithmetic }
+  }
+  const scripted = unit
+  const counters =
+    scripted.id === 'counting-to-10'
+      ? ({ mode: 'count', a: 5, b: 0 } as const)
+      : undefined
   function Lesson() {
-    const settings = arithmeticUnits[id]
-    if (settings) return <ArithmeticLesson {...settings} />
     return (
       <TeachingScript
         renderVisual={(step) => (
-          <LessonVisual
-            unitId={id}
-            problem={
-              id === 'numbers' ? { mode: 'count', a: 5, b: 0 } : undefined
-            }
-            step={step}
-          />
+          <LessonVisual unitId={scripted.id} problem={counters} step={step} />
         )}
-        counters={id === 'numbers' ? { mode: 'count', a: 5, b: 0 } : undefined}
+        counters={counters}
         prepare={{
-          goal: unit!.learn,
+          goal: scripted.learn,
           materials: [
             '紙と鉛筆',
             'おはじきやブロック（数の学習）',
             '時計・定規（取り組む単元に合わせて）',
           ],
-          point: unit!.parent,
+          point: scripted.parent,
           avoid: [
             '答えを先に教える',
             '一度に全部説明する',
@@ -52,35 +43,21 @@ export function lesson(id: string) {
           ],
         }}
         question={{
-          say: question,
+          say: scripted.q,
           show: (
             <>
-              <QuestionVisual id={id} />
-              <p>{question}</p>
+              <QuestionVisual id={scripted.id} />
+              <p>{scripted.q}</p>
             </>
           ),
-          expect: answer,
           how: '問題の文をゆっくり読み、数えるものや見る場所を指さして伝えます。',
           why: '何について考える問題なのかを、最初にはっきりさせます。',
           avoid: [
-            `最初に「答えは${answer}だよ」と言ってしまう`,
+            `最初に「答えは${scripted.a}だよ」と言ってしまう`,
             '読み終える前に答えを急かす',
           ],
-          praise: '答えられたね。どう考えたかも教えてね。',
         }}
-        turns={teaching[id] ?? []}
-        check={[
-          {
-            say: 'どうやって答えを見つけたか、教えてくれる？',
-            expect: '今の手順を、言葉や実物を使って説明できる',
-            stuck: [
-              {
-                say: '最初に何をしたかな？ 使ったものを指さしながら教えてね。',
-              },
-            ],
-            praise: '考え方を教えてくれてありがとう！',
-          },
-        ]}
+        turns={teaching[scripted.id]}
       />
     )
   }

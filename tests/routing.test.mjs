@@ -1,15 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createServer } from 'vite'
+import { createTestServer } from './viteServer.mjs'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 test('all published units navigate directly to preparation and old unit URLs still work', async () => {
-  const server = await createServer({
-    server: { middlewareMode: true },
-    appType: 'custom',
-  })
+  const server = await createTestServer()
   try {
     const { loadGroup, loadGroupPage, loadProblem } =
       await server.ssrLoadModule('/src/pages/loaders.ts')

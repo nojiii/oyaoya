@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { counterGroups, type CounterProblem } from './counterModel'
 import styles from './LessonVisual.module.css'
 import { VisualPlayground } from './VisualPlayground'
+import type { ScriptedUnitId } from '../problems/unit-lessons/units'
 
 function Beads({ problem, step }: { problem: CounterProblem; step: number }) {
   const groups = counterGroups(problem, step)
@@ -39,8 +40,8 @@ function Beads({ problem, step }: { problem: CounterProblem; step: number }) {
   )
 }
 
-function UnitDiagram({ id, step }: { id: string; step: number }) {
-  if (id === 'numbers')
+function UnitDiagram({ id, step }: { id: ScriptedUnitId; step: number }) {
+  if (id === 'counting-to-10')
     return (
       <div
         className={styles.apples}
@@ -59,20 +60,20 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
         <p>{step < 2 ? '左から1こずつ指さす →' : '全体を囲んで「5こ」'}</p>
       </div>
     )
-  if (id === 'clock' || id === 'time')
+  if (id === 'clock-reading' || id === 'time-duration')
     return (
       <svg
         viewBox="0 0 240 220"
         role="img"
         aria-label={
-          id === 'time'
+          id === 'time-duration'
             ? step < 2
               ? '長い針が1周すると60分'
               : '12から6への半周が30分'
             : '短い針が3、長い針が12の3時の時計'
         }
       >
-        {id === 'time' && (
+        {id === 'time-duration' && (
           <path
             d={
               step < 2
@@ -108,13 +109,15 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
           )
         })}
         <path
-          d={id === 'time' && step >= 2 ? 'M120 100V158' : 'M120 100V42'}
+          d={
+            id === 'time-duration' && step >= 2 ? 'M120 100V158' : 'M120 100V42'
+          }
           stroke="#658274"
           strokeWidth="4"
         />
         <path d="M120 100H162" stroke="#b77348" strokeWidth="7" />
         <text x="120" y="208" textAnchor="middle" fontSize="13">
-          {id === 'time'
+          {id === 'time-duration'
             ? step < 2
               ? '長い針：1周で60分'
               : '長い針：半周で30分'
@@ -122,9 +125,9 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
         </text>
       </svg>
     )
-  if (id === 'shape' || id === 'figures') {
+  if (id === 'shape-sides' || id === 'shape-corners') {
     const points =
-      id === 'shape'
+      id === 'shape-sides'
         ? [
             [120, 20],
             [210, 155],
@@ -141,7 +144,7 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
         viewBox="0 0 240 205"
         role="img"
         aria-label={
-          id === 'shape'
+          id === 'shape-sides'
             ? '三角形の3本の辺を番号順になぞる'
             : '四角形の4つの角に番号をつける'
         }
@@ -155,7 +158,7 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
         {step > 0 &&
           points.map(([x, y], i) => {
             const next = points[(i + 1) % points.length]
-            return id === 'shape' ? (
+            return id === 'shape-sides' ? (
               <g key={i}>
                 <line
                   x1={x}
@@ -183,12 +186,12 @@ function UnitDiagram({ id, step }: { id: string; step: number }) {
             )
           })}
         <text x="120" y="200" textAnchor="middle" fontSize="13">
-          {id === 'shape' ? '線を1本ずつなぞる' : 'かどに印をつける'}
+          {id === 'shape-sides' ? '線を1本ずつなぞる' : 'かどに印をつける'}
         </text>
       </svg>
     )
   }
-  if (id === 'length')
+  if (id === 'length-compare')
     return (
       <svg
         viewBox="0 0 260 140"
@@ -224,7 +227,7 @@ export function LessonVisual({
   step,
 }: {
   problem?: CounterProblem
-  unitId?: string
+  unitId?: ScriptedUnitId
   step: number
 }) {
   return (
@@ -235,9 +238,9 @@ export function LessonVisual({
         step={step}
         apples={
           (!problem || problem.mode === 'count') &&
-          (!unitId || unitId === 'numbers')
+          (!unitId || unitId === 'counting-to-10')
         }
-        diagram={<UnitDiagram id={unitId ?? 'numbers'} step={step} />}
+        diagram={<UnitDiagram id={unitId ?? 'counting-to-10'} step={step} />}
       >
         {problem && problem.mode !== 'count' ? (
           <div className={styles.objects}>
@@ -257,7 +260,7 @@ export function LessonVisual({
           </div>
         ) : (
           <div className={styles.diagram}>
-            <UnitDiagram id={unitId ?? 'numbers'} step={step} />
+            <UnitDiagram id={unitId ?? 'counting-to-10'} step={step} />
           </div>
         )}
       </VisualPlayground>

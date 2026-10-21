@@ -1,7 +1,9 @@
 import type { Turn } from '../../components/TeachingScript'
+import type { ScriptedUnitId } from './units'
 
-export const teaching: Record<string, Turn[]> = {
-  numbers: [
+// 計算以外の単元の台本（いっしょに解く手順）。単元を units.ts に足したら、ここにも足す
+export const teaching: Record<ScriptedUnitId, Turn[]> = {
+  'counting-to-10': [
     {
       say: 'いっしょに1こずつ数えてみよう。',
       how: 'りんごを1つずつ指さしながら数えます。数えたものを横に動かし、まだ数えていないものと分けます。',
@@ -24,7 +26,7 @@ export const teaching: Record<string, Turn[]> = {
       ],
     },
   ],
-  clock: [
+  'clock-reading': [
     {
       say: '短い針と長い針を探してみよう。',
       how: '時計の短針と長針を1本ずつ指さし、長さの違いを確認します。',
@@ -41,7 +43,7 @@ export const teaching: Record<string, Turn[]> = {
       avoid: ['長い針を見て「12時」と言わせる', '短い針だけで時刻を判断させる'],
     },
   ],
-  shape: [
+  'shape-sides': [
     {
       say: 'この形の、まっすぐなところをなぞってみよう。',
       how: '三角形の辺を1本ずつ指でなぞります。始めたところに印をつけます。',
@@ -55,7 +57,7 @@ export const teaching: Record<string, Turn[]> = {
       avoid: ['向きが違うと別の形だと伝える', '角だけを指して辺の数を説明する'],
     },
   ],
-  length: [
+  'length-compare': [
     {
       say: '2つの左の端をそろえてみよう。',
       how: '線Aと線Bの左端を指さします。実物なら机の同じ位置に端をそろえて置きます。',
@@ -69,7 +71,7 @@ export const teaching: Record<string, Turn[]> = {
       avoid: ['見た目だけで即答させる', '定規の1を測る始点にする'],
     },
   ],
-  time: [
+  'time-duration': [
     {
       say: '時計の長い針が1周すると、60分で1時間だよ。',
       how: '時計の長い針を12から1周させます。1周が60分になることを確認します。',
@@ -86,7 +88,7 @@ export const teaching: Record<string, Turn[]> = {
       ],
     },
   ],
-  figures: [
+  'shape-corners': [
     {
       say: 'この形の、かどを1つずつ探してみよう。',
       how: '四角形の曲がり角を指さし、見つけた角に印をつけます。',

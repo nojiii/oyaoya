@@ -1,4 +1,4 @@
-﻿import { ArithmeticLesson } from '../../components/ArithmeticLesson'
+import { ArithmeticLesson } from '../../components/ArithmeticLesson'
 
 export const title = 'あわせていくつ'
 

@@ -1,17 +1,15 @@
 import type { ProblemId } from './problems'
-import units from './problems/unit-lessons/units.json'
+import { units } from './problems/unit-lessons/units'
 
-const unitIds = new Set<string>(units.map((unit) => unit.id))
-function isUnitId(id: string): id is ProblemId {
-  return unitIds.has(id)
-}
+// units.ts の単元のうち、その学年のものを単元の分類にする（単元の id が分類の slug と問題ID）。
+// units.ts に足した単元を problems/index.ts に足し忘れると、ここが型エラーになる
 function lessonGroups(grade: number): Group[] {
   return units
-    .filter((unit) => unit.grades.includes(grade))
+    .filter((unit) => unit.grade === grade)
     .map((unit) => ({
       slug: unit.id,
       name: unit.title,
-      problems: isUnitId(unit.id) ? [unit.id] : [],
+      problems: [unit.id] satisfies ProblemId[],
     }))
 }
 
@@ -59,14 +57,7 @@ export const curriculum: Group[] = [
       {
         slug: 'math',
         name: '算数',
-        children: [
-          ...lessonGroups(2),
-          {
-            slug: 'unit-02-addition-carry',
-            name: 'くり上がりのたしざん',
-            problems: ['addition-carry'],
-          },
-        ],
+        children: [...lessonGroups(2)],
       },
     ],
   },

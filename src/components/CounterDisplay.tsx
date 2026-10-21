@@ -1,4 +1,4 @@
-﻿import { VisualPlayground } from './VisualPlayground'
+import { VisualPlayground } from './VisualPlayground'
 import { counterGroups, type CounterProblem } from './counterModel'
 import styles from './CounterInvitation.module.css'
 export type { CounterProblem } from './counterModel'

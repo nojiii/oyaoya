@@ -35,7 +35,13 @@ test('each arithmetic notebook has one new line per teaching step', () => {
 })
 
 test('other units have problem and teaching diagrams with notebook steps', () => {
-  for (const id of ['clock', 'shape', 'figures', 'length', 'time']) {
+  for (const id of [
+    'clock-reading',
+    'shape-sides',
+    'shape-corners',
+    'length-compare',
+    'time-duration',
+  ]) {
     assert.equal(unitNotebook[id].length, 3)
     assert.ok(unitNotebook[id].every(Boolean))
   }

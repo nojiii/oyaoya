@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import ts from 'typescript'
-import { createServer } from 'vite'
+import { createTestServer } from './viteServer.mjs'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -54,10 +54,7 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
 })
 
 test('side navigation reads breadcrumbs from the matched route loader data', async () => {
-  const server = await createServer({
-    server: { middlewareMode: true, hmr: false },
-    appType: 'custom',
-  })
+  const server = await createTestServer()
   let router
   try {
     const { SideNavigation } = await server.ssrLoadModule(
