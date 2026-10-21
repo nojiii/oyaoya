@@ -1,0 +1,252 @@
+.preview {
+  cursor: pointer;
+  border-radius: 12px;
+}
+.preview:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+}
+.openHint {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.dialog .iconButton {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: 10px;
+}
+.iconButton svg {
+  width: 24px;
+  height: 24px;
+}
+.toolbar {
+  justify-content: flex-end;
+}
+.toolbar output {
+  margin-right: auto;
+}
+.dialog {
+  transform-origin: top left;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  border: 0;
+  background: #fffdf8;
+  color: var(--color-text);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.dialog::backdrop {
+  background: #4a3b2a80;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header h2 {
+  margin: 0;
+  font-size: clamp(1rem, 3vw, 1.5rem);
+}
+.dialog button {
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #c5b39c;
+  border-radius: 12px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dialog button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.dialog button:focus-visible {
+  outline: 3px solid #658274;
+  outline-offset: 3px;
+}
+.hint {
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+.prompt {
+  display: grid;
+  place-items: center;
+  min-height: 5.5rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  background: #f4ede1;
+  text-align: center;
+  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.toolbar output {
+  font-size: 1.4rem;
+  font-weight: bold;
+  min-width: 3rem;
+}
+.board {
+  position: relative;
+  width: 100%;
+  height: max(300px, calc(100dvh - 220px));
+  border: 2px dashed #d9cbbb;
+  border-radius: 20px;
+  background: radial-gradient(#e7dfd6 1px, transparent 1px) 0 0 / 24px 24px;
+  overflow: hidden;
+}
+.dialog .piece {
+  position: absolute;
+  width: clamp(44px, 6vw, 64px);
+  height: clamp(44px, 6vw, 64px);
+  min-height: 44px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #a1663c;
+  background: #dca477;
+  box-shadow:
+    inset 0 3px 6px #ffffff60,
+    0 3px 5px #4a3b2a20;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.dialog .green {
+  background: #8bb5a1;
+  border-color: #4c7162;
+}
+.dialog .removed {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.dialog .apple {
+  font-size: clamp(32px, 5vw, 48px);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.dialog .piece[aria-pressed='true'] {
+  outline: 3px solid #658274;
+  outline-offset: 3px;
+  z-index: 1;
+}
+.dialog .piece:active {
+  cursor: grabbing;
+}
+.slot {
+  position: absolute;
+  width: clamp(44px, 6vw, 64px);
+  height: clamp(44px, 6vw, 64px);
+  transform: translate(-50%, -50%);
+  border: 2px dashed #b9b1a3;
+  border-radius: 50%;
+  background: #fffdf8b0;
+  pointer-events: none;
+}
+.dialog .piece[data-dragging='true'] {
+  z-index: 2;
+  will-change: transform;
+  transition: none;
+  cursor: grabbing;
+}
+.empty {
+  position: absolute;
+  inset: 40% 0 auto;
+  text-align: center;
+  color: var(--color-muted);
+}
+.largeDiagram {
+  display: grid;
+  place-items: center;
+  min-height: 70dvh;
+}
+.largeDiagram svg {
+  width: min(100%, 700px);
+  max-height: 75dvh;
+}
+.mats {
+  position: absolute;
+  inset: 10px;
+  display: grid;
+  grid-template-columns: 1fr 12% 1fr;
+  pointer-events: none;
+}
+.orangeMat,
+.greenMat {
+  border: 2px solid #e6c09f;
+  border-radius: 24px;
+  background: #fff0e1b8;
+  text-align: center;
+  padding-top: 0.5rem;
+}
+.takenMat {
+  border: 2px dashed #d1c7b8;
+  border-radius: 24px;
+  text-align: center;
+  padding-top: 1rem;
+  background: #f5f2eb80;
+}
+.takenLabel {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.greenMat {
+  border-color: #a8c9b6;
+  background: #e7f4ecb8;
+}
+.count {
+  display: inline-block;
+  font-size: clamp(2.5rem, 9vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #97521f;
+}
+.greenMat .count {
+  color: #376550;
+}
+@keyframes count-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .prompt > span {
+    animation: count-pop 0.2s ease-out;
+  }
+  .count {
+    animation: count-pop 0.3s ease-out;
+  }
+}

@@ -1,4 +1,17 @@
 import type { ProblemId } from './problems'
+import { units } from './problems/unit-lessons/units'
+
+// units.ts の単元のうち、その学年のものを単元の分類にする（単元の id が分類の slug と問題ID）。
+// units.ts に足した単元を problems/index.ts に足し忘れると、ここが型エラーになる
+function lessonGroups(grade: number): Group[] {
+  return units
+    .filter((unit) => unit.grade === grade)
+    .map((unit) => ({
+      slug: unit.id,
+      name: unit.title,
+      problems: [unit.id] satisfies ProblemId[],
+    }))
+}
 
 // 分類（学年・教科・単元など）。中に分類（children）と問題（problems）を入れられる。
 // 入れ子は何段でもよく、一覧には書いた順に並ぶ
@@ -22,6 +35,7 @@ export const curriculum: Group[] = [
         slug: 'math',
         name: '算数',
         children: [
+          ...lessonGroups(1),
           {
             slug: 'unit-01-addition-1digit',
             name: 'たし算(1けたの数)',
@@ -36,7 +50,17 @@ export const curriculum: Group[] = [
       },
     ],
   },
-  { slug: 'grade-2', name: '小学2年生' },
+  {
+    slug: 'grade-2',
+    name: '小学2年生',
+    children: [
+      {
+        slug: 'math',
+        name: '算数',
+        children: [...lessonGroups(2)],
+      },
+    ],
+  },
   { slug: 'grade-3', name: '小学3年生' },
   { slug: 'grade-4', name: '小学4年生' },
   { slug: 'grade-5', name: '小学5年生' },

@@ -1,41 +1,28 @@
-import {
-  lazy,
-  Suspense,
-  use,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import {
-  Link,
-  useBlocker,
-  useLoaderData,
-  useParams,
-  useSearchParams,
-} from 'react-router'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
-import { FlowTreeContext } from './flowTreeContext'
-import {
-  createFlow,
-  decodeActions,
-  HEADINGS,
-  type Beat,
-  type Flow,
-  type Action,
-  type Position,
-  type Script,
-  type Section,
-} from './scriptFlow'
 import styles from './TeachingScript.module.css'
+import { CounterDisplay, type CounterProblem } from './CounterDisplay'
 
-export type { Turn } from './scriptFlow'
-
-// 動線の表示は、開発中の動線一覧（/debug）と ?debug=true でだけ使う。
-// 本番のビルドに含めないよう、開発中だけ読み込む
-const FlowViews = import.meta.env.DEV ? lazy(() => import('./FlowViews')) : null
+// 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
+// 台本の画面には「声をかける →（reveal があれば）解説を確認する」の順に出す
+export interface Turn {
+  // 親がお子さんに言うこと
+  say: string
+  // 声をかける前に、親がすること（準備）。「声をかける前の準備」として閉じて出す
+  do?: string
+  // 教え方のヒント。閉じて出す
+  how?: string
+  // このステップで避けたい声かけ。閉じて出す
+  avoid?: string[]
+  // 問題（question）の図や文。台本の上部に常に出す。いっしょに解く手順（turns）では使わない
+  show?: ReactNode
+  // 声をかけた後に、親が確認する解説図
+  reveal?: ReactNode
+  // なぜこう言うのか。「このセリフの理由」として閉じて出す（書かなければ prepare.point を出す）
+  why?: ReactNode
+}
 
 // 始める前に読む内容。30秒ほどで読める量にする
 interface Prepare {
@@ -49,9 +36,45 @@ interface Prepare {
   avoid: string[]
 }
 
-interface Props extends Script {
+interface Props {
+  // ステップごとに出す図（おはじき（counters）を使うときは出さない）
+  renderVisual?: (step: number) => ReactNode
+  // 台本の下に出す、おはじきの画面
+  counters?: CounterProblem
+  // 問題の数字を変える入力欄
+  editor?: ReactNode
   prepare: Prepare
+  // 教える問題。台本の上部に常時表示する
+  question: Turn
+  // 順番に読み上げる、解き方の台本
+  turns: Turn[]
 }
+
+type Section = 'question' | 'guide' | 'finish'
+
+// 1画面に出す、親の1つの行動
+type Beat =
+  | { kind: 'do'; text: string }
+  // label は、ふつうの声掛け以外（ヒント・ほめる など）のときだけ、吹き出しの上に出す
+  | { kind: 'say'; label?: string; say: string; why?: ReactNode }
+  // say がなければ、見せて確かめるだけ
+  | {
+      kind: 'show'
+      content: ReactNode
+      label?: string
+      say?: string
+      why?: ReactNode
+    }
+  | { kind: 'finish' }
+
+// turn は台本の何ステップ目か（問題・いっしょに解く手順・確かめを順につないだ番号）、
+// beat は、その場面の何画面目か
+interface Position {
+  turn: number
+  beat: number
+}
+
+const START: Position = { turn: 0, beat: 0 }
 
 // 教えている間は、スマホの画面が自動で消えないようにする
 function useWakeLock(active: boolean) {
@@ -83,59 +106,159 @@ function useWakeLock(active: boolean) {
   }, [active])
 }
 
+// 教える手順を、反応による分岐のない台本にする。
+function beatsOf(turn: Turn): Beat[] {
+  const beats: Beat[] = []
+  beats.push({ kind: 'say', say: turn.say })
+  if (turn.reveal != null && turn.reveal !== false) {
+    beats.push({ kind: 'show', content: turn.reveal })
+  }
+  return beats
+}
+
+function GuideIcon({ kind }: { kind: 'prepare' | 'script' | 'together' }) {
+  const paths = {
+    prepare: 'M8 4H5v16h14V4h-3M9 3h6v4H9zM8 12l2 2 5-5M8 17h8',
+    script: 'M4 4h16v12H9l-5 4V4zM8 8h8M8 12h5',
+    together:
+      'M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M2 20v-3a5 5 0 0 1 10 0v3M12 20v-3a5 5 0 0 1 10 0v3',
+  }
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={paths[kind]} />
+    </svg>
+  )
+}
+
 function PrepareView({
+  counters,
+  editor,
   prepare,
   question,
   turns,
-  check,
   onStart,
-}: Props & { onStart: () => void }) {
+  resume,
+}: Props & { onStart: () => void; resume?: boolean }) {
+  const guideId = useId()
+  const symbol =
+    counters?.mode === 'times'
+      ? '×'
+      : counters?.mode === 'sub' || counters?.mode === 'borrow'
+        ? '−'
+        : '＋'
+  const learning = counters
+    ? counters.mode === 'count'
+      ? `${counters.a}このおはじきを、一緒に数えます。`
+      : `${counters.a}${symbol}${counters.b}を、おはじきを使って一緒に考えます。`
+    : prepare.goal
   return (
     <div className={styles.prepare}>
-      <h2 className={styles.prepareTitle}>はじめる前に</h2>
-      <dl className={styles.facts}>
-        <dt>ねらい</dt>
-        <dd>{prepare.goal}</dd>
-        <dt>用意するもの</dt>
-        <dd>{prepare.materials.join('・')}</dd>
-        <dt>いちばん大事なこと</dt>
-        <dd>{prepare.point}</dd>
-        <dt>言わないようにしたいこと</dt>
-        <dd>
+      <header className={styles.prepareHeading}>
+        <h2 className={styles.prepareTitle}>この学習でやること</h2>
+        <p className={styles.learning}>{learning}</p>
+      </header>
+      {editor && (
+        <details className={styles.numberEditor}>
+          <summary>問題の数字を変更</summary>
+          {editor}
+        </details>
+      )}
+      <section className={styles.quickGuide} aria-labelledby={guideId}>
+        <h2 id={guideId}>使い方は3ステップ</h2>
+        <ol className={styles.guideSteps}>
+          <li>
+            <span className={styles.stepNumber}>1</span>
+            <GuideIcon kind="prepare" />
+            <div>
+              <h3>準備する</h3>
+              <p>この画面で、今日の問題と教え方を確認します。</p>
+            </div>
+          </li>
+          <li>
+            <span className={styles.stepNumber}>2</span>
+            <GuideIcon kind="script" />
+            <div>
+              <h3>台本を見て教える</h3>
+              <p>「台本」でセリフを読み、お子さんに声をかけます。</p>
+            </div>
+          </li>
+          <li>
+            <span className={styles.stepNumber}>3</span>
+            <GuideIcon kind="together" />
+            <div>
+              <h3>一緒に確かめる</h3>
+              <p>
+                {counters
+                  ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
+                  : '台本の図や身近なものを使って、一緒に答えを考えます。'}
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section className={styles.teachingPoints}>
+        <h2>今日の教え方のポイント</h2>
+        <ul>
+          <li>
+            {counters
+              ? '一緒におはじきを動かして考える'
+              : '図や身近なものを使って、一緒に考える'}
+          </li>
+          <li>すぐに答えを教えず、お子さんが考えるのを待つ</li>
+        </ul>
+        <details className={styles.extraNote}>
+          <summary>詳しい教え方・気をつけたいこと</summary>
+          <div>{prepare.point}</div>
           <ul>
             {prepare.avoid.map((text) => (
               <li key={text}>{text}</li>
             ))}
           </ul>
-        </dd>
-      </dl>
-      <details className={styles.why}>
-        <summary>声掛けの流れを見る</summary>
+          <p>
+            {counters
+              ? 'おはじきはアプリに用意しています。実物の準備はいりません。'
+              : `用意するもの：${prepare.materials.join('・')}`}
+          </p>
+        </details>
+      </section>
+      <details className={styles.extraNote}>
+        <summary>声かけを先に読んでおく</summary>
         <p className={styles.flowLabel}>1. 問題を出す</p>
         <p className={styles.flowText}>{question.say}</p>
-        <p className={styles.flowLabel}>
-          2. むずかしそうなら、いっしょに解く（すぐ答えられたら とばす）
-        </p>
+        <p className={styles.flowLabel}>2. 解き方を順番に教える</p>
         <ol className={styles.flow}>
           {turns.map((turn) => (
             <li key={turn.say}>{turn.say}</li>
           ))}
         </ol>
-        <p className={styles.flowLabel}>3. わかったかを確かめる</p>
-        <ul className={styles.flow}>
-          {check.map((turn) => (
-            <li key={turn.say}>{turn.say}</li>
-          ))}
-        </ul>
       </details>
+      <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
         <button className={styles.primary} type="button" onClick={onStart}>
-          はじめる
+          {resume ? '途中から台本にもどる' : '台本をはじめる'}
         </button>
       </div>
     </div>
   )
 }
+
+// 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
+const HEADINGS = {
+  do: ['✋', 'すること'],
+  say: ['💬', 'お子さんへの声かけ'],
+  show: ['📝', '解説を確認する'],
+  finish: ['🎉', 'おしまい'],
+} as const
 
 // 画面が替わったときに読み上げる文。正解のめやすは入れない
 // （読み上げ機能を使っていると、考えているお子さんに答えが聞こえてしまうため）
@@ -147,11 +270,7 @@ function announcement(beat: Beat) {
     case 'say':
       return `${heading}。${beat.label ? `${beat.label}。` : ''}${beat.say}`
     case 'show':
-      return beat.say
-        ? `${heading}。見せながら、こう声をかける。${beat.say}`
-        : `${heading}。いっしょに確かめる`
-    case 'wait':
-      return `${heading}。答えるまで だまって待つ`
+      return heading
     case 'finish':
       return heading
   }
@@ -163,14 +282,8 @@ function BeatView({ beat }: { beat: Beat }) {
     case 'do':
       return <p className={styles.main}>{beat.text}</p>
     case 'say':
-    case 'show':
       return (
         <>
-          {beat.kind === 'show' && (
-            <p className={styles.main}>
-              {beat.say ? '見せながら、こう声をかける' : 'いっしょに確かめる'}
-            </p>
-          )}
           {beat.say && (
             <div className={styles.speech}>
               <img className={styles.mascot} src="/mascot.png" alt="" />
@@ -180,27 +293,12 @@ function BeatView({ beat }: { beat: Beat }) {
               </div>
             </div>
           )}
-          {beat.why && (
-            <details className={styles.why}>
-              <summary>なぜ？</summary>
-              {beat.why}
-            </details>
-          )}
         </>
       )
-    case 'wait':
-      return (
-        <>
-          <p className={styles.main}>
-            {beat.retry ? 'もう一度、' : ''}答えるまで だまって待つ
-          </p>
-          <p className={styles.expect}>正解のめやす：{beat.expect}</p>
-        </>
-      )
+    case 'show':
+      return <div className={styles.reference}>{beat.content}</div>
     case 'finish':
-      return (
-        <p className={styles.main}>今日はおしまいです。おつかれさまでした。</p>
-      )
+      return <p className={styles.main}>解き方の説明はここまでです。</p>
   }
 }
 
@@ -210,134 +308,129 @@ function useMenuLink() {
   const homeUrl = useHomeUrl()
   const parent = crumbs.at(-1)
   return parent
-    ? { url: parent.url, label: '一覧にもどる' }
+    ? { url: parent.url, label: '単元一覧にもどる' }
     : { url: homeUrl, label: 'ホームにもどる' }
 }
 
-// 台本の途中でページを離れようとしたときの確認。ブラウザの confirm() ではなく、アプリの見た目で聞く。
-// 「続ける」を押すか、Esc などで閉じたら、ページに残る
-function LeaveConfirm({
-  onStay,
-  onLeave,
-}: {
-  onStay: () => void
-  onLeave: () => void
-}) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
-
-  return (
-    <dialog
-      className={styles.confirm}
-      ref={dialog}
-      aria-labelledby={titleId}
-      onClose={onStay}
-    >
-      <h2 id={titleId}>台本の途中です</h2>
-      <p>このページを離れると、はじめからになります。</p>
-      <div className={styles.confirmButtons}>
-        {/* 何も考えずに押しても進み具合が消えないよう、続けるほうを先に置く（開いたときに選ばれる） */}
-        <button
-          className={styles.primary}
-          type="button"
-          onClick={() => dialog.current?.close()}
-        >
-          続ける
-        </button>
-        <button type="button" onClick={onLeave}>
-          離れる
-        </button>
-      </div>
-    </dialog>
-  )
-}
-
-// 開発中だけ使う URL の指定。本番では、どちらも無いものとして扱う
-// - ?flow=：操作の並びをたどった画面から始める（動線一覧から、途中の画面を開くため）
-// - ?debug=true：PC の画面幅のとき、台本の横に動線を出す
-function useDebugOptions(flow: Flow) {
-  const [params, setParams] = useSearchParams()
-  const text = import.meta.env.DEV ? params.get('flow') : null
-  const actions = text === null ? null : decodeActions(text)
-  const side = import.meta.env.DEV && params.get('debug') === 'true'
-  // 台本の横の動線を開閉する。URL の ?debug=true も書き換えて、再読み込みや共有でも同じ状態で開けるようにする
-  const toggleSide = () => {
-    const next = new URLSearchParams(params)
-    if (side) next.delete('debug')
-    else next.set('debug', 'true')
-    setParams(next, { replace: true, preventScrollReset: true })
-  }
-  return { start: actions && flow.replay(actions), side, toggleSide }
-}
-
-// 教えている最中に使う台本。親の行動を1画面に1つずつ出し、
-// お子さんの反応（できた／つまずいた）に合わせて、ほめ言葉やヒントに切り替える。
-// 流れは「問題 →（むずかしければ）いっしょに解く → 確かめ → おしまい」。
-// すぐ答えられたお子さんは、いっしょに解く手順をとばして確かめへ進み、早く終われる。
-// 動線一覧（開発用）の中では、台本の代わりに、通りうる画面の動線を描く
-export function TeachingScript(props: Props) {
-  const tree = use(FlowTreeContext)
-  if (tree && FlowViews)
-    return (
-      <Suspense>
-        <FlowViews script={props} problemId={tree.problemId} />
-      </Suspense>
+// 保存しておいた進み具合を読む。台本を直した後などで、今の台本に合わない位置があれば使わない。
+// 最後まで終えた問題は、次に開いたときに準備の画面から始める
+function loadProgress(
+  keys: { started: string; history: string },
+  script: Turn[],
+): { started: boolean; history: Position[] } {
+  const fresh = { started: false, history: [START] }
+  try {
+    const started: unknown = JSON.parse(
+      sessionStorage.getItem(keys.started) ?? 'false',
     )
-  return <ScriptPlayer {...props} />
+    const history: unknown = JSON.parse(
+      sessionStorage.getItem(keys.history) ?? 'null',
+    )
+    const valid =
+      Array.isArray(history) &&
+      history.length > 0 &&
+      history.every(
+        (position: Position) =>
+          position &&
+          Number.isInteger(position.turn) &&
+          position.turn >= 0 &&
+          position.turn <= script.length &&
+          Number.isInteger(position.beat) &&
+          position.beat >= 0 &&
+          position.beat <
+            (position.turn === script.length
+              ? 1
+              : beatsOf(script[position.turn]).length),
+      )
+    if (typeof started !== 'boolean') return fresh
+    if (!valid) return { started, history: [START] }
+    if (history.at(-1).turn === script.length) return fresh
+    return { started, history }
+  } catch {
+    // プライベートブラウズなどで読めないときは、はじめから
+    return fresh
+  }
 }
 
-function ScriptPlayer({ prepare, question, turns, check }: Props) {
-  const flow = createFlow({ question, turns, check })
-  const debug = useDebugOptions(flow)
-  const { problemId = '' } = useParams()
-  const [started, setStarted] = useState(debug.start !== null)
+// 準備や一覧を見直しても、同じタブでは台本の続きへ戻れる。
+export function TeachingScript({
+  prepare,
+  question,
+  turns,
+  editor,
+  counters,
+  renderVisual,
+}: Props) {
+  const location = useLocation()
+  // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
+  // 台本を開いたまま問題の数字を変えたとき（部品が作り直される）に、準備の画面へ戻らず、新しい問題の台本の最初を出すため
+  const keys = {
+    started: 'teaching-started:' + location.pathname,
+    history: 'teaching-progress:' + location.pathname + ':' + question.say,
+  }
+  const [saved] = useState(() => loadProgress(keys, [question, ...turns]))
+  const [started, setStarted] = useState(saved.started)
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
-  const [history, setHistory] = useState<Position[]>(
-    debug.start ?? [flow.START],
-  )
-  // 画面を、進むときは下から、戻るときは上から入れる
+  const [history, setHistory] = useState<Position[]>(saved.history)
+  // カルーセルを進めると右から、戻すと左から入れる
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
-  const dialog = useRef<HTMLDialogElement>(null)
+  const [dragX, setDragX] = useState(0)
+  const gesture = useRef<{ id: number; x: number; y: number } | null>(null)
+  const swipeHintId = useId()
   const actions = useRef<HTMLDivElement>(null)
   const menu = useMenuLink()
 
+  // 教える台本には確認・発展を混ぜず、問題から手順へ順番に進む。
+  const script: Turn[] = [question, ...turns]
+  const FINISH = script.length
+  const sectionOf = (turn: number): Section =>
+    turn === FINISH ? 'finish' : turn === 0 ? 'question' : 'guide'
+  const beatsAt = ({ turn }: Position): Beat[] =>
+    turn === FINISH ? [{ kind: 'finish' }] : beatsOf(script[turn])
   const position = history[history.length - 1]
-  const section = flow.sectionOf(position.turn)
-  const beat = flow.beatsAt(position)[position.beat]
+  const index = position.turn
+  const section = sectionOf(index)
+  const beats = beatsAt(position)
+  const beat = beats[position.beat]
+  const totalBeats = script.reduce(
+    (total, turn) => total + beatsOf(turn).length,
+    0,
+  )
+  const currentBeat =
+    section === 'finish'
+      ? totalBeats
+      : script
+          .slice(0, index)
+          .reduce((total, turn) => total + beatsOf(turn).length, 0) +
+        position.beat +
+        1
+  const currentTurn = script[index]
+  const activeQuestion = question
+  const reason = currentTurn?.why ?? prepare.point
   // おしまいの画面まで来たら、画面が自動で消えるように戻す
   useWakeLock(started && beat.kind !== 'finish')
 
-  // 台本の途中でページを離れると（iOS のスワイプで戻る など）はじめからになるので、離れる前に確かめる
-  // （同じページのまま URL の ? や # だけが変わるとき、例えば動線の開閉は、進み具合が消えないので確かめない）
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      started &&
-      beat.kind !== 'finish' &&
-      currentLocation.pathname !== nextLocation.pathname,
-  )
-
-  // 押したボタンが次の画面で消えたとき（「つまずいた」など）は、
-  // キーボードや読み上げで操作している人が迷わないよう、主なボタンへ移す
   useEffect(() => {
-    if (document.activeElement === document.body)
-      actions.current?.querySelector<HTMLElement>('button, a')?.focus()
-  }, [history, started])
+    try {
+      sessionStorage.setItem(keys.started, JSON.stringify(started))
+      sessionStorage.setItem(keys.history, JSON.stringify(history))
+    } catch {
+      // プライベートブラウズなどで保存できないときは、続きから再開できないだけなので何もしない
+    }
+  }, [keys.started, keys.history, started, history])
 
-  // 操作して、次の画面へ進む（行き先は scriptFlow.ts の step が決める）
-  const act = (action: Action) => {
-    setHistory([
-      ...history,
-      flow.step(position, flow.visitedGuide(history), action),
-    ])
+  const ask = (turn: number): Position => ({ turn, beat: 0 })
+  const go = (next: Position) => {
+    setHistory([...history, next])
     setDirection('forward')
   }
-  const advance = () => act('next')
-
+  const advance = () =>
+    position.beat < beats.length - 1
+      ? go({ ...position, beat: position.beat + 1 })
+      : go(ask(index + 1))
+  const finish = () => go(ask(FINISH))
   const start = () => {
-    setHistory([flow.START])
+    setHistory([START])
     setStarted(true)
     window.scrollTo(0, 0)
   }
@@ -346,128 +439,282 @@ function ScriptPlayer({ prepare, question, turns, check }: Props) {
     else setStarted(false)
     setDirection('back')
   }
+  const canAdvance = beat.kind !== 'finish'
+  const canBack = history.length > 1
+  const swipe = (delta: number) => {
+    if (delta < 0 && canAdvance) advance()
+    if (delta > 0 && canBack) back()
+  }
 
-  // 開発中だけ：?debug=true なら、PC の画面幅のとき、台本の横に動線を出す。
-  // 今いる画面と通ってきた画面を目立たせ、動線の画面を押すと、台本がその画面へ移る
-  const side = debug.side && FlowViews && (
-    <aside className={styles.debugSide} aria-label="動線（開発用）">
-      <Suspense>
-        <FlowViews
-          script={{ question, turns, check }}
-          problemId={problemId}
-          // 動線一覧のこの問題の位置を、別のタブで開く（台本の進み具合を消さないため）
-          extra={
-            <a
-              href={`/debug#problem-${problemId}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              一覧で見る
-            </a>
-          }
-          history={started ? history : undefined}
-          onSelect={(node) => {
-            setHistory(flow.replay(node.path))
-            setStarted(true)
-            setDirection('forward')
-          }}
-        />
-      </Suspense>
-    </aside>
+  const navigation = (
+    <nav className={styles.pageNavigation} aria-label="学習ページの移動">
+      <Link to={menu.url} viewTransition>
+        <span aria-hidden="true">‹</span> 単元一覧
+      </Link>
+      <button
+        type="button"
+        aria-current={!started ? 'page' : undefined}
+        onClick={() => {
+          setStarted(false)
+          window.scrollTo(0, 0)
+        }}
+      >
+        準備
+      </button>
+      <button
+        type="button"
+        aria-current={started ? 'page' : undefined}
+        onClick={() => {
+          setStarted(true)
+          window.scrollTo(0, 0)
+        }}
+      >
+        台本
+      </button>
+    </nav>
   )
 
-  const page = !started ? (
-    <PrepareView
-      prepare={prepare}
-      question={question}
-      turns={turns}
-      check={check}
-      onStart={start}
-    />
-  ) : (
+  if (!started)
+    return (
+      <>
+        {navigation}
+        <PrepareView
+          counters={counters}
+          editor={editor}
+          prepare={prepare}
+          question={question}
+          turns={turns}
+          onStart={() => {
+            setStarted(true)
+            window.scrollTo(0, 0)
+          }}
+          resume={history.length > 1}
+        />
+      </>
+    )
+
+  return (
     // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
     <div className={styles.script} data-script-running>
+      {navigation}
+      <section className={styles.question} aria-label="取り組む問題">
+        <h2>問題</h2>
+        {editor && (
+          <details className={styles.numberEditor}>
+            <summary>問題の数字を変更</summary>
+            {editor}
+          </details>
+        )}
+        <div>{activeQuestion.show ?? <p>{activeQuestion.say}</p>}</div>
+      </section>
       <Progress
         section={section}
-        count={turns.length}
-        current={position.turn - flow.GUIDE}
-        onBack={back}
-        onFinish={() => act('finish')}
+        current={currentBeat}
+        total={totalBeats}
+        onFinish={finish}
       />
       {/* 画面が替わったことを、読み上げで伝える */}
       <p className={styles.srOnly} aria-live="polite">
         {announcement(beat)}
       </p>
-      {/* ボタンは押したまま残したいので、入れ替わるパネルの外に置く */}
       <div
-        className={styles.panel}
-        key={history.length}
-        data-direction={direction}
+        className={styles.carousel}
+        role="region"
+        aria-roledescription="カルーセル"
+        aria-label="声かけの台本"
+        aria-describedby={swipeHintId}
+        onPointerDown={(event) => {
+          if (!event.isPrimary || event.button !== 0) return
+          if (
+            (event.target as Element).closest(
+              'summary, button, a, input, select, textarea, [role="button"]',
+            )
+          )
+            return
+          gesture.current = {
+            id: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+          }
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }}
+        onPointerMove={(event) => {
+          const start = gesture.current
+          if (!start || start.id !== event.pointerId) return
+          const dx = event.clientX - start.x
+          const dy = event.clientY - start.y
+          if (Math.abs(dx) <= Math.abs(dy)) {
+            setDragX(0)
+            return
+          }
+          const allowed = dx < 0 ? canAdvance : canBack
+          setDragX(allowed ? Math.max(-160, Math.min(160, dx)) : dx * 0.12)
+        }}
+        onPointerUp={(event) => {
+          const start = gesture.current
+          gesture.current = null
+          setDragX(0)
+          if (!start || start.id !== event.pointerId) return
+          const dx = event.clientX - start.x
+          const dy = event.clientY - start.y
+          if (Math.abs(dx) >= 55 && Math.abs(dx) > Math.abs(dy) * 1.4) swipe(dx)
+        }}
+        onPointerCancel={() => {
+          gesture.current = null
+          setDragX(0)
+        }}
+        onLostPointerCapture={() => {
+          gesture.current = null
+          setDragX(0)
+        }}
       >
-        <h2 className={styles.heading}>
-          <span aria-hidden="true">{HEADINGS[beat.kind][0]}</span>{' '}
-          {HEADINGS[beat.kind][1]}
-        </h2>
-        <BeatView beat={beat} />
-      </div>
-      {beat.kind === 'show' && (
-        // お子さんに見せる画面。親向けの文字が目に入らないように、画面全体をおおう。
-        // 閉じたら、見せ終わったものとして次の画面へ進む
-        <dialog
-          className={styles.child}
-          ref={dialog}
-          aria-label="お子さんの画面"
-          onClose={advance}
+        <div
+          className={styles.dragTrack}
+          style={{ transform: `translateX(${dragX}px)` }}
         >
-          <div className={styles.childPanel}>{beat.content}</div>
-          <button
-            className={styles.close}
-            type="button"
-            onClick={() => dialog.current?.close()}
+          <div
+            className={styles.panel}
+            key={history.length}
+            data-direction={direction}
           >
-            おうちの人の画面にもどる
-          </button>
-        </dialog>
-      )}
-      {blocker.state === 'blocked' && (
-        <LeaveConfirm
-          onStay={() => blocker.reset()}
-          onLeave={() => blocker.proceed()}
+            <div className={styles.readingContent}>
+              <h2 className={styles.heading}>
+                {beat.kind !== 'say' && (
+                  <span aria-hidden="true">{HEADINGS[beat.kind][0]} </span>
+                )}
+                {HEADINGS[beat.kind][1]}
+              </h2>
+              <BeatView beat={beat} />
+              {canAdvance && (
+                <div
+                  className={styles.pageCue}
+                  aria-hidden="true"
+                  data-invite={history.length === 1}
+                >
+                  <svg
+                    width="40"
+                    height="24"
+                    viewBox="0 0 40 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M30 12H7m6-6-6 6 6 6M34 9v6" />
+                  </svg>
+                  <span>左へスワイプして次へ</span>
+                </div>
+              )}
+            </div>
+            {currentTurn && (
+              <aside className={styles.panelNotes} aria-label="教え方">
+                {currentTurn.how && (
+                  <details className={styles.extraNote}>
+                    <summary>教え方のヒント</summary>
+                    <div>{currentTurn.how}</div>
+                  </details>
+                )}
+                {!counters && renderVisual?.(index)}
+                {beat.kind === 'say' && currentTurn.do && (
+                  <details className={styles.extraNote}>
+                    <summary>声をかける前の準備</summary>
+                    <div>{currentTurn.do}</div>
+                  </details>
+                )}
+                <details className={styles.extraNote}>
+                  <summary>このセリフの理由</summary>
+                  <div>{reason}</div>
+                </details>
+                {!!currentTurn.avoid?.length && (
+                  <details className={styles.extraNote}>
+                    <summary>避けたい声かけ</summary>
+                    <ul>
+                      {currentTurn.avoid.map((text) => (
+                        <li key={text}>{text}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </aside>
+            )}
+          </div>
+        </div>
+      </div>
+      <div
+        className={styles.pagination}
+        role="group"
+        aria-label={`台本 ${currentBeat} / ${totalBeats}ページ`}
+      >
+        <button
+          type="button"
+          onClick={back}
+          disabled={!canBack}
+          aria-label="前のページへ"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m14 6-6 6 6 6" />
+          </svg>
+        </button>
+        <div className={styles.pageDots} aria-hidden="true">
+          {Array.from({ length: totalBeats }, (_, i) => (
+            <span
+              key={i}
+              data-current={i === currentBeat - 1}
+              data-done={i < currentBeat - 1}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={advance}
+          disabled={!canAdvance}
+          aria-label="次のページへ"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m10 6 6 6-6 6" />
+          </svg>
+        </button>
+      </div>
+      <p className={styles.swipeHint} id={swipeHintId}>
+        {beat.kind === 'finish'
+          ? '台本はここまでです'
+          : '左へスワイプで次へ。右へスワイプで前のページへ。'}
+      </p>
+      {counters && section !== 'finish' && (
+        <CounterDisplay
+          problem={counters}
+          step={Math.min(index, turns.length)}
         />
       )}
-      {/* おしまいの画面は、ボタンの文字が長いので縦に並べる */}
+
       <div
         className={styles.actions}
         ref={actions}
         data-stack={beat.kind === 'finish'}
       >
-        {/* 押したボタンが消えてフォーカスを失わないように、主なボタンは同じ key で残す */}
-        {beat.kind === 'wait' ? (
+        {beat.kind === 'finish' ? (
           <>
-            <button
-              className={styles.primary}
-              type="button"
-              key="primary"
-              onClick={() => act('done')}
-            >
-              {beat.done}
-            </button>
-            <button type="button" onClick={() => act('stuck')}>
-              {beat.stuck}
-            </button>
-          </>
-        ) : beat.kind === 'show' ? (
-          <button
-            className={styles.primary}
-            type="button"
-            key="primary"
-            onClick={() => dialog.current?.showModal()}
-          >
-            お子さんに見せる
-          </button>
-        ) : beat.kind === 'finish' ? (
-          <>
-            {/* 次の問題を選ぶことが多いので、一覧へ戻るほうを主なボタンにする */}
             <Link
               className={styles.primary}
               to={menu.url}
@@ -481,75 +728,53 @@ function ScriptPlayer({ prepare, question, turns, check }: Props) {
             </button>
           </>
         ) : (
-          <button
-            className={styles.primary}
-            type="button"
-            key="primary"
-            onClick={advance}
-          >
-            つぎへ
-          </button>
+          <>
+            <button type="button" onClick={back}>
+              ‹ もどる
+            </button>
+            <button type="button" className={styles.primary} onClick={advance}>
+              {index === script.length - 1 && position.beat === beats.length - 1
+                ? '学習をおえる'
+                : '次へ ›'}
+            </button>
+          </>
         )}
       </div>
     </div>
   )
-
-  return (
-    <>
-      {page}
-      {side}
-      {/* 開発中だけ：動線を開閉するボタン（PC の画面幅のときだけ出す） */}
-      {import.meta.env.DEV && (
-        <button
-          className={styles.debugToggle}
-          type="button"
-          aria-pressed={debug.side}
-          onClick={debug.toggleSide}
-        >
-          {debug.side ? '動線を閉じる' : '動線を見る'}
-        </button>
-      )}
-    </>
-  )
 }
 
-// 区切りの名前（いっしょに解く手順のときだけ、進み具合を点で出す）
 const SECTION_NAMES = {
   question: '問題',
   guide: 'いっしょに解く',
-  check: '確かめ',
   finish: 'おしまい',
 }
 
 function Progress({
   section,
-  count,
   current,
-  onBack,
+  total,
   onFinish,
 }: {
   section: Section
-  count: number
   current: number
-  onBack: () => void
+  total: number
   onFinish: () => void
 }) {
   return (
     <div className={styles.progress}>
-      <button className={styles.back} type="button" onClick={onBack}>
-        ← もどる
-      </button>
-      <span className={styles.where}>
-        {SECTION_NAMES[section]}
-        {section === 'guide' && (
-          <span className={styles.dots} aria-hidden="true">
-            {Array.from({ length: count }, (_, i) => (
-              <span className={styles.dot} key={i} data-done={i <= current} />
-            ))}
-          </span>
-        )}
-      </span>
-      {/* わかったところで終われるように、おしまいの画面以外では いつでも出しておく */}
+      <div className={styles.progressStatus}>
+        <span>
+          {section === 'finish'
+            ? 'おしまい'
+            : `${SECTION_NAMES[section]} · ${current} / ${total}`}
+        </span>
+        <progress
+          value={current}
+          max={total}
+          aria-label={`台本の進み具合 ${current} / ${total}`}
+        />
+      </div>
       {section !== 'finish' && (
         <button className={styles.back} type="button" onClick={onFinish}>
           おわる
