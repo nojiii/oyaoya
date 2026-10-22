@@ -31,7 +31,22 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
   const { outputText } = ts.transpileModule(`return (${handler})`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022 },
   })
-  const onPointerDown = new Function('gesture', outputText)(gesture)
+  const sliding = { current: false }
+  let dragging = false
+  const onPointerDown = new Function(
+    'gesture',
+    'sliding',
+    'setDragging',
+    'setSlideWidth',
+    outputText,
+  )(
+    gesture,
+    sliding,
+    (value) => {
+      dragging = value
+    },
+    () => {},
+  )
   let captured = 0
   const event = {
     isPrimary: true,
@@ -42,7 +57,7 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
     target: {
       closest: (selector) => (selector.includes('[role="button"]') ? {} : null),
     },
-    currentTarget: { setPointerCapture: () => captured++ },
+    currentTarget: { clientWidth: 360, setPointerCapture: () => captured++ },
   }
   // closest() also matches descendants of the preview, such as its bead illustration.
   onPointerDown(event)
@@ -51,6 +66,10 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
   onPointerDown({ ...event, target: { closest: () => null } })
   assert.equal(captured, 1)
   assert.equal(gesture.current.id, 7)
+  assert.equal(dragging, true)
+  sliding.current = true
+  onPointerDown({ ...event, target: { closest: () => null } })
+  assert.equal(captured, 1)
 })
 
 test('side navigation reads breadcrumbs from the matched route loader data', async () => {
@@ -78,5 +97,110 @@ test('side navigation reads breadcrumbs from the matched route loader data', asy
   } finally {
     router?.dispose()
     await server.close()
+  }
+})
+
+test('counter results appear only after completion and disappear on undo or reset', () => {
+  const source = readFileSync(
+    new URL('../src/components/VisualPlayground.tsx', import.meta.url),
+    'utf8',
+  )
+  const ast = ts.createSourceFile(
+    'VisualPlayground.tsx',
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  )
+  const names = new Set([
+    'addition',
+    'subtraction',
+    'split',
+    'orangeCount',
+    'greenCount',
+    'moved',
+    'targetCount',
+    'progressKey',
+    'wrongSide',
+    'completed',
+  ])
+  const declarations = []
+  function visit(node) {
+    if (ts.isVariableDeclaration(node) && names.has(node.name.getText(ast))) {
+      declarations.push('const ' + node.getText(ast) + ';')
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(ast)
+  const { outputText } = ts.transpileModule(
+    declarations.join('\n') +
+      '\nreturn { completed, progressKey, orangeCount };',
+    {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    },
+  )
+  const evaluate = new Function(
+    'problem',
+    'pieces',
+    'countedIds',
+    'questionKey',
+    outputText,
+  )
+  const check = (problem, pieces, questionKey = '') =>
+    evaluate(problem, pieces, [], questionKey)
+  for (const mode of ['add', 'carry', 'sub', 'borrow']) {
+    const addition = mode === 'add' || mode === 'carry'
+    const problem = {
+      mode,
+      a: mode === 'carry' ? 8 : mode === 'borrow' ? 12 : addition ? 3 : 7,
+      b: 4,
+    }
+    const initial = Array.from(
+      { length: addition ? problem.a + problem.b : problem.a },
+      (_, index) => ({
+        id: index,
+        green: addition && index >= problem.a,
+        side: addition && index >= problem.a ? 'right' : 'left',
+      }),
+    )
+    assert.equal(check(problem, initial).completed, false, mode + ': initial')
+    const finished = initial.map((piece, index) => ({
+      ...piece,
+      side: addition ? 'left' : index < 4 ? 'right' : 'left',
+    }))
+    const key = check(problem, finished).progressKey
+    assert.equal(
+      check(problem, finished).completed,
+      false,
+      mode + ': wait for completion feedback',
+    )
+    assert.equal(
+      check(problem, finished, key).completed,
+      true,
+      mode + ': complete',
+    )
+    const undone = finished.map((piece, index) => ({
+      ...piece,
+      side:
+        index === (addition ? problem.a : 0)
+          ? addition
+            ? 'right'
+            : 'left'
+          : piece.side,
+    }))
+    assert.equal(check(problem, undone, key).completed, false, mode + ': undo')
+    assert.equal(check(problem, initial).completed, false, mode + ': reset')
+    if (addition) {
+      const incorrect = finished.map((piece, index) => ({
+        ...piece,
+        side: index === 0 ? 'right' : piece.side,
+      }))
+      const incorrectKey = check(problem, incorrect).progressKey
+      assert.equal(
+        check(problem, incorrect, incorrectKey).completed,
+        false,
+        mode + ': original group must stay on the left',
+      )
+    }
   }
 })

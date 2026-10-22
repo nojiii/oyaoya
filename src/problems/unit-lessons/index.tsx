@@ -2,7 +2,7 @@ import { QuestionVisual } from './QuestionVisual'
 import { TeachingScript } from '../../components/TeachingScript'
 import { units, type UnitId } from './units'
 import { ArithmeticLesson } from '../../components/ArithmeticLesson'
-import { teaching } from './teaching'
+import { teaching, questionNotes } from './teaching'
 import { LessonVisual } from '../../components/LessonVisual'
 
 // units.ts の単元から、問題（タイトルと画面）を作る
@@ -44,6 +44,7 @@ export function lesson(id: UnitId) {
         }}
         question={{
           say: scripted.q,
+          parentNote: questionNotes[scripted.id],
           show: (
             <>
               <QuestionVisual id={scripted.id} />
@@ -57,7 +58,21 @@ export function lesson(id: UnitId) {
             '読み終える前に答えを急かす',
           ],
         }}
-        turns={teaching[scripted.id]}
+        turns={teaching[scripted.id].map((turn, index) => ({
+          ...turn,
+          counterInvitation: index === 0 ? counters : undefined,
+          resourceHint:
+            index === 0 && !counters
+              ? '下の' +
+                (scripted.id === 'clock-reading' ||
+                scripted.id === 'time-duration'
+                  ? '時計'
+                  : scripted.id === 'length-compare'
+                    ? '長さ'
+                    : '図形') +
+                'の図をタップすると、大きく表示できます。'
+              : undefined,
+        }))}
       />
     )
   }

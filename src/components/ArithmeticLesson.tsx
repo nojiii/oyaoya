@@ -14,102 +14,176 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
   const [values, setValues] = useState(initial)
   const [draft, setDraft] = useState(initial.map(String))
   const [error, setError] = useState('')
+  const [activeNumber, setActiveNumber] = useState<number | null>(null)
+  const [replaceNumber, setReplaceNumber] = useState(true)
   const id = useId()
   const [a, b] = values
   const model = arithmetic(mode, a, b)
   const isSubtract = mode === 'sub' || mode === 'borrow'
   const symbol = isSubtract ? '−' : mode === 'times' ? '×' : '+'
-  const minA =
-    mode === 'borrow' ? 11 : mode === 'carry' || mode === 'times' ? 1 : 0
-  const maxA = mode === 'borrow' ? 19 : mode === 'sub' ? 20 : 9
-  const minB = mode === 'borrow' || mode === 'carry' || mode === 'times' ? 1 : 0
+  const applyNumbers = () => {
+    try {
+      const normalized = draft.map((value) => value.normalize('NFKC').trim())
+      if (normalized.some((value) => !/^\d+$/.test(value)))
+        throw new Error('数字を入力してください。')
+      const next: [number, number] = [
+        Number(normalized[0]),
+        Number(normalized[1]),
+      ]
+      arithmetic(mode, ...next)
+      if (next[0] !== a || next[1] !== b) setValues(next)
+      setDraft(next.map(String))
+      setError('')
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : '数字を確認してください。',
+      )
+    }
+  }
   const editor = (
-    <fieldset className={styles.numberEditor}>
-      <legend>問題の数字を入力</legend>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          try {
-            const normalized = draft.map((value) =>
-              value.normalize('NFKC').trim(),
-            )
-            if (normalized.some((value) => !value))
-              throw new Error('2つの数を入力してください。')
-            if (normalized.some((value) => !/^\d+$/.test(value)))
-              throw new Error('数字だけを入力してください。')
-            const next: [number, number] = [
-              Number(normalized[0]),
-              Number(normalized[1]),
-            ]
-            arithmetic(mode, ...next)
-            setValues(next)
-            setDraft(next.map(String))
-            setError('')
-          } catch (cause) {
-            setError(
-              cause instanceof Error
-                ? cause.message
-                : '数字を確認してください。',
-            )
-          }
-        }}
-      >
-        <p className={styles.editorHelp} id={`${id}-help`}>
-          入力欄をタップし、数字キーボードで変更できます。 最初の数は{minA}〜
-          {maxA}、{isSubtract ? '引く数' : '2つ目の数'}は{minB}〜
-          {mode === 'sub' ? '最初の数' : 9}です。
-        </p>
-        <div className={styles.numberFields}>
-          {[0, 1].map((index) => (
-            <div className={styles.numberField} key={index}>
-              <label htmlFor={`${id}-${index}`}>
-                {index === 0
+    <form
+      className={styles.inlineQuestion}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          applyNumbers()
+          setActiveNumber(null)
+        }
+      }}
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (document.activeElement instanceof HTMLInputElement)
+          document.activeElement.blur()
+        else applyNumbers()
+        setActiveNumber(null)
+      }}
+    >
+      {apples && <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>}
+      <div className={styles.equation}>
+        {[0, 1].map((index) => (
+          <span className={styles.operand} key={index}>
+            {index === 1 && <span aria-hidden="true">{symbol}</span>}
+            <input
+              aria-label={
+                index === 0
                   ? '最初の数'
                   : isSubtract
                     ? '引く数'
                     : mode === 'times'
                       ? 'いくつ分'
-                      : '足す数'}
-              </label>
-              <input
-                id={`${id}-${index}`}
-                type="text"
-                inputMode="numeric"
-                required
-                autoComplete="off"
-                enterKeyHint={index === 0 ? 'next' : 'done'}
-                onFocus={(event) => event.currentTarget.select()}
-                value={draft[index]}
-                aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`}
-                onChange={(event) => {
+                      : '足す数'
+              }
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              enterKeyHint="done"
+              value={draft[index]}
+              onFocus={(event) => {
+                event.currentTarget.select()
+                setActiveNumber(index)
+                setReplaceNumber(true)
+              }}
+              onChange={(event) => {
+                setDraft(
+                  draft.map((value, i) =>
+                    i === index ? event.target.value : value,
+                  ),
+                )
+                setError('')
+                setReplaceNumber(false)
+              }}
+              aria-invalid={!!error}
+              aria-describedby={
+                id + '-help' + (error ? ' ' + id + '-error' : '')
+              }
+            />
+          </span>
+        ))}
+        <span>= ?</span>
+      </div>
+      <p className={styles.editorHelp} id={id + '-help'}>
+        数字をタップして変更できます。
+      </p>
+      {activeNumber !== null && (
+        <div
+          className={styles.numberPad}
+          role="group"
+          aria-label="数字キーボード"
+        >
+          <p>{activeNumber === 0 ? '最初の数' : '2つ目の数'}を変更</p>
+          <div className={styles.numberPadKeys}>
+            {[
+              '1',
+              '2',
+              '3',
+              '4',
+              '5',
+              '6',
+              '7',
+              '8',
+              '9',
+              'クリア',
+              '0',
+              '⌫',
+            ].map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-label={key === '⌫' ? '1文字削除' : key}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => {
                   setDraft(
-                    draft.map((value, i) =>
-                      i === index ? event.target.value : value,
+                    draft.map((value, index) =>
+                      index !== activeNumber
+                        ? value
+                        : key === 'クリア'
+                          ? ''
+                          : key === '⌫'
+                            ? value.slice(0, -1)
+                            : replaceNumber
+                              ? key
+                              : value + key,
                     ),
                   )
+                  setReplaceNumber(false)
                   setError('')
                 }}
-              />
-            </div>
-          ))}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+          <button
+            className={styles.numberPadDone}
+            type="button"
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={() => {
+              applyNumbers()
+              setActiveNumber(null)
+            }}
+          >
+            確定
+          </button>
         </div>
-        <p className={styles.editorHelp}>
-          計算：{draft[0] || '□'} {symbol} {draft[1] || '□'}
+      )}
+      {error && (
+        <p id={id + '-error'} className={styles.editorError} role="alert">
+          {error}
         </p>
-        {error && (
-          <p id={`${id}-error`} className={styles.editorError} role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className={styles.applyNumbers}>
-          この数字で台本を作る
-        </button>
-      </form>
-    </fieldset>
+      )}
+    </form>
   )
   const question = apples
     ? `あかいりんごが${a}こ、あおいりんごが${b}こ。あわせて何こかな？`
     : model.question
+  const parentNotes =
+    mode === 'add' && a + b < 10
+      ? [
+          'まずは問題を一緒に読みましょう。答えを急がず、お子さんが考える時間を作ります。',
+          '下の「おはじきを使う」から、アプリのおはじき機能を開きましょう。2つの数を別々に並べることで、それぞれの数を目で確認できるようにします。',
+          'お子さん自身に1こずつ数えてもらいましょう。数え終わるまで待ってから、次の吹き出しの言葉をかけましょう。',
+          '全部数え終わったら、お子さんの答えを一緒に確かめましょう。数えた結果と計算式を結びつけ、足し算の意味を理解できるようにします。',
+        ]
+      : undefined
   return (
     <TeachingScript
       key={`${mode}-${a}-${b}`}
@@ -136,6 +210,13 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       }}
       question={{
         say: question,
+        parentNote:
+          parentNotes?.[0] ??
+          (isSubtract
+            ? '最初の数と引く数を指さし、何こから何こを取る問題か確認します。答えを急がず、お子さんが状況を思い浮かべる時間を作りましょう。'
+            : mode === 'times'
+              ? '1つ分の数と、いくつ分かを指さして確認します。難しければ、同じ数ずつ並んだ身近なものを使って見せましょう。'
+              : '2つの数を指さし、合わせた数を考える問題だと確認します。先に答えを言わず、お子さんが考える時間を作りましょう。'),
         show: <p>{question}</p>,
         how: 'おはじきの画面を開き、問題の数を指さしながら読み上げます。',
         why: '計算する数と、何をする問題かを確認してから、解き方の説明に入ります。',
@@ -144,7 +225,21 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
           '問題を読み終える前に計算を急かす',
         ],
       }}
-      turns={model.steps}
+      turns={model.steps.map((step, index) => {
+        if (parentNotes && index === 1) {
+          return {
+            say: 'どうやって答えを見つけたの？ おしえてくれる？',
+            parentNote:
+              'お子さんがどう考えたか、ゆっくり聞いてみましょう。言葉にするのが難しければ、おはじきを指さして教えてもらっても大丈夫です。',
+          }
+        }
+        return {
+          ...step,
+          parentNote: parentNotes?.[index + 1] ?? step.parentNote,
+          counterInvitation:
+            mode !== 'times' && index === 0 ? { mode, a, b } : undefined,
+        }
+      })}
     />
   )
 }
