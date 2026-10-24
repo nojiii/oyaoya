@@ -6,7 +6,6 @@ export interface TeachingStepContent {
   say: string
   label?: string
   parentNote?: string
-  afterCounting?: string
   counterInvitation?: CounterProblem
   resourceHint?: string
 }
@@ -65,17 +64,6 @@ export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
       )}
       {beat.resourceHint && (
         <p className={styles.resourceHint}>{beat.resourceHint}</p>
-      )}
-      {beat.afterCounting && (
-        <div className={styles.countingPause}>
-          <p className={styles.waitCue}>全部数え終わったら</p>
-          <div className={styles.speech}>
-            <img className={styles.mascot} src="/mascot.png" alt="" />
-            <div>
-              <p className={styles.bubble}>{beat.afterCounting}</p>
-            </div>
-          </div>
-        </div>
       )}
     </>
   )

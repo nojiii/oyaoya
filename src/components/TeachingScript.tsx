@@ -113,7 +113,6 @@ function beatsOf(turn: Turn): Beat[] {
     kind: 'say',
     say: turn.say,
     parentNote: turn.parentNote,
-    afterCounting: turn.afterCounting,
     counterInvitation: turn.counterInvitation,
     resourceHint: turn.resourceHint,
     label: turn.label,

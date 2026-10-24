@@ -939,22 +939,6 @@ fieldset.numberEditor {
   flex-shrink: 0;
 }
 
-.countingPause {
-  color: #604733;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-.waitCue {
-  margin: 0;
-  padding: 0.65rem 0;
-  color: #80522f;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-.countingPause .speech {
-  margin-top: 0.25rem;
-}
-
 .counterGuide {
   display: flex;
   align-items: flex-start;

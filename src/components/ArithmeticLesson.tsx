@@ -181,15 +181,6 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
   const question = apples
     ? `あかいりんごが${a}こ、あおいりんごが${b}こ。あわせて何こかな？`
     : model.question
-  const parentNotes =
-    mode === 'add' && a + b < 10
-      ? [
-          'まずは問題を一緒に読みましょう。答えを急がず、お子さんが考える時間を作ります。',
-          '下の「おはじきを使う」から、アプリのおはじき機能を開きましょう。2つの数を別々に並べることで、それぞれの数を目で確認できるようにします。',
-          'お子さん自身に1こずつ数えてもらいましょう。数え終わるまで待ってから、次の吹き出しの言葉をかけましょう。',
-          '全部数え終わったら、お子さんの答えを一緒に確かめましょう。数えた結果と計算式を結びつけ、足し算の意味を理解できるようにします。',
-        ]
-      : undefined
   return (
     <TeachingScript
       key={`${mode}-${a}-${b}`}
@@ -216,13 +207,13 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       }}
       question={{
         say: question,
-        parentNote:
-          parentNotes?.[0] ??
-          (isSubtract
-            ? '最初の数と引く数を指さし、何こから何こを取る問題か確認します。答えを急がず、お子さんが状況を思い浮かべる時間を作りましょう。'
-            : mode === 'times'
-              ? '1つ分の数と、いくつ分かを指さして確認します。難しければ、同じ数ずつ並んだ身近なものを使って見せましょう。'
-              : '2つの数を指さし、合わせた数を考える問題だと確認します。先に答えを言わず、お子さんが考える時間を作りましょう。'),
+        parentNote: isSubtract
+          ? '最初の数と引く数を指さし、何こから何こを取る問題か確認します。答えを急がず、お子さんが状況を思い浮かべる時間を作りましょう。'
+          : mode === 'times'
+            ? '1つ分の数と、いくつ分かを指さして確認します。難しければ、同じ数ずつ並んだ身近なものを使って見せましょう。'
+            : mode === 'add' && a + b < 10
+              ? 'まずは問題を一緒に読みましょう。答えを急がず、お子さんが考える時間を作ります。'
+              : '2つの数を指さし、合わせた数を考える問題だと確認します。先に答えを言わず、お子さんが考える時間を作りましょう。',
         show: <p>{question}</p>,
         how: 'おはじきの画面を開き、問題の数を指さしながら読み上げます。',
         why: '計算する数と、何をする問題かを確認してから、解き方の説明に入ります。',
@@ -231,21 +222,11 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
           '問題を読み終える前に計算を急かす',
         ],
       }}
-      turns={model.steps.map((step, index) => {
-        if (parentNotes && index === 1) {
-          return {
-            say: 'どうやって答えを見つけたの？ おしえてくれる？',
-            parentNote:
-              'お子さんがどう考えたか、ゆっくり聞いてみましょう。言葉にするのが難しければ、おはじきを指さして教えてもらっても大丈夫です。',
-          }
-        }
-        return {
-          ...step,
-          parentNote: parentNotes?.[index + 1] ?? step.parentNote,
-          counterInvitation:
-            mode !== 'times' && index === 0 ? { mode, a, b } : undefined,
-        }
-      })}
+      turns={model.steps.map((step, index) => ({
+        ...step,
+        counterInvitation:
+          mode !== 'times' && index === 0 ? { mode, a, b } : undefined,
+      }))}
     />
   )
 }
