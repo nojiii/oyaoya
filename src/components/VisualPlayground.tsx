@@ -20,6 +20,7 @@ export function VisualPlayground({
   diagram,
   apples = false,
   showOpenHint = true,
+  showIntroduction = false,
 }: {
   children: ReactNode
   problem?: CounterProblem
@@ -27,8 +28,12 @@ export function VisualPlayground({
   diagram?: ReactNode
   apples?: boolean
   showOpenHint?: boolean
+  showIntroduction?: boolean
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const introduction = useRef<HTMLDialogElement>(null)
+  const introductionTitle = useId()
+  const introductionDescription = useId()
   const preview = useRef<HTMLDivElement>(null)
   const closing = useRef(false)
   const board = useRef<HTMLDivElement>(null)
@@ -50,12 +55,22 @@ export function VisualPlayground({
   const [selected, setSelected] = useState<number | null>(null)
   const [countedIds, setCountedIds] = useState<number[]>([])
   const [questionKey, setQuestionKey] = useState('')
+  const [hasPointed, setHasPointed] = useState(false)
+  const [hasInteracted, setHasInteracted] = useState(false)
   const addition = problem?.mode === 'add' || problem?.mode === 'carry'
   const subtraction = problem?.mode === 'sub' || problem?.mode === 'borrow'
   const split = addition || subtraction
   const orangeCount = pieces.filter((piece) => piece.side === 'left').length
   const greenCount = pieces.length - orangeCount
   const interactive = !!problem || apples
+  const invitationPiece = addition
+    ? pieces.find((piece) => piece.green)
+    : pieces[0]
+  const operationHint = subtraction
+    ? 'おはじきを みぎへ うごかしてみよう'
+    : addition
+      ? 'みぎの おはじきを ひだりへ うごかしてみよう'
+      : 'おはじきを さわって かぞえてみよう'
   const moved = subtraction
     ? greenCount
     : addition
@@ -65,6 +80,12 @@ export function VisualPlayground({
   const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${pieces.map((piece) => piece.side).join(',')}-${countedIds.join(',')}`
   const wrongSide =
     addition && pieces.some((piece) => !piece.green && piece.side === 'right')
+  const completed =
+    (addition || subtraction) &&
+    !wrongSide &&
+    moved === targetCount &&
+    questionKey === progressKey
+  const readyToCount = addition && completed
   const prompt = wrongSide
     ? 'ちゃいろの おはじきは、ひだりに もどしてみよう。'
     : counterPrompt(
@@ -107,6 +128,7 @@ export function VisualPlayground({
   )
   const reset = () => {
     setCountedIds([])
+    setHasPointed(false)
     setQuestionKey('')
     const groups =
       addition && problem
@@ -152,6 +174,7 @@ export function VisualPlayground({
     const target = dialog.current
     if (!target || target.open) return
     reset()
+    setHasInteracted(false)
     target.showModal()
     if (
       !origin ||
@@ -224,11 +247,15 @@ export function VisualPlayground({
         aria-haspopup="dialog"
         title="子どもに見せる"
         className={styles.preview}
-        onClick={open}
+        onClick={() => {
+          if (showIntroduction) introduction.current?.showModal()
+          else open()
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
-            open()
+            if (showIntroduction) introduction.current?.showModal()
+            else open()
           }
         }}
       >
@@ -252,9 +279,50 @@ export function VisualPlayground({
           </span>
         )}
       </div>
+      {showIntroduction && (
+        <dialog
+          ref={introduction}
+          className={styles.introduction}
+          aria-labelledby={introductionTitle}
+          aria-describedby={introductionDescription}
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerMove={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <h2 id={introductionTitle}>おはじきを使ってみましょう</h2>
+          <div id={introductionDescription}>
+            <p>
+              お子さんにスマホ画面を見せながら、一緒におはじきを動かしてみましょう。
+            </p>
+            <p>
+              {subtraction
+                ? '画面の案内に合わせて取り分け、最後に残った数を考えてみましょう。'
+                : '画面の案内に合わせて動かし、最後に全部で何こあるか考えてみましょう。'}
+            </p>
+          </div>
+          <div className={styles.introductionActions}>
+            <button
+              type="button"
+              className={styles.introductionPrimary}
+              onClick={() => {
+                introduction.current?.close()
+                open()
+              }}
+            >
+              おはじき画面へ
+            </button>
+            <button type="button" onClick={() => introduction.current?.close()}>
+              もどる
+            </button>
+          </div>
+        </dialog>
+      )}
       <dialog
         ref={dialog}
         className={styles.dialog}
+        data-addition={addition}
         aria-labelledby={title}
         onCancel={(event) => {
           event.preventDefault()
@@ -305,13 +373,28 @@ export function VisualPlayground({
               aria-atomic="true"
             >
               <span key={prompt}>{prompt}</span>
+              {readyToCount && (
+                <small className={styles.countingHint}>
+                  1こずつ かぞえてみよう。
+                </small>
+              )}
             </p>
             <div className={styles.toolbar}>
+              <p
+                className={styles.operationHint}
+                data-hidden={hasInteracted}
+                aria-hidden={hasInteracted}
+              >
+                {operationHint}
+              </p>
               {!split && <output aria-live="polite">{pieces.length}こ</output>}
               <button
                 type="button"
                 className={styles.iconButton}
-                onClick={reset}
+                onClick={() => {
+                  setHasInteracted(true)
+                  reset()
+                }}
                 aria-label="もとにもどす"
                 title="もとにもどす"
               >
@@ -332,12 +415,17 @@ export function VisualPlayground({
               ref={board}
               className={styles.board}
               style={{
-                minHeight: Math.max(
-                  360,
-                  (Math.max(...slots.map((slot) => slot.y)) > 0
-                    ? Math.ceil(slots.length / (split ? 4 : 5))
-                    : 5) * 76,
-                ),
+                minHeight: addition
+                  ? Math.max(
+                      280,
+                      Math.ceil(((slots.length / 4 - 1) * 44) / 0.64),
+                    )
+                  : Math.max(
+                      360,
+                      (Math.max(...slots.map((slot) => slot.y)) > 0
+                        ? Math.ceil(slots.length / (split ? 4 : 5))
+                        : 5) * 76,
+                    ),
               }}
               aria-label={
                 apples ? 'りんごを動かす広場' : 'おはじきを動かす広場'
@@ -389,11 +477,17 @@ export function VisualPlayground({
                   className={`${styles.piece} ${apples ? styles.apple : ''} ${piece.green ? styles.green : ''} ${piece.removed ? styles.removed : ''}`}
                   style={{ left: `${piece.x}%`, top: `${piece.y}%` }}
                   aria-label={`${i + 1}こめの${apples ? 'りんご' : 'おはじき'}${piece.removed ? '（とったぶん）' : ''}`}
+                  data-invitation={
+                    !hasInteracted && piece.id === invitationPiece?.id
+                  }
                   aria-pressed={selected === piece.id}
+                  onClick={() => setHasInteracted(true)}
                   aria-describedby={hint}
                   onFocus={() => setSelected(piece.id)}
                   onPointerDown={(event) => {
                     if (drag.current || event.button !== 0) return
+                    setHasInteracted(true)
+                    if (readyToCount) setHasPointed(true)
                     if (!split)
                       setCountedIds((ids) =>
                         ids.includes(piece.id) ? ids : [...ids, piece.id],
@@ -483,8 +577,52 @@ export function VisualPlayground({
                   {apples ? '🍎' : ''}
                 </button>
               ))}
+              {readyToCount && !hasPointed && pieces[0] && (
+                <svg
+                  className={styles.pointingHand}
+                  viewBox="0 0 40 48"
+                  fill="none"
+                  aria-hidden="true"
+                  style={{
+                    left: 'calc(' + pieces[0].x + '% + 5px)',
+                    top: 'calc(' + pieces[0].y + '% + 5px)',
+                  }}
+                >
+                  <path
+                    d="M14 24V10a4 4 0 0 1 8 0v11l2-1c2-1 5 0 5 3 4-1 6 1 6 4v8c0 6-4 10-10 10h-3c-4 0-7-2-9-5L5 29c-2-4 3-7 6-4l3 3"
+                    fill="#fffdf8"
+                    stroke="#80522f"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
               {!pieces.length && <p className={styles.empty}>0こ</p>}
             </div>
+            {completed && (
+              <section
+                className={styles.countingFinish}
+                aria-label="かぞえたあとの おはなし"
+              >
+                <div className={styles.countingWords} role="status">
+                  <p>
+                    {subtraction ? 'のこりは ' : 'ぜんぶで '}
+                    <strong>
+                      {subtraction ? orangeCount : pieces.length}
+                      <small>こ</small>
+                    </strong>
+                    だね。
+                  </p>
+                </div>
+                <div className={styles.continueGuide}>
+                  <button type="button" onClick={close}>
+                    おうちのひとにもどす <span aria-hidden="true">→</span>
+                  </button>
+                  <p>おうちのひとにスマホをわたしてね</p>
+                </div>
+              </section>
+            )}
           </>
         ) : (
           <div className={styles.largeDiagram}>{diagram}</div>

@@ -61,6 +61,7 @@ test('saved progress decides whether the preparation or the script opens', async
     const { arithmetic } = await server.ssrLoadModule(
       '/src/problems/arithmetic.ts',
     )
+    // 数える手順の代わりに、考え方を聞く手順を台本に表示する。
     const finish = arithmetic('add', 3, 4).steps.length + 1
     storage.set(
       progressKey(question),

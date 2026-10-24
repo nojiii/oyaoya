@@ -1,26 +1,26 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
+import { TeachingStep, type TeachingStepContent } from './TeachingStep'
 
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
 // 台本の画面には「声をかける →（reveal があれば）解説を確認する」の順に出す
-export interface Turn {
-  // 親がお子さんに言うこと
-  say: string
-  // 声をかける前に、親がすること（準備）。「声をかける前の準備」として閉じて出す
+export interface Turn extends TeachingStepContent {
+  // 声をかける前に、親がすること（準備）。
   do?: string
-  // 教え方のヒント。閉じて出す
+  // 教材ごとの教え方のヒント（元の台本データ）。
   how?: string
-  // このステップで避けたい声かけ。閉じて出す
+  // このステップで避けたい声かけ。
   avoid?: string[]
   // 問題（question）の図や文。台本の上部に常に出す。いっしょに解く手順（turns）では使わない
   show?: ReactNode
   // 声をかけた後に、親が確認する解説図
   reveal?: ReactNode
-  // なぜこう言うのか。「このセリフの理由」として閉じて出す（書かなければ prepare.point を出す）
+  // この声かけをする理由（元の台本データ）。
   why?: ReactNode
 }
 
@@ -56,7 +56,7 @@ type Section = 'question' | 'guide' | 'finish'
 type Beat =
   | { kind: 'do'; text: string }
   // label は、ふつうの声掛け以外（ヒント・ほめる など）のときだけ、吹き出しの上に出す
-  | { kind: 'say'; label?: string; say: string; why?: ReactNode }
+  | ({ kind: 'say'; why?: ReactNode } & TeachingStepContent)
   // say がなければ、見せて確かめるだけ
   | {
       kind: 'show'
@@ -109,7 +109,14 @@ function useWakeLock(active: boolean) {
 // 教える手順を、反応による分岐のない台本にする。
 function beatsOf(turn: Turn): Beat[] {
   const beats: Beat[] = []
-  beats.push({ kind: 'say', say: turn.say })
+  beats.push({
+    kind: 'say',
+    say: turn.say,
+    parentNote: turn.parentNote,
+    counterInvitation: turn.counterInvitation,
+    resourceHint: turn.resourceHint,
+    label: turn.label,
+  })
   if (turn.reveal != null && turn.reveal !== false) {
     beats.push({ kind: 'show', content: turn.reveal })
   }
@@ -167,12 +174,7 @@ function PrepareView({
         <h2 className={styles.prepareTitle}>この学習でやること</h2>
         <p className={styles.learning}>{learning}</p>
       </header>
-      {editor && (
-        <details className={styles.numberEditor}>
-          <summary>問題の数字を変更</summary>
-          {editor}
-        </details>
-      )}
+      {editor}
       <section className={styles.quickGuide} aria-labelledby={guideId}>
         <h2 id={guideId}>使い方は3ステップ</h2>
         <ol className={styles.guideSteps}>
@@ -255,7 +257,7 @@ function PrepareView({
 // 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
 const HEADINGS = {
   do: ['✋', 'すること'],
-  say: ['💬', 'お子さんへの声かけ'],
+  say: ['💬', 'お子さんに声に出して読もう'],
   show: ['📝', '解説を確認する'],
   finish: ['🎉', 'おしまい'],
 } as const
@@ -282,19 +284,7 @@ function BeatView({ beat }: { beat: Beat }) {
     case 'do':
       return <p className={styles.main}>{beat.text}</p>
     case 'say':
-      return (
-        <>
-          {beat.say && (
-            <div className={styles.speech}>
-              <img className={styles.mascot} src="/mascot.png" alt="" />
-              <div>
-                {beat.label && <p className={styles.label}>{beat.label}</p>}
-                <p className={styles.bubble}>{beat.say}</p>
-              </div>
-            </div>
-          )}
-        </>
-      )
+      return <TeachingStep step={beat} />
     case 'show':
       return <div className={styles.reference}>{beat.content}</div>
     case 'finish':
@@ -372,12 +362,13 @@ export function TeachingScript({
   const [started, setStarted] = useState(saved.started)
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
-  // カルーセルを進めると右から、戻すと左から入れる
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward')
   const [dragX, setDragX] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [slideWidth, setSlideWidth] = useState(320)
+  const [dotTarget, setDotTarget] = useState<number | null>(null)
+  const track = useRef<HTMLDivElement>(null)
+  const sliding = useRef(false)
   const gesture = useRef<{ id: number; x: number; y: number } | null>(null)
-  const swipeHintId = useId()
-  const actions = useRef<HTMLDivElement>(null)
   const menu = useMenuLink()
 
   // 教える台本には確認・発展を混ぜず、問題から手順へ順番に進む。
@@ -404,9 +395,7 @@ export function TeachingScript({
           .reduce((total, turn) => total + beatsOf(turn).length, 0) +
         position.beat +
         1
-  const currentTurn = script[index]
   const activeQuestion = question
-  const reason = currentTurn?.why ?? prepare.point
   // おしまいの画面まで来たら、画面が自動で消えるように戻す
   useWakeLock(started && beat.kind !== 'finish')
 
@@ -422,13 +411,11 @@ export function TeachingScript({
   const ask = (turn: number): Position => ({ turn, beat: 0 })
   const go = (next: Position) => {
     setHistory([...history, next])
-    setDirection('forward')
   }
   const advance = () =>
     position.beat < beats.length - 1
       ? go({ ...position, beat: position.beat + 1 })
       : go(ask(index + 1))
-  const finish = () => go(ask(FINISH))
   const start = () => {
     setHistory([START])
     setStarted(true)
@@ -437,13 +424,53 @@ export function TeachingScript({
   const back = () => {
     if (history.length > 1) setHistory(history.slice(0, -1))
     else setStarted(false)
-    setDirection('back')
   }
   const canAdvance = beat.kind !== 'finish'
   const canBack = history.length > 1
-  const swipe = (delta: number) => {
-    if (delta < 0 && canAdvance) advance()
-    if (delta > 0 && canBack) back()
+  const activeCardIndex =
+    script
+      .slice(0, index)
+      .reduce((sum, turn) => sum + beatsOf(turn).length, 0) + position.beat
+  const progressPosition = Math.max(
+    0,
+    Math.min(totalBeats - 1, dotTarget ?? currentBeat - 1 - dragX / slideWidth),
+  )
+  const swipe = async (delta: number) => {
+    if (sliding.current || !(delta < 0 ? canAdvance : canBack)) {
+      setDragX(0)
+      return
+    }
+    const element = track.current
+    if (!element) return
+    sliding.current = true
+    setDotTarget(currentBeat - 1 + (delta < 0 ? 1 : -1))
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    const width = element.getBoundingClientRect().width + 12
+    const animation = element.animate(
+      [
+        { transform: getComputedStyle(element).transform },
+        { transform: 'translateX(' + (delta < 0 ? -width : width) + 'px)' },
+      ],
+      {
+        duration: reduced ? 0 : 300,
+        easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+        fill: 'forwards',
+      },
+    )
+    try {
+      await animation.finished
+      flushSync(() => {
+        setDragX(0)
+        setDotTarget(null)
+        if (delta < 0) advance()
+        else back()
+      })
+    } finally {
+      animation.cancel()
+      sliding.current = false
+    }
   }
 
   const navigation = (
@@ -499,19 +526,16 @@ export function TeachingScript({
       {navigation}
       <section className={styles.question} aria-label="取り組む問題">
         <h2>問題</h2>
-        {editor && (
-          <details className={styles.numberEditor}>
-            <summary>問題の数字を変更</summary>
-            {editor}
-          </details>
-        )}
-        <div>{activeQuestion.show ?? <p>{activeQuestion.say}</p>}</div>
+        <div>
+          {editor ?? activeQuestion.show ?? <p>{activeQuestion.say}</p>}
+        </div>
       </section>
       <Progress
         section={section}
         current={currentBeat}
         total={totalBeats}
-        onFinish={finish}
+        value={progressPosition + 1}
+        dragging={dragging}
       />
       {/* 画面が替わったことを、読み上げで伝える */}
       <p className={styles.srOnly} aria-live="polite">
@@ -522,15 +546,27 @@ export function TeachingScript({
         role="region"
         aria-roledescription="カルーセル"
         aria-label="声かけの台本"
-        aria-describedby={swipeHintId}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget || sliding.current) return
+          if (event.key === 'ArrowLeft' && canBack) {
+            event.preventDefault()
+            back()
+          } else if (event.key === 'ArrowRight' && canAdvance) {
+            event.preventDefault()
+            advance()
+          }
+        }}
         onPointerDown={(event) => {
-          if (!event.isPrimary || event.button !== 0) return
+          if (!event.isPrimary || event.button !== 0 || sliding.current) return
           if (
             (event.target as Element).closest(
               'summary, button, a, input, select, textarea, [role="button"]',
             )
           )
             return
+          setSlideWidth(event.currentTarget.clientWidth - 32 + 12)
+          setDragging(true)
           gesture.current = {
             id: event.pointerId,
             x: event.clientX,
@@ -548,97 +584,84 @@ export function TeachingScript({
             return
           }
           const allowed = dx < 0 ? canAdvance : canBack
-          setDragX(allowed ? Math.max(-160, Math.min(160, dx)) : dx * 0.12)
+          setDragX(allowed ? dx : dx * 0.12)
         }}
         onPointerUp={(event) => {
           const start = gesture.current
           gesture.current = null
-          setDragX(0)
+          setDragging(false)
           if (!start || start.id !== event.pointerId) return
           const dx = event.clientX - start.x
           const dy = event.clientY - start.y
-          if (Math.abs(dx) >= 55 && Math.abs(dx) > Math.abs(dy) * 1.4) swipe(dx)
+          if (Math.abs(dx) >= 55 && Math.abs(dx) > Math.abs(dy) * 1.4)
+            void swipe(dx)
+          else setDragX(0)
         }}
         onPointerCancel={() => {
           gesture.current = null
-          setDragX(0)
+          setDragging(false)
+          if (!sliding.current) setDragX(0)
         }}
         onLostPointerCapture={() => {
           gesture.current = null
-          setDragX(0)
+          setDragging(false)
+          if (!sliding.current) setDragX(0)
         }}
       >
         <div
           className={styles.dragTrack}
+          ref={track}
+          key={history.length}
+          data-dragging={dragging}
           style={{ transform: `translateX(${dragX}px)` }}
         >
-          <div
-            className={styles.panel}
-            key={history.length}
-            data-direction={direction}
-          >
-            <div className={styles.readingContent}>
-              <h2 className={styles.heading}>
-                {beat.kind !== 'say' && (
-                  <span aria-hidden="true">{HEADINGS[beat.kind][0]} </span>
-                )}
-                {HEADINGS[beat.kind][1]}
-              </h2>
-              <BeatView beat={beat} />
-              {canAdvance && (
+          {[
+            ...script.map((turn) => beatsOf(turn)),
+            [{ kind: 'finish' } as Beat],
+          ].flatMap((turnBeats, turnIndex) =>
+            turnBeats.map((cardBeat, beatIndex) => {
+              const active = turnIndex === index && beatIndex === position.beat
+              const cardIndex =
+                script
+                  .slice(0, turnIndex)
+                  .reduce((sum, turn) => sum + beatsOf(turn).length, 0) +
+                beatIndex
+              const offset = cardIndex - activeCardIndex
+              return (
                 <div
-                  className={styles.pageCue}
-                  aria-hidden="true"
-                  data-invite={history.length === 1}
+                  className={styles.panel}
+                  key={turnIndex + '-' + beatIndex}
+                  data-active={active}
+                  style={{
+                    transform:
+                      'translateX(calc(' +
+                      offset * 100 +
+                      '% + ' +
+                      offset * 12 +
+                      'px))',
+                  }}
+                  aria-hidden={!active}
+                  inert={!active}
                 >
-                  <svg
-                    width="40"
-                    height="24"
-                    viewBox="0 0 40 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M30 12H7m6-6-6 6 6 6M34 9v6" />
-                  </svg>
-                  <span>左へスワイプして次へ</span>
+                  <div className={styles.readingContent}>
+                    {cardBeat.kind !== 'say' && (
+                      <h2 className={styles.heading}>
+                        <span aria-hidden="true">
+                          {HEADINGS[cardBeat.kind][0]}{' '}
+                        </span>
+
+                        {HEADINGS[cardBeat.kind][1]}
+                      </h2>
+                    )}
+                    <BeatView beat={cardBeat} />
+                  </div>
+                  {turnIndex < script.length &&
+                    !counters &&
+                    renderVisual?.(turnIndex)}
                 </div>
-              )}
-            </div>
-            {currentTurn && (
-              <aside className={styles.panelNotes} aria-label="教え方">
-                {currentTurn.how && (
-                  <details className={styles.extraNote}>
-                    <summary>教え方のヒント</summary>
-                    <div>{currentTurn.how}</div>
-                  </details>
-                )}
-                {!counters && renderVisual?.(index)}
-                {beat.kind === 'say' && currentTurn.do && (
-                  <details className={styles.extraNote}>
-                    <summary>声をかける前の準備</summary>
-                    <div>{currentTurn.do}</div>
-                  </details>
-                )}
-                <details className={styles.extraNote}>
-                  <summary>このセリフの理由</summary>
-                  <div>{reason}</div>
-                </details>
-                {!!currentTurn.avoid?.length && (
-                  <details className={styles.extraNote}>
-                    <summary>避けたい声かけ</summary>
-                    <ul>
-                      {currentTurn.avoid.map((text) => (
-                        <li key={text}>{text}</li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </aside>
-            )}
-          </div>
+              )
+            }),
+          )}
         </div>
       </div>
       <div
@@ -646,27 +669,17 @@ export function TeachingScript({
         role="group"
         aria-label={`台本 ${currentBeat} / ${totalBeats}ページ`}
       >
-        <button
-          type="button"
-          onClick={back}
-          disabled={!canBack}
-          aria-label="前のページへ"
+        <div
+          className={styles.pageDots}
+          aria-hidden="true"
+          data-dragging={dragging}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m14 6-6 6 6 6" />
-          </svg>
-        </button>
-        <div className={styles.pageDots} aria-hidden="true">
+          <i
+            className={styles.pageIndicator}
+            style={{
+              transform: 'translateX(' + progressPosition * 13 + 'px)',
+            }}
+          />
           {Array.from({ length: totalBeats }, (_, i) => (
             <span
               key={i}
@@ -675,32 +688,7 @@ export function TeachingScript({
             />
           ))}
         </div>
-        <button
-          type="button"
-          onClick={advance}
-          disabled={!canAdvance}
-          aria-label="次のページへ"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m10 6 6 6-6 6" />
-          </svg>
-        </button>
       </div>
-      <p className={styles.swipeHint} id={swipeHintId}>
-        {beat.kind === 'finish'
-          ? '台本はここまでです'
-          : '左へスワイプで次へ。右へスワイプで前のページへ。'}
-      </p>
       {counters && section !== 'finish' && (
         <CounterDisplay
           problem={counters}
@@ -708,38 +696,16 @@ export function TeachingScript({
         />
       )}
 
-      <div
-        className={styles.actions}
-        ref={actions}
-        data-stack={beat.kind === 'finish'}
-      >
-        {beat.kind === 'finish' ? (
-          <>
-            <Link
-              className={styles.primary}
-              to={menu.url}
-              key="primary"
-              viewTransition
-            >
-              {menu.label}
-            </Link>
-            <button type="button" onClick={start}>
-              もういちど はじめから
-            </button>
-          </>
-        ) : (
-          <>
-            <button type="button" onClick={back}>
-              ‹ もどる
-            </button>
-            <button type="button" className={styles.primary} onClick={advance}>
-              {index === script.length - 1 && position.beat === beats.length - 1
-                ? '学習をおえる'
-                : '次へ ›'}
-            </button>
-          </>
-        )}
-      </div>
+      {beat.kind === 'finish' && (
+        <div className={styles.actions} data-stack>
+          <Link className={styles.primary} to={menu.url} viewTransition>
+            {menu.label}
+          </Link>
+          <button type="button" onClick={start}>
+            もういちど はじめから
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -754,12 +720,14 @@ function Progress({
   section,
   current,
   total,
-  onFinish,
+  value,
+  dragging,
 }: {
   section: Section
   current: number
   total: number
-  onFinish: () => void
+  value: number
+  dragging: boolean
 }) {
   return (
     <div className={styles.progress}>
@@ -769,17 +737,18 @@ function Progress({
             ? 'おしまい'
             : `${SECTION_NAMES[section]} · ${current} / ${total}`}
         </span>
-        <progress
-          value={current}
-          max={total}
+        <div
+          className={styles.progressTrack}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-valuenow={current}
           aria-label={`台本の進み具合 ${current} / ${total}`}
-        />
+          data-dragging={dragging}
+        >
+          <span style={{ transform: 'scaleX(' + value / total + ')' }} />
+        </div>
       </div>
-      {section !== 'finish' && (
-        <button className={styles.back} type="button" onClick={onFinish}>
-          おわる
-        </button>
-      )}
     </div>
   )
 }
