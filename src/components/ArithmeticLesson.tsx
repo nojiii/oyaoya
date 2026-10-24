@@ -40,6 +40,14 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       )
     }
   }
+  // 入力欄からフォーカスを外すと、form の onBlur で数字が反映される。
+  // フォーカスを残すと、同じ欄を再タップしても onFocus が走らず数字パッドが出ない。
+  const finishEditing = () => {
+    if (document.activeElement instanceof HTMLInputElement)
+      document.activeElement.blur()
+    else applyNumbers()
+    setActiveNumber(null)
+  }
   const editor = (
     <form
       className={styles.inlineQuestion}
@@ -49,13 +57,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
           setActiveNumber(null)
         }
       }}
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (document.activeElement instanceof HTMLInputElement)
-          document.activeElement.blur()
-        else applyNumbers()
-        setActiveNumber(null)
-      }}
+      onSubmit={(event) => event.preventDefault()}
     >
       {apples && <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>}
       <div className={styles.equation}>
@@ -77,6 +79,13 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
               autoComplete="off"
               enterKeyHint="done"
               value={draft[index]}
+              onKeyDown={(event) => {
+                // 入力欄が2つで送信ボタンがないフォームは、Enter で送信されない
+                if (event.key !== 'Enter' || event.nativeEvent.isComposing)
+                  return
+                event.preventDefault()
+                finishEditing()
+              }}
               onFocus={(event) => {
                 event.currentTarget.select()
                 setActiveNumber(index)
@@ -156,10 +165,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
             className={styles.numberPadDone}
             type="button"
             onPointerDown={(event) => event.preventDefault()}
-            onClick={() => {
-              applyNumbers()
-              setActiveNumber(null)
-            }}
+            onClick={finishEditing}
           >
             確定
           </button>
