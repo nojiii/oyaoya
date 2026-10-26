@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react'
 import type { CounterProblem } from './CounterDisplay'
 import { VisualPlayground } from './VisualPlayground'
 import styles from './TeachingScript.module.css'
 
 export interface TeachingStepContent {
   say: string
+  sayContent?: ReactNode
   label?: string
   parentNote?: string
   counterInvitation?: CounterProblem
@@ -13,37 +15,36 @@ export interface TeachingStepContent {
 export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
   return (
     <>
-      <h2 className={styles.readAloudHeading}>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2zM7 9h10M7 13h6" />
-        </svg>
-        お子さんに声に出して読もう
-      </h2>
       {beat.parentNote && (
         <section className={styles.parentNote}>
           <h3>
             <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
+              className={styles.pointIcon}
+              width="36"
+              height="36"
+              viewBox="0 0 36 36"
               fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
               aria-hidden="true"
             >
-              <path d="M9 18h6M10 21h4M9 15c0-2-3-3-3-7a6 6 0 0 1 12 0c0 4-3 5-3 7v1H9z" />
+              <path
+                d="M14 23v-2c0-2-3-3-3-7a7 7 0 0 1 14 0c0 4-3 5-3 7v2z"
+                fill="#ffd45c"
+                stroke="#9b5b24"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M14 26h8M16 29h4M18 2v2M5 8l2 2M29 8l2-2M3 17h3M30 17h3"
+                stroke="#9b5b24"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M15 14a3 3 0 0 1 3-3"
+                stroke="#fffdf8"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
             教え方のポイント
           </h3>
@@ -52,10 +53,38 @@ export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
       )}
       {beat.say && (
         <div className={styles.speech}>
+          <h2 className={styles.readAloudHeading}>
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 36 36"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 5h18a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H17l-7 5v-5H9a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z"
+                fill="#fff0bd"
+                stroke="#b66b30"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <circle cx="13" cy="15" r="1.6" fill="#80522f" />
+              <circle cx="23" cy="15" r="1.6" fill="#80522f" />
+              <path
+                d="M14 20q4 4 8 0"
+                stroke="#80522f"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <circle cx="10" cy="19" r="2" fill="#efa38b" />
+              <circle cx="26" cy="19" r="2" fill="#efa38b" />
+            </svg>
+            <span>お子さんに声に出して読もう</span>
+          </h2>
           <img className={styles.mascot} src="/mascot.png" alt="" />
           <div>
             {beat.label && <p className={styles.label}>{beat.label}</p>}
-            <p className={styles.bubble}>{beat.say}</p>
+            <div className={styles.bubble}>{beat.sayContent ?? beat.say}</div>
           </div>
         </div>
       )}

@@ -48,7 +48,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
     else applyNumbers()
     setActiveNumber(null)
   }
-  const editor = (
+  const renderEditor = (inSpeech = false) => (
     <form
       className={styles.inlineQuestion}
       onBlur={(event) => {
@@ -59,11 +59,17 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       }}
       onSubmit={(event) => event.preventDefault()}
     >
-      {apples && <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>}
-      <div className={styles.equation}>
+      {apples && !inSpeech && (
+        <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>
+      )}
+      <div className={inSpeech ? styles.editableSpeech : styles.equation}>
         {[0, 1].map((index) => (
           <span className={styles.operand} key={index}>
-            {index === 1 && <span aria-hidden="true">{symbol}</span>}
+            {inSpeech && apples
+              ? index === 0
+                ? 'あかいりんごが'
+                : 'こ、あおいりんごが'
+              : index === 1 && <span aria-hidden="true">{symbol}</span>}
             <input
               aria-label={
                 index === 0
@@ -79,6 +85,11 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
               autoComplete="off"
               enterKeyHint="done"
               value={draft[index]}
+              style={
+                inSpeech
+                  ? { width: `${Math.max(1, draft[index].length) + 0.5}ch` }
+                  : undefined
+              }
               onKeyDown={(event) => {
                 // 入力欄が2つで送信ボタンがないフォームは、Enter で送信されない
                 if (event.key !== 'Enter' || event.nativeEvent.isComposing)
@@ -107,7 +118,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
             />
           </span>
         ))}
-        <span>= ?</span>
+        <span>{inSpeech && apples ? 'こ。あわせて何こかな？' : '= ?'}</span>
       </div>
       <p className={styles.editorHelp} id={id + '-help'}>
         数字をタップして変更できます。
@@ -184,7 +195,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
   return (
     <TeachingScript
       key={`${mode}-${a}-${b}`}
-      editor={editor}
+      editor={renderEditor()}
       counters={{ mode, a, b }}
       renderVisual={(step) => (
         <LessonVisual problem={{ mode, a, b }} step={step} />
@@ -207,6 +218,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
       }}
       question={{
         say: question,
+        sayContent: renderEditor(true),
         parentNote: isSubtract
           ? '最初の数と引く数を指さし、何こから何こを取る問題か確認します。答えを急がず、お子さんが状況を思い浮かべる時間を作りましょう。'
           : mode === 'times'

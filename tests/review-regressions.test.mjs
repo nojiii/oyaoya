@@ -20,9 +20,12 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
     ts.ScriptKind.TSX,
   )
   let handler
+  let moveHandler
   function visit(node) {
     if (ts.isJsxAttribute(node) && node.name.getText(ast) === 'onPointerDown')
       handler = node.initializer.expression.getText(ast)
+    if (ts.isJsxAttribute(node) && node.name.getText(ast) === 'onPointerMove')
+      moveHandler = node.initializer.expression.getText(ast)
     ts.forEachChild(node, visit)
   }
   visit(ast)
@@ -38,6 +41,7 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
     'sliding',
     'setDragging',
     'setSlideWidth',
+    'track',
     outputText,
   )(
     gesture,
@@ -46,6 +50,7 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
       dragging = value
     },
     () => {},
+    { current: { getBoundingClientRect: () => ({ width: 296 }) } },
   )
   let captured = 0
   const event = {
@@ -66,10 +71,50 @@ test('tapping a preview does not let the carousel capture its pointer', () => {
   onPointerDown({ ...event, target: { closest: () => null } })
   assert.equal(captured, 1)
   assert.equal(gesture.current.id, 7)
-  assert.equal(dragging, true)
+  assert.equal(dragging, false)
   sliding.current = true
   onPointerDown({ ...event, target: { closest: () => null } })
   assert.equal(captured, 1)
+
+  let dragX = 0
+  const onPointerMove = new Function(
+    'gesture',
+    'setDragging',
+    'setDragX',
+    'canAdvance',
+    'canBack',
+    'slideWidth',
+    ts.transpileModule(`return (${moveHandler})`, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+  )(
+    gesture,
+    (value) => {
+      dragging = value
+    },
+    (value) => {
+      dragX = value
+    },
+    true,
+    false,
+    308,
+  )
+  // Finger jitter does not start a drag; a horizontal gesture stays horizontal.
+  onPointerMove({ pointerId: 7, clientX: 117, clientY: 82 })
+  assert.equal(dragging, false)
+  onPointerMove({ pointerId: 7, clientX: 100, clientY: 85 })
+  assert.equal(dragging, true)
+  assert.equal(dragX, -20)
+  onPointerMove({ pointerId: 7, clientX: 90, clientY: 120 })
+  assert.equal(dragX, -30)
+  onPointerMove({ pointerId: 7, clientX: -500, clientY: 120 })
+  assert.equal(dragX, -308)
+  // A gesture that starts vertically remains a scroll even if it moves sideways.
+  gesture.current = { id: 8, x: 120, y: 80, axis: null }
+  dragX = 0
+  onPointerMove({ pointerId: 8, clientX: 122, clientY: 100 })
+  onPointerMove({ pointerId: 8, clientX: 20, clientY: 110 })
+  assert.equal(dragX, 0)
 })
 
 test('side navigation reads breadcrumbs from the matched route loader data', async () => {
