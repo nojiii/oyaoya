@@ -1,13 +1,26 @@
 /* はじめる前に */
+.lessonPage {
+  --bottom-tabs-height: calc(
+    48px + 0.7rem + 2px + env(safe-area-inset-bottom, 0px)
+  );
+  padding-bottom: calc(var(--bottom-tabs-height) + 1rem);
+}
+.lessonPage .actions {
+  bottom: calc(var(--bottom-tabs-height) + 0.5rem);
+}
 .pageNavigation {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2.5rem);
+  max-width: calc(480px - 2.5rem);
   z-index: 5;
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;
   gap: 0.35rem;
-  margin: 0 0 0.75rem;
-  padding: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.35rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
   background: #fffdf8;
   border: 1px solid var(--color-border);
   border-radius: 1.25rem;
@@ -34,6 +47,14 @@
   color: var(--tone-ink, #925b34);
   background: var(--tone-bg, #f8eee6);
   font-weight: 700;
+}
+.pageNavigation svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.pageNavigation span {
+  white-space: nowrap;
 }
 .pageNavigation :is(a, button):focus-visible {
   outline: 2px solid var(--color-accent);
@@ -182,6 +203,17 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+.firstQuestion {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.firstQuestion svg {
+  max-width: 100%;
+  height: auto;
+}
+.firstQuestion p {
+  margin: 0.25rem 0;
 }
 .question {
   padding: 0.75rem 1rem;
@@ -436,27 +468,68 @@ fieldset.numberEditor {
 .pageCue svg {
   flex-shrink: 0;
 }
+.carouselFrame {
+  position: relative;
+}
 .pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.75rem;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pageButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #fffdf8ed;
+  color: #80522f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+.pageButton:first-child {
+  left: -16px;
+}
+.pageButton:last-child {
+  right: -16px;
+}
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pageButton:focus-visible {
+  outline: 2px solid #80522f;
+  outline-offset: 3px;
 }
 .pageDots {
   display: flex;
+  justify-content: center;
   position: relative;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 7px;
   margin: 0 5px;
 }
 .pageDots span {
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
   border-radius: 999px;
   background: #dfd5c9;
 }
 .pageDots [data-done='true'] {
   background: #c6a17f;
+}
+.pageDots [data-current='true'] {
+  background: #a36235;
+  box-shadow: 0 0 0 3px #a3623526;
 }
 .pageIndicator {
   position: absolute;
@@ -594,18 +667,21 @@ fieldset.numberEditor {
 /* おやじいと吹き出し。言うことがこの画面の主役なので、いちばん大きく出す */
 .speech {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   gap: 0.5rem;
 }
 .speech > div {
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 .mascot {
   flex: none;
-  width: 36px;
+  width: 144px;
+  max-width: 100%;
   height: auto;
-  margin-top: 1.25rem;
+  align-self: center;
 }
 .label {
   margin: 0 0 0.25rem;
@@ -631,8 +707,8 @@ fieldset.numberEditor {
 .speech .bubble::before {
   content: '';
   position: absolute;
-  top: 1.1rem;
-  left: -0.4rem;
+  top: -0.4rem;
+  left: calc(50% - 0.45rem);
   width: 0.9rem;
   height: 0.9rem;
   background: inherit;
@@ -792,12 +868,46 @@ fieldset.numberEditor {
 }
 .speech .bubble::before {
   background: inherit;
-  border-bottom: 1px solid #e4cdb6;
+  border-top: 1px solid #e4cdb6;
   border-left: 1px solid #e4cdb6;
 }
 
 .inlineQuestion {
   padding: 0.75rem 0;
+}
+.bubble .inlineQuestion {
+  padding: 0;
+}
+.editableSpeech {
+  display: inline;
+  line-height: 2;
+}
+.editableSpeech .operand {
+  display: inline;
+}
+.editableSpeech input {
+  min-width: 1.5ch;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0 0.15em;
+  padding: 0 0.1em;
+  border: 1px solid #a36235;
+  border-radius: 0;
+  background: #fff;
+  color: #80522f;
+  font: inherit;
+  text-align: center;
+}
+.editableSpeech input:focus-visible {
+  outline: 2px solid #80522f;
+  outline-offset: 2px;
+}
+.editableSpeech input[aria-invalid='true'] {
+  border-color: #a32e24;
+}
+.bubble .editorHelp {
+  margin: 0.75rem 0 0;
+  font-weight: 400;
 }
 .equation {
   display: flex;
@@ -938,6 +1048,11 @@ fieldset.numberEditor {
 .parentNote h3 svg {
   flex-shrink: 0;
 }
+.parentNote h3 .pointIcon {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 2px 1px #9b5b2426);
+}
 
 .counterGuide {
   display: flex;
@@ -986,8 +1101,14 @@ fieldset.numberEditor {
 .readAloudHeading {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  align-self: center;
+  gap: 0.5rem;
   margin: 0;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #e5c49e;
+  border-radius: 1.25rem;
+  background: #fff8e9;
   color: #80522f;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -995,6 +1116,7 @@ fieldset.numberEditor {
 }
 .readAloudHeading svg {
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 0 #e5c49e);
 }
 
 .resourceHint {

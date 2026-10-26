@@ -50,6 +50,34 @@ test('every published script has teaching points, reading labels and only suppor
         assert.equal(router.state.errors, null, id)
         const html = renderToString(createElement(RouterProvider, { router }))
         assert.ok(html.includes('data-script-running'), id)
+        assert.ok(
+          !html.includes('aria-label="取り組む問題"'),
+          id + ': no separate question section',
+        )
+        assert.ok(
+          html.includes('aria-label="前のページ"') &&
+            html.includes('aria-label="次のページ"'),
+          id + ': navigation without swiping',
+        )
+        if (html.includes('aria-label="最初の数"')) {
+          const firstCard = html.match(
+            /<div[^>]*data-active="true"[\s\S]*?<\/form>/,
+          )?.[0]
+          assert.ok(
+            firstCard?.includes('aria-label="最初の数"'),
+            id + ': numbers are editable on the first card',
+          )
+          assert.equal(
+            (html.match(/aria-label="最初の数"/g) ?? []).length,
+            1,
+            id + ': one number editor',
+          )
+          assert.match(
+            firstCard,
+            /class="[^"]*bubble[^"]*"[\s\S]*<form[\s\S]*aria-label="最初の数"/,
+            id + ': editable numbers are inside the speech bubble',
+          )
+        }
         const headings = [...html.matchAll(/<h2[^>]*>[\s\S]*?<\/h2>/g)].filter(
           (match) => match[0].includes('お子さんに声に出して読もう'),
         )
@@ -60,11 +88,11 @@ test('every published script has teaching points, reading labels and only suppor
           headings.length,
           id + ': every reading step has teaching points',
         )
-        const start = html.indexOf('お子さんに声に出して読もう')
-        const point = html.indexOf('教え方のポイント', start)
+        const start = html.indexOf(headings[0][0])
+        const point = html.indexOf('教え方のポイント')
         assert.ok(
-          start < point && html.indexOf('/mascot.png', point) > point,
-          id + ': heading, points, speech order',
+          point < start && html.indexOf('/mascot.png', start) > start,
+          id + ': teaching points, reading heading, mascot order',
         )
         const hasCounters = [
           'addition-apples',
