@@ -132,13 +132,11 @@ src/
   curriculum.ts            # 階層（分類と、そこに並べる問題）
   problems/                # 問題。1問 = 1フォルダ
     index.ts               #   問題の一覧
-    addition-apples/       #   フォルダ名が問題ID
+    <問題ID>/              #   フォルダ名が問題ID
       index.tsx            #     その問題のタイトルと画面
     arithmetic.ts          #   計算の問題の文と、解き方の台本を、数字から作る
     unit-lessons/          #   単元ごとに1問ずつ置く教材（1つのフォルダで複数の問題を作る）
-      units.ts             #     単元の一覧（問題ID・学年・問題の文など）
-      teaching.ts          #     計算以外の単元の台本
-      QuestionVisual.tsx   #     問題の図
+      units.ts             #     単元の一覧（問題ID・タイトル・計算の種類と最初の数字）
   components/              # 複数の問題で使う部品
     TeachingScript.tsx     #   教えている最中に使う台本。声かけを1ページずつ出し、スワイプで進める
     ArithmeticLesson.tsx   #   計算の問題の画面（数字を変えられる台本と、おはじき）
@@ -161,15 +159,15 @@ tests/                     # テスト（npm test）
 
 ## 問題を追加する
 
-1. [src/problems/addition-apples/](src/problems/addition-apples/) をコピーして、フォルダ名を新しい問題IDにする
-2. コピーした `index.tsx` の `title` と中身を書き換える
+1. `src/problems/` に新しい問題IDのフォルダを作る
+2. フォルダに `index.tsx` を作り、`title`（タイトル）と、画面のコンポーネントを `export default` する
 3. [src/problems/index.ts](src/problems/index.ts) に2行足す（アルファベット順の位置に入れる）
 
    ```ts
    import * as subtractionCandies from './subtraction-candies'
 
    export const problems = {
-     'addition-apples': additionApples,
+     'addition-meaning': lesson('addition-meaning'),
      'subtraction-candies': subtractionCandies,
    }
    ```
@@ -182,19 +180,17 @@ tests/                     # テスト（npm test）
 
 単元ごとに1問だけ置く教材は、問題のフォルダを作らず、[src/problems/unit-lessons/](src/problems/unit-lessons/) にまとめて書く。
 
-1. [units.ts](src/problems/unit-lessons/units.ts) に単元を1つ足す。`id` が問題ID、`grade` が置く学年
-   - 計算の単元は、`arithmetic`（計算の種類と、最初に出す数字）だけを書く。問題の文と台本は、数字から作る（[arithmetic.ts](src/problems/arithmetic.ts)）
-   - それ以外の単元は、`learn`（この学習でやること）・`q`（問題の文）・`a`（答え）・`parent`（いちばん大事なこと）を書き、[teaching.ts](src/problems/unit-lessons/teaching.ts) に台本を足す
+1. [units.ts](src/problems/unit-lessons/units.ts) に単元を1つ足す。`id` が問題ID
+   - `arithmetic`（計算の種類と、最初に出す数字）だけを書く。問題の文と台本は、数字から作る（[arithmetic.ts](src/problems/arithmetic.ts)）
 2. [src/problems/index.ts](src/problems/index.ts) に `'<問題ID>': lesson('<問題ID>'),` を1行足す（アルファベット順の位置に入れる）
-3. 図が要るときは、[QuestionVisual.tsx](src/problems/unit-lessons/QuestionVisual.tsx)（問題の図）と [LessonVisual.tsx](src/components/LessonVisual.tsx)（ステップごとの図）に足す
-4. `grade` の学年の算数の中に、単元として自動で並ぶ（`curriculum.ts` は書き換えなくてよい）
+3. [src/curriculum.ts](src/curriculum.ts) で、その単元（「じゅんび中」の単元なら、その行）の4つ目の引数に `['<問題ID>']` を書く
 
-台本の書き忘れや、`src/problems/index.ts` への足し忘れは、`npm run typecheck` が見つける。
+`src/problems/index.ts` への足し忘れは、`npm run typecheck` が見つける。`curriculum.ts` への置き忘れと、`slug`・名前が `units.ts` の `id`・`title` と違うことは、`npm test` が見つける。
 
 ### 問題ID
 
 - フォルダ名が問題IDで、そのまま問題のURLになる（`/problems/<問題ID>`）
-- 半角の英小文字・数字・ハイフンで、内容がわかる名前を付ける（例: `addition-apples`）
+- 半角の英小文字・数字・ハイフンで、内容がわかる名前を付ける（例: `addition-meaning`）
 - 教科名や単元の番号は入れない（階層が変わっても、IDを変えずに済むようにするため）
 - 公開後は変えない（URLが変わるため）
 
@@ -261,7 +257,8 @@ tests/                     # テスト（npm test）
 <ProblemStory
   question={{
     steps: ['あかい りんごが 3こ、', 'あおい りんごが 2こ あります。'],
-    visual: (step) => <AppleScene count={step === 0 ? 3 : 5} />,
+    // 図はその問題のフォルダに作る
+    visual: (step) => <Scene count={step === 0 ? 3 : 5} />,
   }}
   howToSolve={{ steps: [...] }}
   howToTeach={{ steps: [...] }}
@@ -270,7 +267,7 @@ tests/                     # テスト（npm test）
 ```
 
 - `steps` に、ステップごとの文章を順に書く。1ステップは1〜2文にする（長いと画面に収まらない）。強調したい言葉は `<strong>` で囲む
-- `visual` は図で、省略できる。今のステップ番号（0始まり）を受け取るので、ステップごとに見た目を変える。図はその問題のフォルダに作る（例: [AppleScene.tsx](src/problems/addition-apples/AppleScene.tsx)）
+- `visual` は図で、省略できる。今のステップ番号（0始まり）を受け取るので、ステップごとに見た目を変える。図はその問題のフォルダに作る
 - 図の動きは、ステップに応じて `data-*` 属性やクラスを切り替え、CSSの `transition` で付ける。スクロール量を自分で調べる必要はない
 - 教え方と声掛け例は、`visual` を省略すると標準の図（ポイントの番号、おやじいの吹き出し）になる
 - 画面の高さやブラウザの幅を変えて、文章が図や画面の端に重ならないか確かめる
@@ -289,11 +286,10 @@ export const curriculum: Group[] = [
         slug: 'math',
         name: '算数',
         children: [
-          {
-            slug: 'unit-01-addition-1digit',
-            name: 'たし算(1けたの数)',
-            problems: ['addition-apples'],
-          },
+          unit('数の理解', 'counting', '数を正しく数えよう'),
+          unit('たし算・ひき算', 'addition-meaning', 'たし算ってなに？', [
+            'addition-meaning',
+          ]),
         ],
       },
     ],
@@ -306,10 +302,11 @@ export const curriculum: Group[] = [
 - 分類は `slug`（URLになる）と `name`（画面に出る名前）を持ち、`children`（下の分類）と `problems`（問題ID）を入れられる
 - 入れ子は何段でもよい。一覧には書いた順に並ぶ
 - 段を足す、並べ替える、問題を別の分類へ移すといった変更は、このファイルの書き換えだけでできる
-- 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/unit-01-addition-1digit`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
+- 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/addition-meaning`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
 - `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題・大学祭モードのURLと重なるため）
 - 1つの問題は、1つの分類にだけ置く（2つに置くと、パンくずリストと戻り先が、先に書いた分類になってしまう。`npm test` が見つける）
-- [単元の教材](#単元の教材を足す)は、`units.ts` の `grade` の学年の算数の中に、自動で並ぶ（`curriculum.ts` の `lessonGroups`）
+- 単元は `unit(タグ, slug, 名前, 問題ID)` で書く。問題IDを省くと「じゅんび中」になる。問題を作るときは、`slug` と同じ問題IDにする
+- タグは `TAGS` に書いたものから選ぶ。一覧の行に出て、`TAGS` の並び順に色が付く（[src/index.css](src/index.css) の `[data-tag]`）
 - 下の分類がなく、問題が1つだけの分類は、一覧から問題のページへ直接進む（分類のURLを開いても、問題のページへ移る）。問題のページのパンくずリストには、その分類を出さない
 - 一覧には、分類ごとに中の問題の数（下の段も含む）が出る。問題が1つもない分類は「じゅんび中」と表示され、押せない
 - 一番上の段の分類には、並び順に色が付く（6色を順に使い、7つ目からは最初の色に戻る）。その分類の下のページも同じ色になる。色は [src/index.css](src/index.css) の `[data-tone]` で決めている
@@ -323,7 +320,6 @@ export const curriculum: Group[] = [
 | `src/curriculum.ts` で `Type '"..."' is not assignable to type ...`            | 問題IDの書き間違いか、[src/problems/index.ts](src/problems/index.ts) にまだ足していない |
 | `src/problems/index.ts` で `Property 'title' is missing ...`                   | その問題の `index.tsx` に `export const title = '...'` がない                           |
 | 問題の `index.tsx` で `Property '...' is missing ... required in type 'Props'` | `ProblemStory`（または `ProblemSections`）に4つの中身を渡していない                     |
-| `src/problems/unit-lessons/teaching.ts` で `Property '...' is missing ...`     | `units.ts` に足した計算以外の単元の台本を、`teaching.ts` に書いていない                 |
 | `src/problems/index.ts` で `lesson('...')` に `is not assignable`              | `units.ts` にない問題IDを書いている（書き間違いか、`units.ts` にまだ足していない）      |
 
 ## 大学祭モード
@@ -348,11 +344,11 @@ export const curriculum: Group[] = [
 
 [src/App.tsx](src/App.tsx) がURLを見て、どのページを出すかを決める。
 
-| URL                                                     | 出るページ                                                 | 中身の探し方                           |
-| ------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
-| `/`                                                     | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
-| `/problems/<問題ID>`                                    | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
-| それ以外（例: `/grade-1/math/unit-01-addition-1digit`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
+| URL                             | 出るページ                                                 | 中身の探し方                           |
+| ------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| `/`                             | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
+| `/problems/<問題ID>`            | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
+| それ以外（例: `/grade-1/math`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
 
 URLの先頭に `/festival` を付けると、同じ3種類のページが大学祭モードで出る（[大学祭モード](#大学祭モード)）。
 

@@ -1,10 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { arithmetic } from '../src/problems/arithmetic.ts'
-import {
-  notebookLines,
-  unitNotebook,
-} from '../src/components/lessonVisualModel.ts'
+import { notebookLines } from '../src/components/lessonVisualModel.ts'
 
 test('notebook carrying calculations follow every valid input pair', () => {
   for (let a = 1; a <= 9; a++)
@@ -32,18 +29,4 @@ test('each arithmetic notebook has one new line per teaching step', () => {
     assert.equal(lines.length, model.steps.length + 1)
     assert.ok(lines.at(-1).endsWith(String(model.answer)))
   }
-})
-
-test('other units have problem and teaching diagrams with notebook steps', () => {
-  for (const id of [
-    'clock-reading',
-    'shape-sides',
-    'shape-corners',
-    'length-compare',
-    'time-duration',
-  ]) {
-    assert.equal(unitNotebook[id].length, 3)
-    assert.ok(unitNotebook[id].every(Boolean))
-  }
-  assert.equal(notebookLines({ mode: 'count', a: 5, b: 0 }).length, 4)
 })

@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useMatches } from 'react-router'
-import { curriculum, festivalCurriculum } from '../curriculum'
+import { curriculum, festivalCurriculum, type Group } from '../curriculum'
 import { useFestival, useHomeUrl } from '../pages/festival'
-import type { PageLink } from '../pages/loaders'
+import { countProblems, type PageLink } from '../pages/loaders'
 
 export function SideNavigation() {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -117,34 +117,37 @@ export function SideNavigation() {
             {groups.map((group) => (
               <details className="sheet-group" key={group.slug}>
                 <summary>{group.name}</summary>
-                <Link
+                <MenuLink
+                  group={group}
                   className="sheet-link"
                   to={`${base}/${group.slug}`}
                   onClick={close}
                 >
                   {group.name}の一覧
-                </Link>
+                </MenuLink>
                 {group.children?.map((subject) => (
                   <div key={subject.slug}>
-                    <Link
+                    <MenuLink
+                      group={subject}
                       className="sheet-link"
                       to={`${base}/${group.slug}/${subject.slug}`}
                       onClick={close}
                     >
                       {subject.name}の単元を選ぶ
-                    </Link>
+                    </MenuLink>
                     {subject.children?.map((unit) => {
                       const url = `${base}/${group.slug}/${subject.slug}/${unit.slug}`
                       return (
-                        <Link
+                        <MenuLink
+                          group={unit}
                           className="sheet-link sheet-unit"
                           key={url}
                           to={url}
                           onClick={close}
-                          aria-current={pathname === url ? 'page' : undefined}
+                          current={pathname === url}
                         >
                           {unit.name}
-                        </Link>
+                        </MenuLink>
                       )
                     })}
                   </div>
@@ -155,5 +158,41 @@ export function SideNavigation() {
         </nav>
       </dialog>
     </>
+  )
+}
+
+// メニューの1項目。中に問題が1つもない分類は、リンクにせず押せない見た目にする
+// （ホーム・一覧の「じゅんび中」と同じ）
+function MenuLink({
+  group,
+  className,
+  to,
+  onClick,
+  current = false,
+  children,
+}: {
+  group: Group
+  className: string
+  to: string
+  onClick: () => void
+  current?: boolean
+  children: ReactNode
+}) {
+  if (countProblems(group) === 0)
+    return (
+      <span className={className} data-empty>
+        {children}
+        <span className="sheet-sub">じゅんび中</span>
+      </span>
+    )
+  return (
+    <Link
+      className={className}
+      to={to}
+      onClick={onClick}
+      aria-current={current ? 'page' : undefined}
+    >
+      {children}
+    </Link>
   )
 }

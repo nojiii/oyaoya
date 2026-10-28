@@ -1,4 +1,4 @@
-import { curriculum, festivalCurriculum, type Group } from '../curriculum'
+import { curriculum, festivalCurriculum, TAGS, type Group } from '../curriculum'
 import { problems, type ProblemId } from '../problems'
 import { FESTIVAL_URL } from './festival'
 import { redirect } from 'react-router'
@@ -11,16 +11,19 @@ export interface PageLink {
   url: string
 }
 
-// 一覧に並べる分類。count はその中（下の段も含む）にある問題の数
+// 一覧に並べる分類。count はその中（下の段も含む）にある問題の数。
+// tag の index は、タグの色分けに使う番号
 export interface GroupLink extends PageLink {
   count: number
+  tag?: { name: string; index: number }
 }
 
 function notFound(): never {
   throw new Response('Not Found', { status: 404 })
 }
 
-function countProblems(group: Group): number {
+// 分類の中（下の段も含む）にある問題の数
+export function countProblems(group: Group): number {
   const own = group.problems?.length ?? 0
   return (group.children ?? []).reduce(
     (sum, child) => sum + countProblems(child),
@@ -48,6 +51,7 @@ function groupLinks(
         ? `${base}/problems/${group.problems[0]}`
         : `${parentUrl}/${group.slug}`,
     count: countProblems(group),
+    tag: group.tag && { name: group.tag, index: TAGS.indexOf(group.tag) },
   }))
 }
 
@@ -72,7 +76,7 @@ export function loadHome(festival: boolean) {
   return { groups: groupLinks(tree, base, base) }
 }
 
-// URL（例: math/unit-01-addition-1digit）を上からたどって分類を探す
+// URL（例: grade-1/math/addition-meaning）を上からたどって分類を探す
 export function loadGroup(path: string, festival: boolean) {
   const { base, tree } = modeOf(festival)
   const groups: Group[] = []

@@ -18,21 +18,6 @@ test('every published script has teaching points, reading labels and only suppor
     const { default: ProblemDetail } = await server.ssrLoadModule(
       '/src/pages/ProblemDetail.tsx',
     )
-    const { teaching, questionNotes } = await server.ssrLoadModule(
-      '/src/problems/unit-lessons/teaching.ts',
-    )
-    for (const [id, turns] of Object.entries(teaching)) {
-      assert.ok(questionNotes[id], id + ': question note')
-      assert.ok(
-        turns.every((turn) => turn.parentNote),
-        id + ': every teaching step has its own note',
-      )
-      assert.equal(
-        new Set(turns.map((turn) => turn.parentNote)).size,
-        turns.length,
-        id + ': notes do not repeat',
-      )
-    }
     for (const id of Object.keys(problems)) {
       const path = '/problems/' + id
       const router = createMemoryRouter(
@@ -59,7 +44,7 @@ test('every published script has teaching points, reading labels and only suppor
             html.includes('aria-label="次のページ"'),
           id + ': navigation without swiping',
         )
-        if (id === 'addition-basic') {
+        if (id === 'addition-meaning') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んでみましょう'))
           assert.ok(html.includes('実物のおはじきを使う'))
@@ -148,18 +133,6 @@ test('every published script has teaching points, reading labels and only suppor
           false,
           id + ': no counter invitation inside the script card',
         )
-        const hasDiagram = [
-          'clock-reading',
-          'time-duration',
-          'length-compare',
-          'shape-sides',
-          'shape-corners',
-        ].includes(id)
-        assert.equal(
-          html.includes('の図をタップすると、大きく表示できます。'),
-          hasDiagram,
-          id + ': diagram invitation',
-        )
         assert.ok(
           html.includes('台本の進み具合'),
           id + ': progress is retained',
@@ -168,7 +141,6 @@ test('every published script has teaching points, reading labels and only suppor
         router.dispose()
       }
     }
-    assert.equal(Object.keys(problems).length, 12)
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage

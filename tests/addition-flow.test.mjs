@@ -124,7 +124,7 @@ test('both addition routes render all steps with matching progress, counter reus
     const { additionPages } = await server.ssrLoadModule(
       '/src/components/additionFlowState.ts',
     )
-    const path = '/problems/addition-basic'
+    const path = '/problems/addition-meaning'
     const render = (a, b) => {
       const router = createMemoryRouter(
         [

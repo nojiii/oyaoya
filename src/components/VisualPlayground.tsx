@@ -54,6 +54,8 @@ export function VisualPlayground({
   const introductionDescription = useId()
   const preview = useRef<HTMLDivElement>(null)
   const closing = useRef(false)
+  // 閉じ終わってから呼ぶ処理（close の afterClose）
+  const afterClosing = useRef<(() => void) | null>(null)
   const board = useRef<HTMLDivElement>(null)
   const drag = useRef<{
     id: number
@@ -194,6 +196,7 @@ export function VisualPlayground({
     const origin = preview.current?.getBoundingClientRect()
     const target = dialog.current
     if (!target || target.open) return
+    afterClosing.current = null
     reset()
     setHasInteracted(false)
     target.showModal()
@@ -220,16 +223,26 @@ export function VisualPlayground({
     )
   }
   useImperativeHandle(ref, () => ({ open }))
-  const close = () => {
+  // 閉じる操作はすべてここを通す。afterClose は、閉じ終わってから1回だけ呼ぶ
+  // （ほかの操作で閉じている途中に渡されても、閉じ終わってから呼ぶ）
+  const close = (afterClose?: () => void) => {
     cancelDrag()
     const target = dialog.current
-    if (!target?.open || closing.current) return
+    if (!target?.open) return
+    if (afterClose) afterClosing.current = afterClose
+    if (closing.current) return
+    const finish = () => {
+      const after = afterClosing.current
+      afterClosing.current = null
+      after?.()
+    }
     const origin = preview.current?.getBoundingClientRect()
     if (
       !origin ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       target.close()
+      finish()
       return
     }
     closing.current = true
@@ -258,6 +271,7 @@ export function VisualPlayground({
       target.close()
       animation.cancel()
       closing.current = false
+      finish()
     }
   }
   return (
@@ -369,7 +383,7 @@ export function VisualPlayground({
           <button
             type="button"
             className={styles.iconButton}
-            onClick={close}
+            onClick={() => close()}
             aria-label="もどる"
             title="もどる"
           >
@@ -638,18 +652,7 @@ export function VisualPlayground({
                   </p>
                 </div>
                 <div className={styles.continueGuide}>
-                  <button
-                    type="button"
-                    onClick={
-                      onReviewAnswer
-                        ? () => {
-                            cancelDrag()
-                            dialog.current?.close()
-                            onReviewAnswer()
-                          }
-                        : close
-                    }
-                  >
+                  <button type="button" onClick={() => close(onReviewAnswer)}>
                     {onReviewAnswer ? '答えを確認する' : 'おうちのひとにもどす'}{' '}
                     <span aria-hidden="true">→</span>
                   </button>

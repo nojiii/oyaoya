@@ -249,3 +249,125 @@ test('counter results appear only after completion and disappear on undo or rese
     }
   }
 })
+
+// 横のメニューでも、ホーム・一覧と同じく、問題がない分類（じゅんび中）は押せない
+test('side navigation links only to groups that have problems', async () => {
+  const server = await createTestServer()
+  let router
+  try {
+    const { SideNavigation } = await server.ssrLoadModule(
+      '/src/components/SideNavigation.tsx',
+    )
+    router = createMemoryRouter([
+      { path: '/', element: createElement(SideNavigation) },
+    ])
+    await router.navigate('/')
+    // 文字と式の境目に React が入れる <!-- --> は、照合の前に取り除く
+    const html = renderToString(
+      createElement(RouterProvider, { router }),
+    ).replaceAll('<!-- -->', '')
+    assert.ok(html.includes('href="/grade-1/math/addition-meaning"'))
+    assert.ok(html.includes('href="/grade-1"'))
+    for (const [slug, name] of [
+      ['grade-1/math/subtraction-meaning', 'ひき算ってなに？'],
+      ['grade-2', '小学2年生の一覧'],
+    ]) {
+      assert.ok(!html.includes(`href="/${slug}"`), slug + ': not a link')
+      assert.match(
+        html,
+        new RegExp(`<span[^>]*data-empty[^>]*>${name}<span[^>]*>じゅんび中`),
+        slug + ': shown as not ready',
+      )
+    }
+  } finally {
+    router?.dispose()
+    await server.close()
+  }
+})
+
+// 「答えを確認する」も、もどるボタンと同じ閉じる処理（アニメーション・二重押しの防止）を通す。
+// もどるボタンや Esc で閉じている途中に押しても、閉じ終わってから答えへ進む
+test('the counter dialog closes only through close(), which runs the follow-up once after closing', () => {
+  const source = readFileSync(
+    new URL('../src/components/VisualPlayground.tsx', import.meta.url),
+    'utf8',
+  )
+  const ast = ts.createSourceFile(
+    'VisualPlayground.tsx',
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  )
+  let closeSource
+  const bypasses = []
+  function visit(node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.name.getText(ast) === 'close' &&
+      node.initializer
+    )
+      closeSource = node.initializer.getText(ast)
+    if (
+      ts.isCallExpression(node) &&
+      /^dialog\.current\??\.close$/.test(node.expression.getText(ast))
+    )
+      bypasses.push(node.getText(ast))
+    ts.forEachChild(node, visit)
+  }
+  visit(ast)
+  assert.deepEqual(bypasses, [], 'the dialog is not closed directly')
+  assert.ok(closeSource)
+
+  const { outputText } = ts.transpileModule(`return (${closeSource})`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022 },
+  })
+  let closedCount = 0
+  let animation
+  const target = {
+    open: true,
+    close() {
+      closedCount++
+      target.open = false
+    },
+    getAnimations: () => [],
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 800 }),
+    animate() {
+      animation = { cancel() {} }
+      return animation
+    },
+  }
+  const close = new Function(
+    'cancelDrag',
+    'dialog',
+    'closing',
+    'afterClosing',
+    'preview',
+    'window',
+    outputText,
+  )(
+    () => {},
+    { current: target },
+    { current: false },
+    { current: null },
+    {
+      current: {
+        getBoundingClientRect: () => ({
+          left: 20,
+          top: 300,
+          width: 200,
+          height: 120,
+        }),
+      },
+    },
+    { matchMedia: () => ({ matches: false }) },
+  )
+  let reviewed = 0
+  close()
+  close(() => reviewed++)
+  close(() => reviewed++)
+  assert.equal(reviewed, 0, 'waits for the closing animation')
+  animation.onfinish()
+  assert.equal(closedCount, 1)
+  assert.equal(reviewed, 1, 'a second tap while closing does not run it again')
+})
