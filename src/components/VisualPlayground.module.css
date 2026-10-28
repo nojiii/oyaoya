@@ -12,7 +12,7 @@
   padding: 0.5rem;
   text-align: center;
   font-size: 0.8rem;
-  color: var(--color-muted);
+  color: #333333;
 }
 .dialog .iconButton {
   display: inline-grid;
@@ -46,7 +46,7 @@
     max(1rem, env(safe-area-inset-left));
   border: 0;
   background: #fffdf8;
-  color: var(--color-text);
+  color: #333333;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -69,7 +69,7 @@
   border: 1px solid #c5b39c;
   border-radius: 12px;
   background: white;
-  color: inherit;
+  color: #333333;
   font: inherit;
   cursor: pointer;
   touch-action: manipulation;
@@ -96,7 +96,7 @@
   background: #f4ede1;
   text-align: center;
   font-size: clamp(1.25rem, 4vw, 1.375rem);
-  color: #503824;
+  color: #333333;
   font-weight: 700;
   line-height: 1.6;
   text-wrap: pretty;
@@ -181,7 +181,7 @@
   position: absolute;
   inset: 40% 0 auto;
   text-align: center;
-  color: var(--color-muted);
+  color: #333333;
 }
 .largeDiagram {
   display: grid;
@@ -216,7 +216,7 @@
 }
 .takenLabel {
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: #333333;
 }
 .greenMat {
   border-color: #a8c9b6;
@@ -227,10 +227,10 @@
   font-size: clamp(2.5rem, 9vw, 4.5rem);
   font-weight: 800;
   line-height: 1.2;
-  color: #97521f;
+  color: #333333;
 }
 .greenMat .count {
-  color: #376550;
+  color: #333333;
 }
 @keyframes count-pop {
   0% {
@@ -260,7 +260,7 @@
   border: 1px solid #e0cdb9;
   border-radius: 1.25rem;
   background: #fffaf3;
-  color: #604733;
+  color: #333333;
   box-shadow: 0 12px 32px rgba(74, 59, 42, 0.16);
 }
 .introduction::backdrop {
@@ -287,7 +287,7 @@
   border: 1px solid #d8c2aa;
   border-radius: 0.75rem;
   background: #fffdf8;
-  color: #80522f;
+  color: #333333;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -333,7 +333,7 @@
   display: block;
   font-size: 1rem;
   font-weight: 400;
-  color: #60432e;
+  color: #333333;
   line-height: 1.6;
 }
 .dialog[data-addition='true'] .prompt {
@@ -355,7 +355,7 @@
 }
 .countingWords {
   margin: 0 0 1rem;
-  color: #604733;
+  color: #333333;
   text-align: center;
   line-height: 1.6;
   font-size: 1rem;
@@ -367,13 +367,13 @@
 .countingWords .countingWait {
   margin-bottom: 0.5rem;
   font-size: 1rem;
-  color: #60432e;
+  color: #333333;
   font-weight: 400;
 }
 .countingWords strong {
   font-size: 2.25rem;
   line-height: 1.3;
-  color: #985e30;
+  color: #333333;
   font-variant-numeric: tabular-nums;
 }
 .countingWords strong small {
@@ -386,7 +386,7 @@
   gap: 0.65rem;
   margin: 0 auto;
   max-width: 24rem;
-  color: #60432e;
+  color: #333333;
   line-height: 1.6;
 }
 .continueGuide p {
@@ -484,7 +484,7 @@
   min-width: 0;
   margin: 0;
   padding: 0.3rem 0;
-  color: #60432e;
+  color: #333333;
   font-size: 1rem;
   line-height: 1.6;
   transition: opacity 160ms ease-out;

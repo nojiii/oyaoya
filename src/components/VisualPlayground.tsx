@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react'
 import { counterGroups, type CounterProblem } from './counterModel'
 import styles from './VisualPlayground.module.css'
 import { visualSlots, nearestEmptySlot } from './visualSlots'
@@ -13,7 +21,12 @@ type Piece = {
   removed?: boolean
 }
 
+export interface VisualPlaygroundHandle {
+  open: () => void
+}
+
 export function VisualPlayground({
+  ref,
   children,
   problem,
   step,
@@ -21,7 +34,10 @@ export function VisualPlayground({
   apples = false,
   showOpenHint = true,
   showIntroduction = false,
+  onCompleteChange,
+  onReviewAnswer,
 }: {
+  ref?: Ref<VisualPlaygroundHandle>
   children: ReactNode
   problem?: CounterProblem
   step: number
@@ -29,6 +45,8 @@ export function VisualPlayground({
   apples?: boolean
   showOpenHint?: boolean
   showIntroduction?: boolean
+  onCompleteChange?: (complete: boolean) => void
+  onReviewAnswer?: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const introduction = useRef<HTMLDialogElement>(null)
@@ -86,6 +104,9 @@ export function VisualPlayground({
     moved === targetCount &&
     questionKey === progressKey
   const readyToCount = addition && completed
+  useEffect(() => {
+    onCompleteChange?.(completed)
+  }, [completed, onCompleteChange])
   const prompt = wrongSide
     ? 'ちゃいろの おはじきは、ひだりに もどしてみよう。'
     : counterPrompt(
@@ -198,6 +219,7 @@ export function VisualPlayground({
       { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     )
   }
+  useImperativeHandle(ref, () => ({ open }))
   const close = () => {
     cancelDrag()
     const target = dialog.current
@@ -616,8 +638,20 @@ export function VisualPlayground({
                   </p>
                 </div>
                 <div className={styles.continueGuide}>
-                  <button type="button" onClick={close}>
-                    おうちのひとにもどす <span aria-hidden="true">→</span>
+                  <button
+                    type="button"
+                    onClick={
+                      onReviewAnswer
+                        ? () => {
+                            cancelDrag()
+                            dialog.current?.close()
+                            onReviewAnswer()
+                          }
+                        : close
+                    }
+                  >
+                    {onReviewAnswer ? '答えを確認する' : 'おうちのひとにもどす'}{' '}
+                    <span aria-hidden="true">→</span>
                   </button>
                   <p>おうちのひとにスマホをわたしてね</p>
                 </div>

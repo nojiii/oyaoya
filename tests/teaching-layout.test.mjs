@@ -59,6 +59,18 @@ test('every published script has teaching points, reading labels and only suppor
             html.includes('aria-label="次のページ"'),
           id + ': navigation without swiping',
         )
+        if (id === 'addition-basic') {
+          assert.match(html, /data-slide="read" data-active="true"/)
+          assert.ok(html.includes('まずは問題を読んでみましょう'))
+          assert.ok(html.includes('実物のおはじきを使う'))
+          assert.ok(html.includes('アプリのおはじきを使う'))
+          assert.ok(html.includes('教え方のポイント'))
+          assert.ok(html.includes('aria-label="最初の数"'))
+          assert.equal((html.match(/aria-label="最初の数"/g) ?? []).length, 1)
+          assert.ok(html.includes('台本の進み具合'))
+          assert.ok(!html.includes('おはじきの案内'))
+          continue
+        }
         if (html.includes('aria-label="最初の数"')) {
           const firstCard = html.match(
             /<div[^>]*data-active="true"[\s\S]*?<\/form>/,
@@ -74,12 +86,13 @@ test('every published script has teaching points, reading labels and only suppor
           )
           assert.match(
             firstCard,
-            /class="[^"]*bubble[^"]*"[\s\S]*<form[\s\S]*aria-label="最初の数"/,
-            id + ': editable numbers are inside the speech bubble',
+            /class="[^"]*readingBox[^"]*"[\s\S]*<form[\s\S]*aria-label="最初の数"/,
+            id + ': editable numbers are inside the reading box',
           )
         }
         const headings = [...html.matchAll(/<h2[^>]*>[\s\S]*?<\/h2>/g)].filter(
-          (match) => match[0].includes('お子さんに声に出して読もう'),
+          (match) =>
+            match[0].replace(/<[^>]*>/g, '').includes('こう声がけしよう'),
         )
         const points = [...html.matchAll(/教え方のポイント/g)]
         assert.ok(headings.length >= 3, id + ': question and teaching steps')
@@ -88,24 +101,52 @@ test('every published script has teaching points, reading labels and only suppor
           headings.length,
           id + ': every reading step has teaching points',
         )
+        const notes = [
+          ...html.matchAll(
+            /<section[^>]*class="[^"]*parentNote[^"]*"[^>]*>[\s\S]*?<\/section>/g,
+          ),
+        ]
+        assert.equal(
+          notes.length,
+          headings.length,
+          id + ': teaching point sections',
+        )
+        for (const [note] of notes) {
+          const paragraphs = [...note.matchAll(/<p>([\s\S]*?)<\/p>/g)]
+          assert.ok(
+            paragraphs.length >= 2 && paragraphs.length <= 3,
+            id + ': teaching points use short, separate paragraphs',
+          )
+          assert.ok(
+            note.includes('親が最初に確認するところ'),
+            id + ': parent label',
+          )
+          assert.ok(
+            note.includes('<strong>'),
+            id + ': key phrases are emphasized',
+          )
+          assert.ok(
+            !note.includes('**'),
+            id + ': emphasis markers are not shown',
+          )
+        }
         const start = html.indexOf(headings[0][0])
         const point = html.indexOf('教え方のポイント')
+        const mascot = html.indexOf('/mascot.png', point)
+        const readingBox = html.indexOf('readingBox', mascot)
+        const readingText = html.indexOf('readAloudText', readingBox)
         assert.ok(
-          point < start && html.indexOf('/mascot.png', start) > start,
-          id + ': teaching points, reading heading, mascot order',
+          point < mascot &&
+            mascot < start &&
+            start < readingBox &&
+            readingBox < readingText,
+          id +
+            ': teaching points, mascot, speech cue and reading text appear in order',
         )
-        const hasCounters = [
-          'addition-apples',
-          'addition-basic',
-          'addition-carry',
-          'subtraction-basic',
-          'subtraction-borrow',
-          'counting-to-10',
-        ].includes(id)
         assert.equal(
           html.includes('aria-label="おはじきの案内"'),
-          hasCounters,
-          id + ': counter invitation',
+          false,
+          id + ': no counter invitation inside the script card',
         )
         const hasDiagram = [
           'clock-reading',

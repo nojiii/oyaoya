@@ -1,6 +1,7 @@
 :root {
   --color-bg: #ffffff;
-  --color-text: #4a3b2a;
+  --color-grid: #f2e6d3;
+  --color-text: #333333;
   --color-accent: #c8895a;
   --color-border: #e7dfd6;
   --color-muted: #8a7a68;
@@ -35,13 +36,21 @@
   box-sizing: border-box;
 }
 
+/* 画面全体に、薄い線で方眼紙の模様を敷く */
+html {
+  background-color: #fff3df;
+  background-image:
+    linear-gradient(var(--color-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 body {
   font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', sans-serif;
   max-width: 480px;
   margin: 0 auto;
   padding: 0 1.25rem 2rem;
   line-height: 1.7;
-  background: var(--color-bg);
   color: var(--color-text);
 }
 
