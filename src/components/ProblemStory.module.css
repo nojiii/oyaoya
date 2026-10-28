@@ -48,7 +48,7 @@
   border-radius: 999px;
   font-size: 0.85rem;
   letter-spacing: 0.15em;
-  color: var(--color-accent);
+  color: #333333;
 }
 
 .visual {
@@ -95,7 +95,7 @@
   margin: 0.25em 0;
 }
 .step strong {
-  color: var(--color-accent);
+  color: #333333;
 }
 
 /* 吹き出し（声掛け例） */
@@ -147,14 +147,14 @@
   font-size: 0.85rem;
   font-weight: bold;
   letter-spacing: 0.15em;
-  color: var(--color-muted);
+  color: #333333;
 }
 .pointNumber {
   font-size: 4.5rem;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: 0;
-  color: var(--color-accent);
+  color: #333333;
   animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -182,7 +182,7 @@
   padding-bottom: 1rem;
   background: linear-gradient(transparent, var(--color-bg) 55%);
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: #333333;
   transition: opacity 0.3s;
   pointer-events: none;
 }
@@ -190,7 +190,7 @@
   opacity: 0;
 }
 .hintArrow {
-  color: var(--color-accent);
+  color: #333333;
   animation: nudge 1.2s ease-in-out infinite;
 }
 
@@ -207,7 +207,7 @@
   background: none;
   font: inherit;
   font-weight: bold;
-  color: var(--color-accent);
+  color: #333333;
   cursor: pointer;
 }
 

@@ -12,7 +12,13 @@ export function lesson(id: UnitId) {
   if ('arithmetic' in unit) {
     const { mode, initial } = unit.arithmetic
     function Arithmetic() {
-      return <ArithmeticLesson mode={mode} initial={initial} />
+      return (
+        <ArithmeticLesson
+          mode={mode}
+          initial={initial}
+          additionFlow={id === 'addition-basic'}
+        />
+      )
     }
     return { title: unit.title, default: Arithmetic }
   }
@@ -60,7 +66,6 @@ export function lesson(id: UnitId) {
         }}
         turns={teaching[scripted.id].map((turn, index) => ({
           ...turn,
-          counterInvitation: index === 0 ? counters : undefined,
           resourceHint:
             index === 0 && !counters
               ? '下の' +

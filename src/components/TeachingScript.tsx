@@ -26,6 +26,7 @@ export interface Turn extends TeachingStepContent {
 
 // 始める前に読む内容。30秒ほどで読める量にする
 interface Prepare {
+  counterChoice?: boolean
   // この問題で、お子さんができるようになること
   goal: ReactNode
   // 用意するもの
@@ -37,6 +38,7 @@ interface Prepare {
 }
 
 interface Props {
+  flow?: ReactNode
   // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
   // 台本の下に出す、おはじきの画面
@@ -114,7 +116,6 @@ function beatsOf(turn: Turn): Beat[] {
     say: turn.say,
     sayContent: turn.sayContent,
     parentNote: turn.parentNote,
-    counterInvitation: turn.counterInvitation,
     resourceHint: turn.resourceHint,
     label: turn.label,
   })
@@ -206,9 +207,11 @@ function PrepareView({
             <div>
               <h3>一緒に確かめる</h3>
               <p>
-                {counters
-                  ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
-                  : '台本の図や身近なものを使って、一緒に答えを考えます。'}
+                {prepare.counterChoice
+                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
+                  : counters
+                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
+                    : '台本の図や身近なものを使って、一緒に答えを考えます。'}
               </p>
             </div>
           </li>
@@ -218,9 +221,11 @@ function PrepareView({
         <h2>今日の教え方のポイント</h2>
         <ul>
           <li>
-            {counters
-              ? '一緒におはじきを動かして考える'
-              : '図や身近なものを使って、一緒に考える'}
+            {prepare.counterChoice
+              ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
+              : counters
+                ? '一緒におはじきを動かして考える'
+                : '図や身近なものを使って、一緒に考える'}
           </li>
           <li>すぐに答えを教えず、お子さんが考えるのを待つ</li>
         </ul>
@@ -233,23 +238,27 @@ function PrepareView({
             ))}
           </ul>
           <p>
-            {counters
-              ? 'おはじきはアプリに用意しています。実物の準備はいりません。'
-              : `用意するもの：${prepare.materials.join('・')}`}
+            {prepare.counterChoice
+              ? '実物を使う場合は、おはじきを用意してください。アプリのおはじきも選べます。'
+              : counters
+                ? 'おはじきはアプリに用意しています。実物の準備はいりません。'
+                : `用意するもの：${prepare.materials.join('・')}`}
           </p>
         </details>
       </section>
-      <details className={styles.extraNote}>
-        <summary>声かけを先に読んでおく</summary>
-        <p className={styles.flowLabel}>1. 問題を出す</p>
-        <p className={styles.flowText}>{question.say}</p>
-        <p className={styles.flowLabel}>2. 解き方を順番に教える</p>
-        <ol className={styles.flow}>
-          {turns.map((turn) => (
-            <li key={turn.say}>{turn.say}</li>
-          ))}
-        </ol>
-      </details>
+      {!prepare.counterChoice && (
+        <details className={styles.extraNote}>
+          <summary>声かけを先に読んでおく</summary>
+          <p className={styles.flowLabel}>1. 問題を出す</p>
+          <p className={styles.flowText}>{question.say}</p>
+          <p className={styles.flowLabel}>2. 解き方を順番に教える</p>
+          <ol className={styles.flow}>
+            {turns.map((turn) => (
+              <li key={turn.say}>{turn.say}</li>
+            ))}
+          </ol>
+        </details>
+      )}
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
         <button className={styles.primary} type="button" onClick={onStart}>
@@ -263,7 +272,7 @@ function PrepareView({
 // 画面の見出し。何をする画面かを、アイコンと短い言葉で示す（アイコンは読み上げない）
 const HEADINGS = {
   do: ['✋', 'すること'],
-  say: ['💬', 'お子さんに声に出して読もう'],
+  say: ['💬', 'こう声がけしよう'],
   show: ['📝', '解説を確認する'],
   finish: ['🎉', 'おしまい'],
 } as const
@@ -356,6 +365,7 @@ export function TeachingScript({
   editor,
   counters,
   renderVisual,
+  flow,
 }: Props) {
   const location = useLocation()
   // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
@@ -517,6 +527,17 @@ export function TeachingScript({
           }}
           resume={history.length > 1}
         />
+        {navigation}
+      </div>
+    )
+
+  if (flow)
+    return (
+      <div
+        className={`${styles.script} ${styles.lessonPage}`}
+        data-script-running
+      >
+        {flow}
         {navigation}
       </div>
     )

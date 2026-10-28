@@ -36,7 +36,7 @@
   border: 0;
   border-radius: 1rem;
   background: transparent;
-  color: var(--color-text);
+  color: #333333;
   font: inherit;
   font-size: 0.85rem;
   text-decoration: none;
@@ -44,7 +44,7 @@
   touch-action: manipulation;
 }
 .pageNavigation [aria-current='page'] {
-  color: var(--tone-ink, #925b34);
+  color: #333333;
   background: var(--tone-bg, #f8eee6);
   font-weight: 700;
 }
@@ -75,11 +75,11 @@
   margin-bottom: 1rem;
 }
 .prepareHeading p {
-  color: var(--color-text);
+  color: #333333;
 }
 .prepareHeading .prepareTitle {
   font-size: 1rem;
-  color: #80522f;
+  color: #333333;
 }
 .learning {
   margin: 0.5rem 0 0;
@@ -117,12 +117,12 @@
   height: 26px;
   border-radius: 50%;
   background: #f8eee6;
-  color: #80522f;
+  color: #333333;
   font-size: 0.9rem;
   font-weight: 800;
 }
 .guideSteps svg {
-  color: #80522f;
+  color: #333333;
   margin-top: 2px;
 }
 .guideSteps h3 {
@@ -164,7 +164,7 @@
 .facts dt {
   font-size: 0.8rem;
   font-weight: bold;
-  color: var(--color-accent);
+  color: #333333;
 }
 .facts dd {
   margin: 0.35rem 0 0;
@@ -226,7 +226,7 @@
 .notes h2 {
   margin: 0 0 0.5rem;
   font-size: 0.95rem;
-  color: var(--color-accent);
+  color: #333333;
 }
 .numberEditor {
   min-width: 0;
@@ -241,7 +241,7 @@ fieldset.numberEditor {
 }
 .numberEditor legend {
   font-weight: bold;
-  color: var(--color-accent);
+  color: #333333;
 }
 .toolOption {
   display: flex;
@@ -259,7 +259,7 @@ fieldset.numberEditor {
 .numberEditor summary {
   min-height: 44px;
   padding: 0.5rem 0;
-  color: var(--color-accent);
+  color: #333333;
   cursor: pointer;
 }
 .numberFields {
@@ -281,16 +281,16 @@ fieldset.numberEditor {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-bg);
-  color: var(--color-text);
+  color: #333333;
   font: inherit;
   font-size: 16px;
 }
 .editorHelp {
   font-size: 0.8rem;
-  color: var(--color-muted);
+  color: #333333;
 }
 .editorError {
-  color: #a32e24;
+  color: #333333;
 }
 .applyNumbers {
   min-height: 44px;
@@ -299,7 +299,7 @@ fieldset.numberEditor {
   border: none;
   border-radius: 10px;
   background: var(--color-accent);
-  color: white;
+  color: #333333;
   font: inherit;
   cursor: pointer;
 }
@@ -322,7 +322,7 @@ fieldset.numberEditor {
 .notes {
   padding: 1rem 1.25rem;
   border-top: 1px solid var(--color-border);
-  color: var(--color-muted);
+  color: #333333;
   font-size: 0.9rem;
 }
 .notes h2:not(:first-child) {
@@ -346,7 +346,7 @@ fieldset.numberEditor {
   align-items: center;
   gap: 0.75rem;
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: #333333;
 }
 .back {
   min-height: 44px;
@@ -354,7 +354,7 @@ fieldset.numberEditor {
   border: none;
   background: none;
   font: inherit;
-  color: #80522f;
+  color: #333333;
   cursor: pointer;
 }
 .progressStatus {
@@ -362,7 +362,7 @@ fieldset.numberEditor {
   flex: 1;
   gap: 0.4rem;
   font-size: 1rem;
-  color: var(--color-text);
+  color: #333333;
 }
 .progressTrack {
   height: 6px;
@@ -432,7 +432,7 @@ fieldset.numberEditor {
   gap: 0.5rem;
   margin: 0;
   font-size: 0.95rem;
-  color: #6d5c49;
+  color: #333333;
 }
 .actions:empty {
   display: none;
@@ -453,6 +453,7 @@ fieldset.numberEditor {
 .readingContent {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 0.75rem;
 }
 .pageCue {
@@ -461,7 +462,7 @@ fieldset.numberEditor {
   justify-content: flex-end;
   gap: 0.4rem;
   margin-top: 0.5rem;
-  color: #806950;
+  color: #333333;
   font-size: 0.75rem;
   line-height: 1.5;
 }
@@ -488,7 +489,7 @@ fieldset.numberEditor {
   border: 0;
   border-radius: 0.5rem;
   background: #fffdf8ed;
-  color: #80522f;
+  color: #333333;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -576,7 +577,7 @@ fieldset.numberEditor {
   border-top: 1px solid var(--color-border);
   font-size: 1rem;
   line-height: 1.7;
-  color: #6d5c49;
+  color: #333333;
 }
 .panelNotes section + section {
   margin-top: 0.85rem;
@@ -584,7 +585,7 @@ fieldset.numberEditor {
 .panelNotes h3 {
   margin: 0 0 0.25rem;
   font-size: 0.85rem;
-  color: var(--color-text);
+  color: #333333;
 }
 .panelNotes p {
   margin: 0 0 0.5rem;
@@ -599,7 +600,7 @@ fieldset.numberEditor {
   border-left: 4px solid var(--color-accent);
   border-radius: 0 12px 12px 0;
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
-  color: var(--color-text);
+  color: #333333;
 }
 .panelNotes .teachGuide h3 {
   margin-bottom: 0.5rem;
@@ -612,7 +613,7 @@ fieldset.numberEditor {
   line-height: 1.8;
 }
 .extraNote {
-  color: var(--color-text);
+  color: #333333;
   font-size: 1rem;
 }
 .extraNote summary {
@@ -645,7 +646,7 @@ fieldset.numberEditor {
   font-size: 0.85rem;
   font-weight: bold;
   letter-spacing: 0.1em;
-  color: #80522f;
+  color: #333333;
 }
 
 /* する・待つ 画面の本文 */
@@ -661,13 +662,15 @@ fieldset.numberEditor {
   margin: 0;
   font-size: 0.85rem;
   text-align: center;
-  color: var(--color-muted);
+  color: #333333;
 }
 
-/* おやじいと吹き出し。言うことがこの画面の主役なので、いちばん大きく出す */
+/* おやじいの右に声がけの案内を並べ、その下に読み上げる言葉を置く */
 .speech {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
   align-items: flex-start;
   gap: 0.5rem;
 }
@@ -676,9 +679,15 @@ fieldset.numberEditor {
   min-width: 0;
   width: 100%;
 }
+.speechIntro {
+  display: grid;
+  grid-template-columns: clamp(4rem, 20vw, 7rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+}
 .mascot {
-  flex: none;
-  width: 144px;
+  display: block;
+  width: 100%;
   max-width: 100%;
   height: auto;
   align-self: center;
@@ -687,45 +696,49 @@ fieldset.numberEditor {
   margin: 0 0 0.25rem;
   font-size: 0.8rem;
   font-weight: bold;
-  color: var(--color-muted);
+  color: #333333;
 }
-.bubble {
-  position: relative;
+.readingBox {
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
-  padding: 0.9rem 1.1rem;
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg));
+  padding: 1.25rem clamp(0.75rem, 3vw, 1.25rem);
+  border: 2px solid #b58f6d;
+  border-radius: 0.75rem;
+  background: var(--color-bg);
+  color: #333333;
+  overflow-wrap: anywhere;
+}
+.readAloudIcon {
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  padding: 4px;
+  border-radius: 50%;
+  background: #fff0bd;
+}
+.readAloudText {
+  min-width: 0;
   font-size: clamp(1.3rem, 5.5vw, 1.6rem);
   font-weight: bold;
   line-height: 1.6;
-  /* 声掛けは言葉の間に空白を入れて書くので、空白のところでだけ改行する */
+  /* 狭い画面でも、長い言葉や数式が枠からはみ出さないようにする */
   word-break: normal;
   overflow-wrap: anywhere;
-  animation: pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-/* 吹き出しのしっぽ（おやじいの方へ向ける） */
-.speech .bubble::before {
-  content: '';
-  position: absolute;
-  top: -0.4rem;
-  left: calc(50% - 0.45rem);
-  width: 0.9rem;
-  height: 0.9rem;
-  background: inherit;
-  transform: rotate(45deg);
 }
 
 /* なぜこう声をかけるのか（閉じておく） */
 .why {
   font-size: 0.9rem;
-  color: var(--color-muted);
+  color: #333333;
 }
 .panel .why {
   align-self: center;
 }
 .why summary {
   cursor: pointer;
-  color: var(--color-accent);
+  color: #333333;
 }
 
 /* ページを離れる前の確認 */
@@ -735,7 +748,7 @@ fieldset.numberEditor {
   border: none;
   border-radius: 1.5rem;
   background: var(--color-bg);
-  color: var(--color-text);
+  color: #333333;
   box-shadow: 0 12px 40px rgba(74, 59, 42, 0.2);
   text-align: center;
 }
@@ -776,7 +789,7 @@ fieldset.numberEditor {
   background: var(--color-bg);
   font: inherit;
   font-weight: bold;
-  color: var(--color-text);
+  color: #333333;
   cursor: pointer;
 }
 /* 一覧へ戻るリンクも、ボタンと同じ見た目にする */
@@ -796,7 +809,7 @@ fieldset.numberEditor {
 .confirmButtons .primary {
   border-color: #a36235;
   background: #a36235;
-  color: #fff;
+  color: #333333;
 }
 .actions :is(button, a) {
   min-height: 56px;
@@ -819,18 +832,10 @@ fieldset.numberEditor {
     transform: translateY(1.5rem) scale(0.95);
   }
 }
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dragTrack {
     transition: none;
   }
-  .bubble,
   .panel {
     animation: none;
   }
@@ -849,37 +854,25 @@ fieldset.numberEditor {
   border-color: var(--color-border);
   background: var(--color-bg);
   box-shadow:
-    0 8px 20px rgba(74, 59, 42, 0.12),
+    0 4px 0 rgb(74 59 42 / 12%),
+    0 10px 18px rgb(74 59 42 / 18%),
     inset 0 1px 0 #fff;
 }
 .speech {
   gap: 0.75rem;
   padding: 0;
 }
-.bubble {
-  padding: 1.25rem;
-  border: 1px solid #e4cdb6;
-  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg));
-  color: var(--color-text);
-  box-shadow:
-    0 10px 18px rgba(99, 65, 37, 0.18),
-    0 3px 5px rgba(99, 65, 37, 0.08),
-    inset 0 1px 0 #fff;
-}
-.speech .bubble::before {
-  background: inherit;
-  border-top: 1px solid #e4cdb6;
-  border-left: 1px solid #e4cdb6;
-}
-
 .inlineQuestion {
   padding: 0.75rem 0;
 }
-.bubble .inlineQuestion {
+.readingBox .inlineQuestion {
   padding: 0;
 }
 .editableSpeech {
-  display: inline;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   line-height: 2;
 }
 .editableSpeech .operand {
@@ -894,7 +887,7 @@ fieldset.numberEditor {
   border: 1px solid #a36235;
   border-radius: 0;
   background: #fff;
-  color: #80522f;
+  color: #333333;
   font: inherit;
   text-align: center;
 }
@@ -905,7 +898,7 @@ fieldset.numberEditor {
 .editableSpeech input[aria-invalid='true'] {
   border-color: #a32e24;
 }
-.bubble .editorHelp {
+.readingBox .editorHelp {
   margin: 0.75rem 0 0;
   font-weight: 400;
 }
@@ -917,7 +910,7 @@ fieldset.numberEditor {
   gap: 0.5rem;
   font-size: clamp(2rem, 8vw, 3.5rem);
   font-weight: 700;
-  color: var(--color-text);
+  color: #333333;
 }
 .operand {
   display: inline-flex;
@@ -932,7 +925,7 @@ fieldset.numberEditor {
   border-bottom: 3px solid #a36235;
   border-radius: 0.75rem;
   background: #fffaf2;
-  color: #80522f;
+  color: #333333;
   font: inherit;
   text-align: center;
 }
@@ -980,7 +973,7 @@ fieldset.numberEditor {
     border: 1px solid var(--color-border);
     border-radius: 0.6rem;
     background: var(--color-bg);
-    color: var(--color-text);
+    color: #333333;
     font: inherit;
     font-weight: 700;
     cursor: pointer;
@@ -996,13 +989,8 @@ fieldset.numberEditor {
     width: 100%;
     margin-top: 0.5rem;
     background: #a36235;
-    color: #fff;
+    color: #333333;
   }
-}
-
-/* Keep the speech attached to its card during page changes. */
-.panel .bubble {
-  animation: none;
 }
 
 /* Leave a glimpse of the following card at the right edge. */
@@ -1011,6 +999,7 @@ fieldset.numberEditor {
 }
 .dragTrack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: calc(100% - 32px);
   margin-inline: 16px;
 }
@@ -1023,105 +1012,80 @@ fieldset.numberEditor {
 }
 
 .parentNote {
-  margin: 0 0 0.25rem;
-  padding-bottom: 0.85rem;
+  margin: 0 0 0.5rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid #e7d9ca;
-  color: #604733;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  color: #333333;
+  font-size: 1rem;
+  line-height: 1.8;
   overflow-wrap: anywhere;
 }
-.parentNote h3 {
+.parentNoteHeader {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  margin: 0 0 0.35rem;
-  color: #80522f;
-  font-size: 0.8rem;
-  font-weight: 600;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
-.parentNote p {
+.parentNoteHeader h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.parentNoteHint {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.parentNoteHeader .pointIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+.parentNoteBody {
+  display: grid;
+  gap: 0.85rem;
+}
+.parentNoteBody p {
   margin: 0;
   font-weight: 400;
 }
-
-.parentNote h3 svg {
-  flex-shrink: 0;
-}
-.parentNote h3 .pointIcon {
-  width: 36px;
-  height: 36px;
-  filter: drop-shadow(0 2px 1px #9b5b2426);
-}
-
-.counterGuide {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.85rem;
-  border: 1px solid #e7d9ca;
-  border-radius: 1rem;
-  background: #faf6f0;
-  box-shadow: 0 2px 5px rgba(99, 65, 37, 0.04);
-  color: #604733;
-  font-size: 0.875rem;
-  line-height: 1.7;
-}
-.counterGuide > svg {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-}
-.counterGuide > div {
-  flex: 1;
-  min-width: 0;
-}
-.counterGuide p {
-  margin: 0 0 0.65rem;
-  overflow-wrap: anywhere;
-}
-.counterGuideButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0.55rem 1rem;
-  border: 1px solid #d8c2aa;
-  border-radius: 0.75rem;
-  color: #80522f;
-  background: #fffdf8;
-  font-weight: 600;
-}
-.counterGuide [role='button']:hover .counterGuideButton {
-  background: #f5e8d8;
-}
-.counterGuide [role='button']:active .counterGuideButton {
-  background: #efe0cd;
+.parentNoteBody strong {
+  font-weight: 700;
 }
 
 .readAloudHeading {
   display: flex;
   align-items: center;
-  justify-content: center;
-  align-self: center;
-  gap: 0.5rem;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.25rem;
   margin: 0;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.4rem;
   border: 1px solid #e5c49e;
-  border-radius: 1.25rem;
+  border-radius: 1.5rem;
   background: #fff8e9;
-  color: #80522f;
-  font-size: 0.9375rem;
+  color: #333333;
+  font-size: clamp(0.875rem, 3.8vw, 0.9375rem);
   font-weight: 700;
   line-height: 1.6;
 }
+.readAloudHeading span {
+  min-width: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
 .readAloudHeading svg {
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 0 #e5c49e);
+  width: clamp(24px, 7vw, 28px);
+  height: auto;
 }
 
 .resourceHint {
   margin: 0;
-  color: #604733;
+  color: #333333;
   font-size: 0.875rem;
   line-height: 1.6;
 }

@@ -14,7 +14,7 @@
   border-radius: 12px;
   padding: 0.8rem 1rem;
   background: #fffcf7;
-  color: #593724;
+  color: #333333;
   min-height: 48px;
 }
 .choices button[aria-pressed='true'] {

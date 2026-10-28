@@ -3,14 +3,21 @@ import { arithmetic, type ArithmeticMode } from '../problems/arithmetic'
 import { TeachingScript } from './TeachingScript'
 import styles from './TeachingScript.module.css'
 import { LessonVisual } from './LessonVisual'
+import { AdditionFlow } from './AdditionFlow'
 
 interface Props {
   mode: ArithmeticMode
   initial: readonly [number, number]
   apples?: boolean
+  additionFlow?: boolean
 }
 
-export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
+export function ArithmeticLesson({
+  mode,
+  initial,
+  apples = false,
+  additionFlow = false,
+}: Props) {
   const [values, setValues] = useState(initial)
   const [draft, setDraft] = useState(initial.map(String))
   const [error, setError] = useState('')
@@ -195,19 +202,25 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
   return (
     <TeachingScript
       key={`${mode}-${a}-${b}`}
+      flow={
+        additionFlow ? (
+          <AdditionFlow a={a} b={b} editor={renderEditor()} />
+        ) : undefined
+      }
       editor={renderEditor()}
       counters={{ mode, a, b }}
       renderVisual={(step) => (
         <LessonVisual problem={{ mode, a, b }} step={step} />
       )}
       prepare={{
+        counterChoice: additionFlow,
         goal: `${model.equation} の解き方を、画面のおはじきを動かしながら教えます。`,
         materials: [
           `おはじきやブロックを${isSubtract ? a : mode === 'times' ? a * b : a + b}こ`,
           '紙と鉛筆',
         ],
         point:
-          (mode === 'carry' || mode === 'add') && a + b >= 10
+          !additionFlow && (mode === 'carry' || mode === 'add') && a + b >= 10
             ? `まず${a}を10にします。${b}を${10 - a}と${b - (10 - a)}に分けると考えやすくなります。`
             : 'おはじきを一緒に動かして、数がどう変わるかを確かめます。',
         avoid: [
@@ -220,12 +233,12 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
         say: question,
         sayContent: renderEditor(true),
         parentNote: isSubtract
-          ? '最初の数と引く数を指さし、何こから何こを取る問題か確認します。答えを急がず、お子さんが状況を思い浮かべる時間を作りましょう。'
+          ? '**最初の数と引く数**を指さし、何こから何こを取るか確かめましょう。\n\n答えを急がず、**思い浮かべる時間**を作ります。'
           : mode === 'times'
-            ? '1つ分の数と、いくつ分かを指さして確認します。難しければ、同じ数ずつ並んだ身近なものを使って見せましょう。'
+            ? '**1つ分といくつ分**を、指さして確かめましょう。\n\n難しければ身近なものを、**同じ数ずつ**並べて見せます。'
             : mode === 'add' && a + b < 10
-              ? 'まずは問題を一緒に読みましょう。答えを急がず、お子さんが考える時間を作ります。'
-              : '2つの数を指さし、合わせた数を考える問題だと確認します。先に答えを言わず、お子さんが考える時間を作りましょう。',
+              ? 'まずは問題を、**一緒に読みましょう**。\n\n答えを急がず、お子さんが**考える時間**を作ります。'
+              : '**2つの数を指さして**、合わせた数を考える問題だと確認します。\n\n先に答えを言わず、お子さんが**考える時間**を作りましょう。',
         show: <p>{question}</p>,
         how: 'おはじきの画面を開き、問題の数を指さしながら読み上げます。',
         why: '計算する数と、何をする問題かを確認してから、解き方の説明に入ります。',
@@ -234,11 +247,7 @@ export function ArithmeticLesson({ mode, initial, apples = false }: Props) {
           '問題を読み終える前に計算を急かす',
         ],
       }}
-      turns={model.steps.map((step, index) => ({
-        ...step,
-        counterInvitation:
-          mode !== 'times' && index === 0 ? { mode, a, b } : undefined,
-      }))}
+      turns={model.steps}
     />
   )
 }

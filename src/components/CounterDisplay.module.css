@@ -4,7 +4,7 @@
   border: 1px solid var(--color-accent);
   border-radius: 12px;
   background: var(--color-bg);
-  color: var(--color-accent);
+  color: #333333;
   font: inherit;
   font-weight: bold;
   cursor: pointer;
@@ -21,7 +21,7 @@
     max(1.25rem, env(safe-area-inset-bottom));
   border: none;
   background: var(--color-bg);
-  color: var(--color-text);
+  color: #333333;
   overflow: auto;
 }
 .display[open] {
