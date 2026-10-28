@@ -295,7 +295,7 @@
 .introductionActions .introductionPrimary {
   background: #a36235;
   border-color: #a36235;
-  color: #333333;
+  color: #fff;
 }
 .introductionActions button:focus-visible {
   outline: 2px solid #80522f;
@@ -407,7 +407,7 @@
   border: 1px solid #a36235;
   border-radius: 0.85rem;
   background: #a36235;
-  color: #333333;
+  color: #fffdf8;
   font-size: 1rem;
   line-height: 1.5;
   font-weight: 600;

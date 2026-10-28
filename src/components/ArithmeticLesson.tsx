@@ -214,7 +214,7 @@ export function ArithmeticLesson({
       )}
       prepare={{
         counterChoice: additionFlow,
-        goal: `${model.equation} の解き方を、画面のおはじきを動かしながら教えます。`,
+        goal: `${model.equation} の解き方を、おはじきを動かしながら教えます。`,
         materials: [
           `おはじきやブロックを${isSubtract ? a : mode === 'times' ? a * b : a + b}こ`,
           '紙と鉛筆',

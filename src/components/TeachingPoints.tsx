@@ -39,7 +39,7 @@ export function TeachingPoints({ note }: { note: string }) {
           />
         </svg>
         <div>
-          <h2 id={headingId}>教え方のポイント</h2>
+          <h3 id={headingId}>教え方のポイント</h3>
           <p className={styles.parentNoteHint}>親が最初に確認するところ</p>
         </div>
       </header>

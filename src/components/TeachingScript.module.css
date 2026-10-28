@@ -290,7 +290,7 @@ fieldset.numberEditor {
   color: #333333;
 }
 .editorError {
-  color: #333333;
+  color: #a32e24;
 }
 .applyNumbers {
   min-height: 44px;
@@ -298,8 +298,8 @@ fieldset.numberEditor {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 10px;
-  background: var(--color-accent);
-  color: #333333;
+  background: #a36235;
+  color: #fff;
   font: inherit;
   cursor: pointer;
 }
@@ -809,7 +809,7 @@ fieldset.numberEditor {
 .confirmButtons .primary {
   border-color: #a36235;
   background: #a36235;
-  color: #333333;
+  color: #fff;
 }
 .actions :is(button, a) {
   min-height: 56px;
@@ -989,7 +989,7 @@ fieldset.numberEditor {
     width: 100%;
     margin-top: 0.5rem;
     background: #a36235;
-    color: #333333;
+    color: #fff;
   }
 }
 
@@ -1026,7 +1026,7 @@ fieldset.numberEditor {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
-.parentNoteHeader h2 {
+.parentNoteHeader h3 {
   margin: 0;
   font-size: 1.0625rem;
   font-weight: 700;
