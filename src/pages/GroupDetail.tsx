@@ -33,6 +33,11 @@ export default function GroupDetail() {
                 {i + 1}
               </span>
               <span className="row-text">
+                {group.tag && (
+                  <span className="row-tag" data-tag={group.tag.index}>
+                    {group.tag.name}
+                  </span>
+                )}
                 <span className="item-name">{group.name}</span>
                 <span className="row-sub">
                   {group.count === 0 ? 'じゅんび中' : `${group.count}問`}

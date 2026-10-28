@@ -141,7 +141,7 @@ main.is-loading {
   color: var(--color-text);
   overflow-wrap: anywhere;
 }
-.sheet-link:hover,
+a.sheet-link:hover,
 .sheet-link[aria-current='page'] {
   background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
   text-decoration: none;
@@ -165,6 +165,19 @@ main.is-loading {
 .sheet-unit {
   padding-left: 1.25rem;
   font-size: 0.9rem;
+}
+/* 中身がまだない項目は、色を薄くして押せないことを示す（一覧の .row[data-empty] と同じ考え方） */
+.sheet-link[data-empty] {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-muted);
+  cursor: default;
+}
+.sheet-sub {
+  flex: none;
+  font-size: 0.75rem;
 }
 @keyframes sheet-enter {
   from {
@@ -377,6 +390,26 @@ ul.rows {
 .row-sub {
   font-size: 0.8rem;
   color: var(--color-muted);
+}
+/* 単元のタグ。タグごとに色を変える（curriculum.ts の TAGS の順番） */
+.row-tag {
+  width: fit-content;
+  margin-bottom: 0.2rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: oklch(0.95 0.04 var(--tag-hue, 55));
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: oklch(0.45 0.1 var(--tag-hue, 55));
+}
+.row-tag[data-tag='1'] {
+  --tag-hue: 230;
+}
+.row-tag[data-tag='2'] {
+  --tag-hue: 150;
+}
+.row-tag[data-tag='3'] {
+  --tag-hue: 300;
 }
 .row-arrow {
   flex: none;
