@@ -49,7 +49,11 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
       title: '1列に並べましょう',
       content: (
         <>
-          <TeachingPoints note="ばらばらのままだと、どれを数えたか分からなくなります。**横1列に、少し間をあけて**並べましょう。\n\nお子さんに並べてもらうと、1個ずつ触るきっかけになります。" />
+          <TeachingPoints
+            note={
+              'ばらばらのままだと、どれを数えたか分からなくなります。**横1列に、少し間をあけて**並べましょう。\n\nお子さんに並べてもらうと、1個ずつ触るきっかけになります。'
+            }
+          />
           <div
             className={countingStyles.line}
             role="img"
@@ -68,7 +72,11 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
       title: '1こずつ指さして数えましょう',
       content: (
         <>
-          <TeachingPoints note="お子さんが**1個ずつ指でさしながら**、声に出して数えるのを見守りましょう。親は一緒に数えません。\n\n数えたものを**横へずらしながら**数えると、2回数えたり、飛ばしたりしにくくなります。指と声がずれるときは、お子さんの手をそっと持って、1個ずつ一緒に触ります。" />
+          <TeachingPoints
+            note={
+              'お子さんが**1個ずつ指でさしながら**、声に出して数えます。親は一緒に数えず、見守りましょう。\n\n数えたものは、**1個ずつ横へずらして**もらいます。数えたものとまだのものが分かれるので、2回数えたり飛ばしたりせずに、最後まで数えられます。'
+            }
+          />
           <SpokenWords>{countingWords.count}</SpokenWords>
         </>
       ),
@@ -78,17 +86,13 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
       title: '全部で何こだったかな？',
       content: (
         <div className={styles.answer}>
-          <TeachingPoints note="数え終わったら、**最後に言った数が全部の数**だと分かっているかを確かめます。\n\nお子さんの答えに合わせて、下の声かけを選びましょう。" />
+          <TeachingPoints
+            note={
+              '数え終わったら、何個だったかを聞きます。\n\nお子さんが答えたら、**最後に言った数が、全部の数**になることを一緒に確かめましょう。'
+            }
+          />
           <SpokenWords>{countingWords.answer}</SpokenWords>
-          <SpokenWords title={`「${n}」と答えたら`}>
-            そう！ 1こずつ指でさして数えたから、ぴったりだね。全部で{n}こ！
-          </SpokenWords>
-          <SpokenWords title="ちがう数を答えたら">
-            おしい！ 数えたものを横にずらしながら、もう一回数えてみよう。
-          </SpokenWords>
-          <SpokenWords title="また「1、2、3…」と数え始めたら">
-            さっき最後に「{n}」って言ったね。だから、全部で{n}こだよ。
-          </SpokenWords>
+          <SpokenWords title="答えたら">{countingWords.confirm(n)}</SpokenWords>
           <button
             className={styles.secondary}
             type="button"

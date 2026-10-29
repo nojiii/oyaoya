@@ -9,6 +9,8 @@ export function restoreCountingPage(raw: string | null): CountingPage {
 export const countingWords = {
   read: '何こ あるかな？ 1こずつ数えてみよう。',
   line: '数えやすいように、1列に並べてみようか。',
-  count: '指でさしながら、1こずつ数えてみよう。',
+  count: '指でさしながら、1こずつ数えてみよう。数えたら、横にずらしてね。',
   answer: '全部で何こだった？',
+  confirm: (n: number) =>
+    `最後に「${n}」って言ったね。だから、全部で${n}こ。1こずつ、ちゃんと数えられたね！`,
 }

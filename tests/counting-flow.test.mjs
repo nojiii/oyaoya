@@ -57,13 +57,15 @@ test('counting renders every page, lets the parent pick 1 to 10 and branches on 
         )
         assert.ok(active.includes(titles[page]), `${n}/${page}: title`)
         assert.ok(html.includes(`${index + 1} / ${countingPages.length}ページ`))
+        // 注意文の改行は段落になり、\n の文字のまま出ない
+        assert.ok(!html.includes('\\n'), `${n}/${page}: no literal \\n`)
         if (page === 'line')
           assert.ok(active.includes(`おはじきが${n}こ、1列に並んでいます`))
         if (page === 'answer') {
-          assert.ok(active.includes(`「${n}」と答えたら`))
-          assert.ok(active.includes(`全部で${n}こ！`))
-          assert.ok(active.includes('ちがう数を答えたら'))
-          assert.ok(active.includes(`さっき最後に「${n}」って言ったね`))
+          // できなかったときの分かれ道は作らず、聞いて確かめる一本道にする
+          assert.ok(active.includes('全部で何こだった？'))
+          assert.ok(active.includes(`最後に「${n}」って言ったね`))
+          assert.ok(!active.includes('ちがう数'))
           assert.ok(active.includes('数を変えて、もう1回'))
         }
       }
