@@ -75,7 +75,7 @@
   font-size: 12px;
   font-weight: 400;
   text-align: center;
-  color: var(--color-faint);
+  color: var(--color-muted);
 }
 
 /* たたんでおく行（数を変える・詳しい教え方・使い方・声かけを先に読む）。入れ子にせず縦に並べる */
@@ -321,7 +321,7 @@
   margin: 0;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 18%);
+  background: var(--teach-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -449,7 +449,7 @@
   margin: 0;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 18%);
+  background: var(--teach-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
