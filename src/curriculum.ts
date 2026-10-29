@@ -108,7 +108,33 @@ export const curriculum: Group[] = [
 // 大学祭モード（/festival 以下）の階層。大学祭用の問題はこちらにだけ置く。書き方は curriculum と同じ。
 // 一番上の段は3段階の難易度
 export const festivalCurriculum: Group[] = [
-  { slug: 'easy', name: 'かんたん' },
-  { slug: 'normal', name: 'ふつう' },
-  { slug: 'hard', name: 'むずかしい' },
+  { 
+    slug: 'math-easy', 
+    name: '数学（易しい）',
+    children: [
+      // 第一引数のタグは既存の TAGS（'数の理解', '形・図形' など）から選ぶ必要があります
+      unit('数の理解', 'math-easy-1', '数学 易しい 第1問', ['math-easy-1'])
+    ]
+  },
+  { 
+    slug: 'math-hard', 
+    name: '数学（難しい）',
+    children: [
+      unit('数の理解', 'math-hard-1', '数学 難しい 第1問', ['math-hard-1'])
+    ]
+  },
+  { 
+    slug: 'puzzle-easy', 
+    name: '謎解き（易しい）',
+    children: [
+      unit('形・図形', 'puzzle-easy-1', '謎解き 易しい 第1問', ['puzzle-easy-1'])
+    ]
+  },
+  { 
+    slug: 'puzzle-hard', 
+    name: '謎解き（難しい）',
+    children: [
+      unit('形・図形', 'puzzle-hard-1', '謎解き 難しい 第1問', ['puzzle-hard-1'])
+    ]
+  },
 ]
