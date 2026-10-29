@@ -44,7 +44,7 @@ export const curriculum: Group[] = [
         name: '算数',
         children: [
           unit('数の理解', 'matching-groups', '同じ仲間を見つけよう'),
-          unit('数の理解', 'counting', '数を正しく数えよう'),
+          unit('数の理解', 'counting', '数を正しく数えよう', ['counting']),
           unit('数の理解', 'numbers-to-10', '0から10までの数'),
           unit('数の理解', 'order-and-position', '何番目？ どこにある？'),
           unit('数の理解', 'comparing-numbers', '数の大きさと順番'),

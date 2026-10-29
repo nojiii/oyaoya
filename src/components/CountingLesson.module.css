@@ -1,0 +1,58 @@
+.numberChoice {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.numberChoice legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.numberChoice div {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.numberChoice button {
+  min-height: 48px;
+  border: 1px solid #b58f6d;
+  border-radius: 0.75rem;
+  background: #fffdf8;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.numberChoice button[aria-pressed='true'] {
+  background: #fff0bd;
+  border-width: 2px;
+}
+
+.numberChoice button:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 1列に並べた様子。10こでスマホの幅に入りきらないときは、丸を小さくして1列のまま収める */
+.line {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding-block: 0.5rem;
+}
+
+.line span {
+  flex: 0 1 22px;
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #c8895a;
+  border: 1px solid #b58f6d;
+}
