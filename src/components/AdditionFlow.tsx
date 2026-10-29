@@ -25,7 +25,14 @@ import {
 import styles from './AdditionFlow.module.css'
 import scriptStyles from './TeachingScript.module.css'
 
-function SpokenWords({ children }: { children: ReactNode }) {
+// 親が子どもに向けて読み上げる文。子どもに見せる文と同じく、数え方は「こ」にそろえる
+function SpokenWords({
+  title = 'こう声をかけよう',
+  children,
+}: {
+  title?: string
+  children: ReactNode
+}) {
   const heading = useId()
   return (
     <section className={styles.spokenWords} aria-labelledby={heading}>
@@ -44,7 +51,7 @@ function SpokenWords({ children }: { children: ReactNode }) {
           <circle cx="13" cy="12" r="5" />
           <path d="M4 32v-4a9 9 0 0 1 18 0v4M26 14q5 6 0 12M31 9q9 11 0 22" />
         </svg>
-        こう声をかけよう
+        {title}
       </h3>
       <p className={scriptStyles.readAloudText}>{children}</p>
     </section>
@@ -56,7 +63,7 @@ function CounterGroups({ a, b }: { a: number; b: number }) {
     <div
       className={styles.counterGroups}
       role="img"
-      aria-label={`おはじきが${a}個と${b}個、別々に並んでいます`}
+      aria-label={`おはじきが${a}こと${b}こ、別々に並んでいます`}
     >
       {[a, b].map((count, group) => (
         <div className={styles.counterGroup} key={group} aria-hidden="true">
@@ -65,7 +72,7 @@ function CounterGroups({ a, b }: { a: number; b: number }) {
               <span key={i} data-green={group === 1} />
             ))}
           </div>
-          <span>{count}個</span>
+          <span>{count}こ</span>
         </div>
       ))}
     </div>
@@ -85,16 +92,30 @@ export function AdditionAnswer({
   onReveal: () => void
   onRestart: () => void
 }) {
+  // 親が答えを言う前に、お子さんに答えてもらう。答えを見たら、お子さんの答えに合わせて声をかける
   return (
     <>
       <div aria-live="polite" className={styles.answer}>
         <p className={styles.equation}>
           {a} ＋ {b} ＝ {visible ? a + b : '？'}
         </p>
-        {visible && (
-          <SpokenWords>
-            {a}個と{b}個を合わせると、全部で{a + b}個になったね！
-          </SpokenWords>
+        {visible ? (
+          <>
+            <SpokenWords title={`「${a + b}」と答えたら`}>
+              そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
+            </SpokenWords>
+            <SpokenWords title="ちがう数を答えたら">
+              おしい！ 指でさしながら、もう一回数えてみよう。
+            </SpokenWords>
+            <TeachingPoints note="ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。" />
+          </>
+        ) : (
+          <>
+            <SpokenWords>
+              {a}こと{b}こ、合わせて何こだった？
+            </SpokenWords>
+            <TeachingPoints note="お子さんが答えてから、「答えを見る」を押して確かめましょう。**答えを先に言わない**ようにします。" />
+          </>
         )}
       </div>
       {visible ? (
@@ -165,7 +186,7 @@ export function AdditionFlow({
       title: 'どちらの方法で教えますか？',
       content: (
         <>
-          <p>おはじきを使って、数が増える様子を一緒に確かめましょう。</p>
+          <p>おはじきを使って、2つの数を合わせる様子を一緒に確かめましょう。</p>
           <div className={styles.choices}>
             <button type="button" onClick={() => choose('physical')}>
               <strong>実物のおはじきを使う</strong>
@@ -200,10 +221,10 @@ export function AdditionFlow({
       content: (
         <>
           <TeachingPoints
-            note={`左側におはじきを${a}個置き、右側の${b}個を**1個ずつ左側へ動かして**合わせましょう。`}
+            note={`「合わせて」の問題なので、片方にもう片方を足すのではなく、**${a}個と${b}個を両手で同時にまん中へ寄せて**、1つにまとめましょう。\n\nお子さんの手で寄せてもらいましょう。`}
           />
           <SpokenWords>
-            左の{a}個に、右の{b}個を1個ずつ合わせてみようか。
+            {a}こと{b}こを、両手で一緒にまん中へ寄せてみようか。
           </SpokenWords>
         </>
       ),
@@ -217,10 +238,10 @@ export function AdditionFlow({
             note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。`}
           />
           <SpokenWords>
-            1個ずつ一緒に数えてみよう！{' '}
+            1こずつ一緒に数えてみよう！{' '}
             {/* 合計が5以下だと、親が答えまで（5なら答えの直前まで）数えてしまうので、数を言わない */}
             {count.length > 5 && `${count.slice(0, 4).join('、')}……`}
-            全部で何個かな？
+            全部で何こかな？
           </SpokenWords>
         </>
       ),

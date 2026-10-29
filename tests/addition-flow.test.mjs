@@ -186,12 +186,12 @@ test('both addition routes render all steps with matching progress, counter reus
             'only app route uses the existing playground',
           )
           assert.ok(
-            !html.includes(`全部で<!-- -->${a + b}<!-- -->個になったね`),
+            !html.includes(`全部で<!-- -->${a + b}<!-- -->こになったね`),
             'answer speech is not rendered before reveal',
           )
           if (page === 'prepare')
             assert.ok(
-              active.includes(`おはじきが${a}個と${b}個、別々に並んでいます`),
+              active.includes(`おはじきが${a}こと${b}こ、別々に並んでいます`),
             )
           if (page === 'combine' || page === 'count') {
             assert.ok(
@@ -220,14 +220,18 @@ test('both addition routes render all steps with matching progress, counter reus
         ).replace(/<!-- -->/g, '')
       const hidden = renderAnswer(false)
       assert.ok(hidden.includes(`${a} ＋ ${b} ＝ ？`))
-      assert.ok(!hidden.includes('こう声をかけよう'))
+      // 答えを見る前は、お子さんに答えを聞くだけで、親は答えを言わない
+      assert.ok(hidden.includes(`${a}こと${b}こ、合わせて何こだった？`))
+      assert.ok(!hidden.includes(`全部で${a + b}こ`))
       const shown = renderAnswer(true)
       assert.ok(shown.includes(`${a} ＋ ${b} ＝ ${a + b}`))
+      assert.ok(shown.includes(`「${a + b}」と答えたら`))
       assert.ok(
         shown.includes(
-          `${a}個と${b}個を合わせると、全部で${a + b}個になったね！`,
+          `そう！ ${a}こと${b}こを合わせると、全部で${a + b}こになったね！`,
         ),
       )
+      assert.ok(shown.includes('ちがう数を答えたら'))
       assert.ok(!shown.includes('答えを見る'))
     }
   } finally {
