@@ -1,18 +1,26 @@
 import type { ComponentType } from 'react'
 import { lesson } from './unit-lessons'
 
-// 問題のフォルダ（index.tsx）が export するもの
+// 新しく作る文化祭用の画面ファイルをインポートする（ファイルの作成場所に合わせてパスを変えてください）
+import MathEasy1 from './MathEasy1'
+import MathHard1 from './MathHard1'
+import PuzzleEasy1 from './PuzzleEasy1'
+import PuzzleHard1 from './PuzzleHard1'
+
 interface ProblemModule {
   title: string
   default: ComponentType
 }
 
-// 問題の一覧。キーが問題IDで、そのままURL（/problems/<問題ID>）になる。
-// 公開後にIDを変えるとURLが変わるので、変えない。
-// 追加するときはアルファベット順の位置に1行足す（同時に追加した人との衝突を減らすため）
 export const problems = {
   'addition-within-10': lesson('addition-within-10'),
   counting: lesson('counting'),
+
+  // アルファベット順の位置に新しい問題を追加
+  'math-easy-1': { title: '数学 易しい 第1問', default: MathEasy1 },
+  'math-hard-1': { title: '数学 難しい 第1問', default: MathHard1 },
+  'puzzle-easy-1': { title: '謎解き 易しい 第1問', default: PuzzleEasy1 },
+  'puzzle-hard-1': { title: '謎解き 難しい 第1問', default: PuzzleHard1 },
 } satisfies Record<string, ProblemModule>
 
 export type ProblemId = keyof typeof problems
