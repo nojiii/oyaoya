@@ -64,7 +64,7 @@ export default function GroupDetail() {
               </span>
               <span className="row-text">
                 <span className="item-name">{problem.name}</span>
-                <span className="row-sub">解説をみる</span>
+                <span className="row-sub">教え方をみる</span>
               </span>
               <span className="row-arrow" aria-hidden="true">
                 ›
