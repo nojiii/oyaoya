@@ -218,7 +218,8 @@ export function AdditionFlow({
           />
           <SpokenWords>
             1個ずつ一緒に数えてみよう！{' '}
-            {count.length > 0 && `${count.slice(0, 4).join('、')}……`}
+            {/* 合計が5以下だと、親が答えまで（5なら答えの直前まで）数えてしまうので、数を言わない */}
+            {count.length > 5 && `${count.slice(0, 4).join('、')}……`}
             全部で何個かな？
           </SpokenWords>
         </>

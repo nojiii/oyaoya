@@ -158,7 +158,9 @@ test('both addition routes render all steps with matching progress, counter reus
       [3, 4],
       [2, 5],
       [0, 0],
-      [9, 9],
+      [1, 2],
+      [2, 3],
+      [4, 6],
     ]) {
       for (const route of ['physical', 'app']) {
         const pages = additionPages(route)
@@ -197,6 +199,12 @@ test('both addition routes render all steps with matching progress, counter reus
                 active.indexOf('こう声をかけよう'),
             )
           }
+          if (page === 'count')
+            assert.equal(
+              /\d……/.test(active),
+              a + b > 5,
+              'parent counts aloud only when the child still has numbers left to count',
+            )
           if (page === 'answer') assert.ok(active.includes('答えを見る'))
         }
       }
