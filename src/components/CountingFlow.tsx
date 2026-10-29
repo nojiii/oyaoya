@@ -7,6 +7,7 @@ import styles from './AdditionFlow.module.css'
 import countingStyles from './CountingLesson.module.css'
 import {
   countingPages,
+  countingStorageKey,
   countingWords,
   restoreCountingPage,
   type CountingPage,
@@ -14,7 +15,7 @@ import {
 
 export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
   const location = useLocation()
-  const storageKey = `counting-flow:v2:${location.pathname}`
+  const storageKey = countingStorageKey(location.pathname)
   const [page, setPage] = useState<CountingPage>(() => {
     try {
       return restoreCountingPage(sessionStorage.getItem(storageKey), n)

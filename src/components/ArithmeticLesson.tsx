@@ -1,9 +1,11 @@
 import { useId, useState } from 'react'
+import { useLocation } from 'react-router'
 import { arithmetic, type ArithmeticMode } from '../problems/arithmetic'
 import { TeachingScript } from './TeachingScript'
 import styles from './TeachingScript.module.css'
 import { LessonVisual } from './LessonVisual'
 import { AdditionFlow } from './AdditionFlow'
+import { additionFlowStatus, additionStorageKey } from './additionFlowState'
 
 interface Props {
   mode: ArithmeticMode
@@ -24,6 +26,7 @@ export function ArithmeticLesson({
   const [activeNumber, setActiveNumber] = useState<number | null>(null)
   const [replaceNumber, setReplaceNumber] = useState(true)
   const id = useId()
+  const location = useLocation()
   const [a, b] = values
   const model = arithmetic(mode, a, b)
   const isSubtract = mode === 'sub' || mode === 'borrow'
@@ -206,6 +209,16 @@ export function ArithmeticLesson({
         additionFlow ? (
           <AdditionFlow a={a} b={b} editor={renderEditor()} />
         ) : undefined
+      }
+      flowStatus={
+        additionFlow
+          ? () =>
+              additionFlowStatus(
+                sessionStorage.getItem(
+                  additionStorageKey(location.pathname, a, b),
+                ),
+              )
+          : undefined
       }
       editor={renderEditor()}
       counters={{ mode, a, b }}

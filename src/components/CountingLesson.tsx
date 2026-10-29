@@ -1,7 +1,12 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router'
 import { TeachingScript } from './TeachingScript'
 import { CountingFlow } from './CountingFlow'
-import { countingWords } from './countingFlowState'
+import {
+  countingFlowStatus,
+  countingStorageKey,
+  countingWords,
+} from './countingFlowState'
 import styles from './CountingLesson.module.css'
 
 interface Props {
@@ -11,6 +16,7 @@ interface Props {
 // 身近なものを1こずつ指さして数える教材。数える数（1〜10）は親が選ぶ
 export function CountingLesson({ initial }: Props) {
   const [n, setN] = useState(initial)
+  const location = useLocation()
   const editor = (
     <fieldset className={styles.numberChoice}>
       <legend>数える数</legend>
@@ -31,6 +37,12 @@ export function CountingLesson({ initial }: Props) {
   return (
     <TeachingScript
       flow={<CountingFlow n={n} editor={editor} />}
+      flowStatus={() =>
+        countingFlowStatus(
+          sessionStorage.getItem(countingStorageKey(location.pathname)),
+          n,
+        )
+      }
       editor={editor}
       prepare={{
         goal: `${n}このものを、1こずつ指さして数えます。`,
@@ -39,6 +51,9 @@ export function CountingLesson({ initial }: Props) {
         ],
         point:
           '数えたものを1こずつ手前にずらしながら数えると、2回数えたり飛ばしたりせずに数えられます。最後に言った数が「全部の数」になることを、一緒に確かめましょう。',
+        together:
+          'お子さんが数えるのを見守り、最後に言った数を一緒に確かめます。',
+        approach: '身近なものを、お子さんが1こずつ指さして数える',
         avoid: [
           '親が先に数えてしまう',
           '間違えたときに「ちがう」とだけ言う',
