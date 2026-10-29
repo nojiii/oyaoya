@@ -1,10 +1,12 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
+import { ScriptGuide } from './ScriptGuide'
+import { ScriptControls } from './scriptControls'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
 
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
@@ -53,6 +55,9 @@ interface Props {
   counters?: CounterProblem
   // 問題の数字を変える入力欄
   editor?: ReactNode
+  // 準備の画面のステージに大きく出す図（なければ、問題の数字を変える欄を出す）。
+  // 図があるときは、数字を変える欄は下の「数を変える」にたたむ
+  picture?: ReactNode
   prepare: Prepare
   // 教える問題。台本の上部に常時表示する
   question: Turn
@@ -133,45 +138,16 @@ function beatsOf(turn: Turn): Beat[] {
   return beats
 }
 
-function GuideIcon({
-  kind,
-}: {
-  kind: 'list' | 'prepare' | 'script' | 'together'
-}) {
-  const paths = {
-    list: 'M4 5h3v3H4zM11 6.5h9M4 11h3v3H4zM11 12.5h9M4 17h3v3H4zM11 18.5h9',
-    prepare: 'M8 4H5v16h14V4h-3M9 3h6v4H9zM8 12l2 2 5-5M8 17h8',
-    script: 'M4 4h16v12H9l-5 4V4zM8 8h8M8 12h5',
-    together:
-      'M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M2 20v-3a5 5 0 0 1 10 0v3M12 20v-3a5 5 0 0 1 10 0v3',
-  }
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={paths[kind]} />
-    </svg>
-  )
-}
-
 function PrepareView({
   counters,
   editor,
+  picture,
   prepare,
   question,
   turns,
   onStart,
   resume,
 }: Props & { onStart: () => void; resume?: boolean }) {
-  const guideId = useId()
   const symbol =
     counters?.mode === 'times'
       ? '×'
@@ -185,62 +161,48 @@ function PrepareView({
     : prepare.goal
   return (
     <div className={styles.prepare}>
+      {/* ステージ：今日の問題の図を大きく出す。キャラクターは将来 Rive の <canvas> に替える */}
+      <div className={styles.stage}>
+        {picture ?? editor ?? (
+          <img
+            className={styles.stageMascot}
+            src="/mascot.png"
+            alt=""
+            draggable={false}
+          />
+        )}
+      </div>
+
+      {/* 大事なこと：大きく太く */}
       <header className={styles.prepareHeading}>
         <h2 className={styles.prepareTitle}>この学習でやること</h2>
         <p className={styles.learning}>{learning}</p>
       </header>
-      {editor}
-      <section className={styles.quickGuide} aria-labelledby={guideId}>
-        <h2 id={guideId}>使い方は3ステップ</h2>
-        <ol className={styles.guideSteps}>
-          <li>
-            <span className={styles.stepNumber}>1</span>
-            <GuideIcon kind="prepare" />
-            <div>
-              <h3>準備する</h3>
-              <p>この画面で、今日の問題と教え方を確認します。</p>
-            </div>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>2</span>
-            <GuideIcon kind="script" />
-            <div>
-              <h3>台本を見て教える</h3>
-              <p>「台本」でセリフを読み、お子さんに声をかけます。</p>
-            </div>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>3</span>
-            <GuideIcon kind="together" />
-            <div>
-              <h3>一緒に確かめる</h3>
-              <p>
-                {prepare.together ??
-                  (prepare.counterChoice
-                    ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
-                    : counters
-                      ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
-                      : '台本の図や身近なものを使って、一緒に答えを考えます。')}
-              </p>
-            </div>
-          </li>
-        </ol>
+      <section className={styles.prepareHeading}>
+        <h2 className={styles.prepareTitle}>今日の教え方のポイント</h2>
+        <p className={styles.keyPoint}>
+          <mark>すぐに答えを教えず</mark>、お子さんが考えるのを待つ
+        </p>
       </section>
-      <section className={styles.teachingPoints}>
-        <h2>今日の教え方のポイント</h2>
-        <ul>
-          <li>
+
+      {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない） */}
+      <div className={styles.folds}>
+        {picture != null && editor != null && (
+          <details className={styles.extraNote}>
+            <summary>数を変える</summary>
+            <div className={styles.foldEditor}>{editor}</div>
+          </details>
+        )}
+        <details className={styles.extraNote}>
+          <summary>詳しい教え方・気をつけたいこと</summary>
+          <p>
             {prepare.approach ??
               (prepare.counterChoice
                 ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
                 : counters
                   ? '一緒におはじきを動かして考える'
                   : '図や身近なものを使って、一緒に考える')}
-          </li>
-          <li>すぐに答えを教えず、お子さんが考えるのを待つ</li>
-        </ul>
-        <details className={styles.extraNote}>
-          <summary>詳しい教え方・気をつけたいこと</summary>
+          </p>
           <div>{prepare.point}</div>
           <ul>
             {prepare.avoid.map((text) => (
@@ -255,20 +217,43 @@ function PrepareView({
                 : `用意するもの：${prepare.materials.join('・')}`}
           </p>
         </details>
-      </section>
-      {!prepare.counterChoice && (
         <details className={styles.extraNote}>
-          <summary>声かけを先に読んでおく</summary>
-          <p className={styles.flowLabel}>1. 問題を出す</p>
-          <p className={styles.flowText}>{question.say}</p>
-          <p className={styles.flowLabel}>2. 順番に声をかける</p>
-          <ol className={styles.flow}>
-            {turns.map((turn) => (
-              <li key={turn.say}>{turn.say}</li>
-            ))}
+          <summary>使い方は3ステップ</summary>
+          <ol className={styles.guideSteps}>
+            <li>
+              <b>準備する</b>
+              この画面で、今日の問題と教え方を確認します。
+            </li>
+            <li>
+              <b>台本を見て教える</b>
+              「台本」でセリフを読み、お子さんに声をかけます。
+            </li>
+            <li>
+              <b>一緒に確かめる</b>
+              {prepare.together ??
+                (prepare.counterChoice
+                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
+                  : counters
+                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
+                    : '台本の図や身近なものを使って、一緒に答えを考えます。')}
+            </li>
           </ol>
         </details>
-      )}
+        {!prepare.counterChoice && (
+          <details className={styles.extraNote}>
+            <summary>声かけを先に読んでおく</summary>
+            <p className={styles.flowLabel}>1. 問題を出す</p>
+            <p className={styles.flowText}>{question.say}</p>
+            <p className={styles.flowLabel}>2. 順番に声をかける</p>
+            <ol className={styles.flow}>
+              {turns.map((turn) => (
+                <li key={turn.say}>{turn.say}</li>
+              ))}
+            </ol>
+          </details>
+        )}
+      </div>
+
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
         <button className={styles.primary} type="button" onClick={onStart}>
@@ -373,6 +358,7 @@ export function TeachingScript({
   question,
   turns,
   editor,
+  picture,
   counters,
   renderVisual,
   flow,
@@ -403,7 +389,6 @@ export function TeachingScript({
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [slideWidth, setSlideWidth] = useState(320)
-  const [dotTarget, setDotTarget] = useState<number | null>(null)
   const track = useRef<HTMLDivElement>(null)
   const sliding = useRef(false)
   const gesture = useRef<{
@@ -450,11 +435,6 @@ export function TeachingScript({
     position.beat < beats.length - 1
       ? go({ ...position, beat: position.beat + 1 })
       : go(ask(index + 1))
-  const start = () => {
-    setHistory([START])
-    setStarted(true)
-    window.scrollTo(0, 0)
-  }
   const back = () => {
     if (history.length > 1) setHistory(history.slice(0, -1))
     else setStarted(false)
@@ -473,7 +453,6 @@ export function TeachingScript({
     const element = track.current
     if (!element) return
     sliding.current = true
-    setDotTarget(activeCardIndex + (delta < 0 ? 1 : -1))
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches
@@ -493,7 +472,6 @@ export function TeachingScript({
       await animation.finished
       flushSync(() => {
         setDragX(0)
-        setDotTarget(null)
         if (delta < 0) advance()
         else back()
       })
@@ -503,35 +481,32 @@ export function TeachingScript({
     }
   }
 
-  const navigation = (
-    <nav className={styles.pageNavigation} aria-label="学習ページの移動">
-      <Link to={menu.url} viewTransition>
-        <GuideIcon kind="list" />
-        <span>単元一覧</span>
-      </Link>
-      <button
-        type="button"
-        aria-current={!started ? 'page' : undefined}
-        onClick={() => {
-          setStarted(false)
-          window.scrollTo(0, 0)
-        }}
+  // 準備の画面へ戻る（台本の進み具合は残る）
+  const toPrepare = () => {
+    setStarted(false)
+    window.scrollTo(0, 0)
+  }
+  // 台本の左上の「×」
+  const close = (
+    <button
+      className={styles.close}
+      type="button"
+      aria-label="準備にもどる"
+      onClick={toPrepare}
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        aria-hidden="true"
       >
-        <GuideIcon kind="prepare" />
-        <span>準備</span>
-      </button>
-      <button
-        type="button"
-        aria-current={started ? 'page' : undefined}
-        onClick={() => {
-          setStarted(true)
-          window.scrollTo(0, 0)
-        }}
-      >
-        <GuideIcon kind="script" />
-        <span>台本</span>
-      </button>
-    </nav>
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
   )
 
   if (!started)
@@ -540,6 +515,7 @@ export function TeachingScript({
         <PrepareView
           counters={counters}
           editor={editor}
+          picture={picture}
           prepare={prepare}
           question={question}
           turns={turns}
@@ -549,7 +525,6 @@ export function TeachingScript({
           }}
           resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
-        {navigation}
       </div>
     )
 
@@ -559,17 +534,22 @@ export function TeachingScript({
         className={`${styles.script} ${styles.lessonPage}`}
         data-script-running
       >
-        {flow}
-        {navigation}
+        {close}
+        <ScriptControls.Provider value={{ toPrepare }}>
+          {flow}
+        </ScriptControls.Provider>
+        <ScriptGuide />
       </div>
     )
 
   return (
-    // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
+    // data-script-running がある間は、画面全体を橙にし、上の帯と見出しを隠す（index.css）
     <div
       className={`${styles.script} ${styles.lessonPage}`}
       data-script-running
     >
+      {close}
+      <ScriptGuide />
       <div
         className={styles.pageDots}
         role="img"
@@ -706,7 +686,7 @@ export function TeachingScript({
                       beatIndex === 0 &&
                       !question.sayContent && (
                         <div className={styles.firstQuestion}>
-                          {editor ?? question.show}
+                          {question.show}
                         </div>
                       )}
                     <div className={styles.readingContent}>
@@ -730,58 +710,6 @@ export function TeachingScript({
             )}
           </div>
         </div>
-        <div
-          className={styles.pagination}
-          role="group"
-          aria-label={`台本 ${activeCardIndex + 1} / ${totalBeats + 1}ページ`}
-        >
-          <button
-            className={styles.pageButton}
-            type="button"
-            aria-label="前のページ"
-            disabled={!canBack || dotTarget !== null}
-            onClick={() => void swipe(1)}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="m15 5-7 7 7 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <button
-            className={styles.pageButton}
-            type="button"
-            aria-label="次のページ"
-            disabled={!canAdvance || dotTarget !== null}
-            onClick={() => void swipe(-1)}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="m9 5 7 7-7 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
       {counters && section !== 'finish' && (
         <CounterDisplay
@@ -795,12 +723,17 @@ export function TeachingScript({
           <Link className={styles.primary} to={menu.url} viewTransition>
             {menu.label}
           </Link>
-          <button type="button" onClick={start}>
-            もういちど はじめから
+          <button
+            type="button"
+            onClick={() => {
+              setHistory([START])
+              toPrepare()
+            }}
+          >
+            終わる
           </button>
         </div>
       )}
-      {navigation}
     </div>
   )
 }

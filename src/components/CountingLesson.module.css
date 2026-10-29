@@ -1,6 +1,8 @@
+/* 数える数を選ぶ欄。準備の画面と台本の最初のページのステージに置く */
 .numberChoice {
   display: grid;
   gap: 0.5rem;
+  width: 100%;
   margin: 0;
   padding: 0;
   border: 0;
@@ -10,7 +12,10 @@
 .numberChoice legend {
   padding: 0;
   margin-bottom: 0.5rem;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
 }
 
 .numberChoice div {
@@ -20,19 +25,19 @@
 }
 
 .numberChoice button {
-  min-height: 48px;
-  border: 1px solid #b58f6d;
-  border-radius: 0.75rem;
-  background: #fffdf8;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: var(--input-bg, var(--color-soft));
   color: var(--color-text);
   font: inherit;
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 900;
 }
 
 .numberChoice button[aria-pressed='true'] {
-  background: #fff0bd;
-  border-width: 2px;
+  background: var(--color-accent);
+  color: #fff;
 }
 
 .numberChoice button:focus-visible {
@@ -45,14 +50,14 @@
   display: flex;
   justify-content: center;
   gap: 4px;
+  width: 100%;
   padding-block: 0.5rem;
 }
 
 .line span {
-  flex: 0 1 22px;
+  flex: 0 1 var(--piece-size, 26px);
   min-width: 0;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #c8895a;
-  border: 1px solid #b58f6d;
+  background: var(--color-accent);
 }

@@ -6,16 +6,18 @@ import flowStyles from './AdditionFlow.module.css'
 export interface LessonSlide {
   id: string
   title: string
+  // ページの上のステージに置く「見るもの」（図・問題・式など）。なければキャラクターを置く
+  stage?: ReactNode
   content: ReactNode
 }
 
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
+// 前へ・次へのボタンは置かず、左右のスワイプ（キーボードでは ← →）だけで送る
 export function LessonSlides({
   label,
   slides,
   currentId,
   totalKnown,
-  nextLabel,
   canNext,
   onNext,
   onBack,
@@ -25,7 +27,6 @@ export function LessonSlides({
   slides: LessonSlide[]
   currentId: string
   totalKnown: boolean
-  nextLabel?: string
   canNext: boolean
   onNext: () => void
   onBack: () => void
@@ -42,7 +43,6 @@ export function LessonSlides({
       ?.focus({ preventScroll: true })
   }, [currentId])
   const sliding = useRef(false)
-  const [moving, setMoving] = useState(false)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const gesture = useRef<{
@@ -55,6 +55,8 @@ export function LessonSlides({
   const pageLabel = totalKnown
     ? `${index + 1} / ${slides.length}ページ`
     : `${index + 1}ページ`
+  // 次のページの名前。送れるときだけ、ページの下に送る向きと行き先として出す
+  const following = canNext ? slides[index + 1] : undefined
 
   const navigate = async (direction: -1 | 1) => {
     if (sliding.current || !(direction === 1 ? canNext : canBack)) {
@@ -64,7 +66,6 @@ export function LessonSlides({
     const element = track.current
     if (!element) return
     sliding.current = true
-    setMoving(true)
     const width = element.getBoundingClientRect().width + 12
     const animation = element.animate(
       [
@@ -89,7 +90,6 @@ export function LessonSlides({
     } finally {
       animation.cancel()
       sliding.current = false
-      setMoving(false)
     }
   }
 
@@ -101,15 +101,10 @@ export function LessonSlides({
         aria-label={`台本の進み具合 ${pageLabel}`}
       >
         {slides.map((slide, i) => (
-          <span
-            key={slide.id}
-            aria-hidden="true"
-            data-current={i === index}
-            data-done={i < index}
-          />
+          <span key={slide.id} aria-hidden="true" data-done={i <= index} />
         ))}
       </div>
-      <p className={flowStyles.pageCount} aria-live="polite">
+      <p className={styles.srOnly} aria-live="polite">
         {pageLabel}
       </p>
       <div className={styles.carouselFrame}>
@@ -132,11 +127,8 @@ export function LessonSlides({
           onPointerDown={(event) => {
             if (!event.isPrimary || event.button !== 0 || sliding.current)
               return
-            if (
-              (event.target as Element).closest(
-                'button, a, input, select, textarea, summary, [role="button"]',
-              )
-            )
+            // 文字を入れる欄とリンクの上からは送らない。ボタンの上からは、横に動いたときだけ送る
+            if ((event.target as Element).closest('a, input, select, textarea'))
               return
             gesture.current = {
               id: event.pointerId,
@@ -145,7 +137,6 @@ export function LessonSlides({
               width: (track.current?.getBoundingClientRect().width ?? 320) + 12,
               axis: null,
             }
-            event.currentTarget.setPointerCapture(event.pointerId)
           }}
           onPointerMove={(event) => {
             const start = gesture.current
@@ -155,7 +146,11 @@ export function LessonSlides({
             if (start.axis === null) {
               if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return
               start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-              if (start.axis === 'x') setDragging(true)
+              // 横に動いたと分かってから指を捕まえる。ただのタップは、そのままボタンに届く
+              if (start.axis === 'x') {
+                event.currentTarget.setPointerCapture(event.pointerId)
+                setDragging(true)
+              }
             }
             if (start.axis !== 'x') return
             const distance = Math.max(-start.width, Math.min(start.width, dx))
@@ -206,6 +201,17 @@ export function LessonSlides({
                   transform: `translateX(calc(${(i - index) * 100}% + ${(i - index) * 12}px))`,
                 }}
               >
+                {/* ステージ：お子さんと一緒に見るもの。キャラクターは将来 Rive の <canvas> に替える */}
+                <div className={flowStyles.stage}>
+                  {slide.stage ?? (
+                    <img
+                      className={flowStyles.stageMascot}
+                      src="/mascot.png"
+                      alt=""
+                      draggable={false}
+                    />
+                  )}
+                </div>
                 <h2 className={flowStyles.title} tabIndex={-1}>
                   {slide.title}
                 </h2>
@@ -214,58 +220,27 @@ export function LessonSlides({
             ))}
           </div>
         </div>
-        <div
-          className={styles.pagination}
-          role="group"
-          aria-label={`台本 ${pageLabel}`}
-        >
-          {([-1, 1] as const).map((direction) => (
-            <button
-              key={direction}
-              className={styles.pageButton}
-              type="button"
-              aria-label={direction === -1 ? '前のページ' : '次のページ'}
-              disabled={moving || !(direction === -1 ? canBack : canNext)}
-              onClick={() => void navigate(direction)}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d={direction === -1 ? 'm15 5-7 7 7 7' : 'm9 5 7 7-7 7'}
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          ))}
-        </div>
       </div>
-      <div className={flowStyles.navigation}>
-        <button
-          type="button"
-          disabled={!canBack || moving}
-          onClick={() => void navigate(-1)}
-        >
-          戻る
-        </button>
-        {nextLabel && (
-          <button
-            className={flowStyles.primary}
-            type="button"
-            disabled={!canNext || moving}
-            onClick={() => void navigate(1)}
+      {following && (
+        <p className={flowStyles.next}>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            {nextLabel}
-          </button>
-        )}
-      </div>
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+          <span>
+            次<b>{following.title}</b>
+          </span>
+        </p>
+      )}
     </>
   )
 }

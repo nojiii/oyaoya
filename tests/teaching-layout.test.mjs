@@ -44,10 +44,16 @@ test('every published script has teaching points, reading labels and only suppor
           !html.includes('aria-label="取り組む問題"'),
           id + ': no separate question section',
         )
+        // 台本はスワイプだけで送る。前へ・次へのボタンは置かず、キーボードでは台本の領域で ← → を使う
         assert.ok(
-          html.includes('aria-label="前のページ"') &&
-            html.includes('aria-label="次のページ"'),
-          id + ': navigation without swiping',
+          !html.includes('aria-label="前のページ"') &&
+            !html.includes('aria-label="次のページ"'),
+          id + ': no page buttons',
+        )
+        assert.match(
+          html,
+          /aria-roledescription="カルーセル"[^>]*tabindex="0"/,
+          id + ': the script can be moved with the keyboard',
         )
         if (id === 'addition-within-10') {
           assert.match(html, /data-slide="read" data-active="true"/)
@@ -55,8 +61,8 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('実物のおはじきを使う'))
           assert.ok(html.includes('アプリのおはじきを使う'))
           assert.ok(html.includes('教え方のポイント'))
-          assert.ok(html.includes('aria-label="最初の数"'))
-          assert.equal((html.match(/aria-label="最初の数"/g) ?? []).length, 1)
+          // 数は準備の画面で決める。台本の中では変えられない
+          assert.ok(!html.includes('aria-label="最初の数"'))
           assert.ok(html.includes('台本の進み具合'))
           assert.ok(!html.includes('おはじきの案内'))
           continue
@@ -65,7 +71,9 @@ test('every published script has teaching points, reading labels and only suppor
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('何こあるか、数えてみましょう'))
           assert.ok(html.includes('教え方のポイント'))
-          assert.ok(html.includes('数える数'))
+          // 数える数は準備の画面で選ぶ。台本の中では変えられない
+          assert.ok(!html.includes('<legend>数える数</legend>'))
+          assert.ok(!html.includes('aria-pressed'))
           assert.ok(html.includes('台本の進み具合'))
           continue
         }
@@ -101,7 +109,7 @@ test('every published script has teaching points, reading labels and only suppor
         )
         const notes = [
           ...html.matchAll(
-            /<section[^>]*class="[^"]*parentNote[^"]*"[^>]*>[\s\S]*?<\/section>/g,
+            /<(section|details)[^>]*class="[^"]*parentNote[^"]*"[^>]*>[\s\S]*?<\/>/g,
           ),
         ]
         assert.equal(
@@ -128,18 +136,18 @@ test('every published script has teaching points, reading labels and only suppor
             id + ': emphasis markers are not shown',
           )
         }
-        const start = html.indexOf(headings[0][0])
-        const point = html.indexOf('教え方のポイント')
-        const mascot = html.indexOf('/mascot.png', point)
-        const readingBox = html.indexOf('readingBox', mascot)
+        const mascot = html.indexOf('/mascot.png')
+        const start = html.indexOf(headings[0][0], mascot)
+        const readingBox = html.indexOf('readingBox', start)
         const readingText = html.indexOf('readAloudText', readingBox)
+        const point = html.indexOf('教え方のポイント', readingText)
         assert.ok(
-          point < mascot &&
-            mascot < start &&
+          mascot < start &&
             start < readingBox &&
-            readingBox < readingText,
+            readingBox < readingText &&
+            readingText < point,
           id +
-            ': teaching points, mascot, speech cue and reading text appear in order',
+            ': mascot, speech cue, reading text and teaching points appear in order',
         )
         assert.equal(
           html.includes('aria-label="おはじきの案内"'),

@@ -1,0 +1,95 @@
+import { useEffect, useId, useRef, useState } from 'react'
+import styles from './ScriptGuide.module.css'
+
+// 一度見たら、同じブラウザでは出さない
+const STORAGE_KEY = 'oyaoya:script-guide:v1'
+
+// 台本の使い方。見る場所 → 読む場所 → スワイプ の順に、小さな画面の絵で示す
+const FRAMES = [
+  {
+    focus: 'stage',
+    title: ['上のステージを、', 'お子さんと一緒に見ます'],
+    lead: 'おはじきや問題の絵が出ます。',
+  },
+  {
+    focus: 'read',
+    title: ['下のセリフを、', 'そのまま読み上げます'],
+    lead: '「教え方のポイント」は、必要なときに開きます。',
+  },
+  {
+    focus: 'swipe',
+    title: ['台本は、スワイプで', 'めくって進みます'],
+    lead: '左へ：次のページ　右へ：前のページ',
+  },
+] as const
+
+// 初めて台本を開いたときに出す、使い方の説明（3段）。画面のどこをさわっても次へ進む
+export function ScriptGuide() {
+  const [frame, setFrame] = useState<number | null>(() => {
+    // サーバーでの描画（テスト）では出さない
+    if (typeof localStorage === 'undefined') return null
+    try {
+      return localStorage.getItem(STORAGE_KEY) === 'done' ? null : 0
+    } catch {
+      // 保存を読めないブラウザでは、毎回出す
+      return 0
+    }
+  })
+  const titleId = useId()
+  const button = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (frame !== null) button.current?.focus({ preventScroll: true })
+  }, [frame])
+
+  if (frame === null) return null
+  const finish = () => {
+    setFrame(null)
+    try {
+      localStorage.setItem(STORAGE_KEY, 'done')
+    } catch {
+      // 保存できなくても、この画面では閉じられる
+    }
+  }
+  const last = frame === FRAMES.length - 1
+  const next = () => (last ? finish() : setFrame(frame + 1))
+  const { focus, title, lead } = FRAMES[frame]
+
+  return (
+    <div
+      className={styles.overlay}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={next}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') finish()
+      }}
+    >
+      <div className={styles.picture} aria-hidden="true">
+        <div className={styles.phone} data-focus={focus}>
+          <div className={styles.pages}>
+            <i data-part="stage" />
+            <b data-part="read" />
+            <b data-part="read" />
+            <b data-part="read" />
+          </div>
+        </div>
+        {focus === 'swipe' && <span className={styles.finger} />}
+      </div>
+      <h2 id={titleId}>
+        {title[0]}
+        <br />
+        {title[1]}
+      </h2>
+      <p className={styles.lead}>{lead}</p>
+      <div className={styles.dots} aria-hidden="true">
+        {FRAMES.map((_, i) => (
+          <i key={i} data-on={i === frame} />
+        ))}
+      </div>
+      <button className={styles.next} type="button" ref={button}>
+        {last ? 'さわって閉じる' : 'さわってつぎへ'}
+      </button>
+    </div>
+  )
+}

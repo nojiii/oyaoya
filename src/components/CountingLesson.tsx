@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from './TeachingScript'
-import { CountingFlow } from './CountingFlow'
+import { CountingFlow, CountingLine } from './CountingFlow'
 import {
   countingFlowStatus,
   countingStorageKey,
@@ -36,7 +36,7 @@ export function CountingLesson({ initial }: Props) {
   )
   return (
     <TeachingScript
-      flow={<CountingFlow n={n} editor={editor} />}
+      flow={<CountingFlow n={n} />}
       flowStatus={() =>
         countingFlowStatus(
           sessionStorage.getItem(countingStorageKey(location.pathname)),
@@ -44,6 +44,7 @@ export function CountingLesson({ initial }: Props) {
         )
       }
       editor={editor}
+      picture={<CountingLine n={n} />}
       prepare={{
         goal: `${n}このものを、1こずつ指さして数えます。`,
         materials: [

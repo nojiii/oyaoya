@@ -44,13 +44,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       answer: '全部で何こだったかな？',
     }
     const key = `counting-flow:v2:${path}`
-    const renderFlow = (n) =>
-      render(
-        createElement(CountingFlow, {
-          n,
-          editor: createElement('p', null, '数える数'),
-        }),
-      )
+    const renderFlow = (n) => render(createElement(CountingFlow, { n }))
     const activeSlide = (html) =>
       html.match(/data-slide="(\w+)" data-active="true"/)?.[1]
     for (const n of [1, 5, 10]) {
@@ -74,12 +68,18 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
           assert.ok(content.includes(title), `${n}/${slide}: title`)
         }
         assert.ok(html.includes(`おはじきが${n}こ、1列に並んでいます`))
+        // 数える数は準備の画面で選ぶ。台本の中では変えられない
+        assert.ok(
+          !html.includes('aria-pressed'),
+          `${n}/${page}: no number choice`,
+        )
         // できなかったときの分かれ道は作らず、聞いて確かめる一本道にする
         const answer = html.slice(html.indexOf('data-slide="answer"'))
         assert.ok(answer.includes('全部で何こだった？'))
         assert.ok(answer.includes('最後に言った数が、全部の数だよ。'))
         assert.ok(!answer.includes('ちがう数'))
-        assert.ok(answer.includes('数を変えて、もう1回'))
+        // 最後は「終わる」で準備の画面へ戻る
+        assert.ok(answer.includes('終わる'))
       }
     }
     // 保存したときと違う数なら、最初のページから

@@ -4,7 +4,7 @@ import { arithmetic, type ArithmeticMode } from '../problems/arithmetic'
 import { TeachingScript } from './TeachingScript'
 import styles from './TeachingScript.module.css'
 import { LessonVisual } from './LessonVisual'
-import { AdditionFlow } from './AdditionFlow'
+import { AdditionFlow, CounterGroups } from './AdditionFlow'
 import { additionFlowStatus, additionStorageKey } from './additionFlowState'
 
 interface Props {
@@ -205,11 +205,7 @@ export function ArithmeticLesson({
   return (
     <TeachingScript
       key={`${mode}-${a}-${b}`}
-      flow={
-        additionFlow ? (
-          <AdditionFlow a={a} b={b} editor={renderEditor()} />
-        ) : undefined
-      }
+      flow={additionFlow ? <AdditionFlow a={a} b={b} /> : undefined}
       flowStatus={
         additionFlow
           ? () =>
@@ -221,6 +217,7 @@ export function ArithmeticLesson({
           : undefined
       }
       editor={renderEditor()}
+      picture={additionFlow ? <CounterGroups a={a} b={b} /> : undefined}
       counters={{ mode, a, b }}
       renderVisual={(step) => (
         <LessonVisual problem={{ mode, a, b }} step={step} />
