@@ -1,9 +1,11 @@
-import { useLoaderData } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 import { ItemLink, TONE_COUNT } from './ItemLink'
 import type { loadHome } from './loaders'
+import { useFestival } from './festival'
 
 export default function Home() {
   const { groups } = useLoaderData<ReturnType<typeof loadHome>>()
+  const festival = useFestival()
 
   return (
     <>
@@ -53,6 +55,17 @@ export default function Home() {
               </ItemLink>
             </li>
           ))}
+          {!festival && (
+            <li data-tone={groups.length % TONE_COUNT}>
+              <Link className="tile" to="/festival" viewTransition>
+                <span className="tile-number" aria-hidden="true">
+                  ★
+                </span>
+                <span className="item-name">文化祭</span>
+                <span className="tile-sub">文化祭の問題に挑戦</span>
+              </Link>
+            </li>
+          )}
         </ul>
       </section>
 

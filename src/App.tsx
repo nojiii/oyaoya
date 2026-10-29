@@ -19,6 +19,15 @@ function pages(festival: boolean): RouteObject[] {
       loader: ({ params }) => loadProblem(params.problemId!, festival),
       element: <ProblemDetail />,
     },
+    ...(festival
+      ? [
+          {
+            path: 'MathHard1',
+            loader: () => loadProblem('math-hard-1', true),
+            element: <ProblemDetail />,
+          },
+        ]
+      : []),
     // それ以外のURLは分類のページ。階層は何段でもよいので、残りのパス全体を渡す
     {
       path: '*',
