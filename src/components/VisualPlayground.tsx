@@ -106,6 +106,8 @@ export function VisualPlayground({
     moved === targetCount &&
     questionKey === progressKey
   const readyToCount = addition && completed
+  // たし算では、合わせた後の左のわくの数が答えになる。お子さんが数える前に見えないよう、右から移し始めたら出さない
+  const hideLeftCount = addition && moved > 0
   useEffect(() => {
     onCompleteChange?.(completed)
   }, [completed, onCompleteChange])
@@ -472,10 +474,17 @@ export function VisualPlayground({
                   <div className={styles.orangeMat}>
                     <output
                       aria-live="polite"
-                      aria-label={`${subtraction ? 'のこり' : '左のわく'} ${orangeCount}こ`}
+                      aria-label={
+                        hideLeftCount
+                          ? '左のわく'
+                          : `${subtraction ? 'のこり' : '左のわく'} ${orangeCount}こ`
+                      }
                     >
-                      <strong key={orangeCount} className={styles.count}>
-                        {orangeCount}
+                      <strong
+                        key={hideLeftCount ? 'hidden' : orangeCount}
+                        className={styles.count}
+                      >
+                        {hideLeftCount ? '？' : orangeCount}
                       </strong>
                     </output>
                   </div>
@@ -642,13 +651,20 @@ export function VisualPlayground({
                 aria-label="かぞえたあとの おはなし"
               >
                 <div className={styles.countingWords} role="status">
+                  {/* たし算の答えは、お子さんが数えて、おうちのひとに伝える */}
                   <p>
-                    {subtraction ? 'のこりは ' : 'ぜんぶで '}
-                    <strong>
-                      {subtraction ? orangeCount : pieces.length}
-                      <small>こ</small>
-                    </strong>
-                    だね。
+                    {subtraction ? (
+                      <>
+                        のこりは{' '}
+                        <strong>
+                          {orangeCount}
+                          <small>こ</small>
+                        </strong>
+                        だね。
+                      </>
+                    ) : (
+                      'かぞえたら、おうちのひとに こたえを おしえてね。'
+                    )}
                   </p>
                 </div>
                 <div className={styles.continueGuide}>

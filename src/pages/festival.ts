@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router'
 
 // 大学祭モードのホームのURL。通常のURLの先頭にこれを付けたものが、大学祭モードのURLになる
-// （例: /problems/addition-meaning → /festival/problems/addition-meaning）
+// （例: /problems/addition-within-10 → /festival/problems/addition-within-10）
 export const FESTIVAL_URL = '/festival'
 
 // 今のURLが大学祭モードかどうか

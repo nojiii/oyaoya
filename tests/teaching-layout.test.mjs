@@ -44,7 +44,7 @@ test('every published script has teaching points, reading labels and only suppor
             html.includes('aria-label="次のページ"'),
           id + ': navigation without swiping',
         )
-        if (id === 'addition-meaning') {
+        if (id === 'addition-within-10') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んでみましょう'))
           assert.ok(html.includes('実物のおはじきを使う'))

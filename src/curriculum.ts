@@ -57,16 +57,16 @@ export const curriculum: Group[] = [
             'grouping-and-sharing',
             'まとめて数える・同じずつ分ける',
           ),
-          unit('たし算・ひき算', 'addition-meaning', 'たし算ってなに？', [
-            'addition-meaning',
-          ]),
+          unit('たし算・ひき算', 'addition-meaning', 'たし算ってなに？'),
           unit('たし算・ひき算', 'subtraction-meaning', 'ひき算ってなに？'),
           unit(
             'たし算・ひき算',
             'equations-and-pictures',
             '式と絵をつなげよう',
           ),
-          unit('たし算・ひき算', 'addition-within-10', '10までのたし算'),
+          unit('たし算・ひき算', 'addition-within-10', '10までのたし算', [
+            'addition-within-10',
+          ]),
           unit('たし算・ひき算', 'subtraction-within-10', '10までのひき算'),
           unit('たし算・ひき算', 'three-numbers', '3つの数を計算しよう'),
           unit(

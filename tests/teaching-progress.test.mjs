@@ -18,7 +18,7 @@ test('saved progress decides whether the preparation or the script opens', async
     const { default: ProblemDetail } = await server.ssrLoadModule(
       '/src/pages/ProblemDetail.tsx',
     )
-    const path = '/problems/addition-meaning'
+    const path = '/problems/addition-within-10'
     const render = async () => {
       const router = createMemoryRouter(
         [

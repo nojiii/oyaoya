@@ -167,7 +167,7 @@ tests/                     # テスト（npm test）
    import * as subtractionCandies from './subtraction-candies'
 
    export const problems = {
-     'addition-meaning': lesson('addition-meaning'),
+     'addition-within-10': lesson('addition-within-10'),
      'subtraction-candies': subtractionCandies,
    }
    ```
@@ -190,7 +190,7 @@ tests/                     # テスト（npm test）
 ### 問題ID
 
 - フォルダ名が問題IDで、そのまま問題のURLになる（`/problems/<問題ID>`）
-- 半角の英小文字・数字・ハイフンで、内容がわかる名前を付ける（例: `addition-meaning`）
+- 半角の英小文字・数字・ハイフンで、内容がわかる名前を付ける（例: `addition-within-10`）
 - 教科名や単元の番号は入れない（階層が変わっても、IDを変えずに済むようにするため）
 - 公開後は変えない（URLが変わるため）
 
@@ -287,8 +287,8 @@ export const curriculum: Group[] = [
         name: '算数',
         children: [
           unit('数の理解', 'counting', '数を正しく数えよう'),
-          unit('たし算・ひき算', 'addition-meaning', 'たし算ってなに？', [
-            'addition-meaning',
+          unit('たし算・ひき算', 'addition-within-10', '10までのたし算', [
+            'addition-within-10',
           ]),
         ],
       },
@@ -302,7 +302,7 @@ export const curriculum: Group[] = [
 - 分類は `slug`（URLになる）と `name`（画面に出る名前）を持ち、`children`（下の分類）と `problems`（問題ID）を入れられる
 - 入れ子は何段でもよい。一覧には書いた順に並ぶ
 - 段を足す、並べ替える、問題を別の分類へ移すといった変更は、このファイルの書き換えだけでできる
-- 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/addition-meaning`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
+- 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/addition-within-10`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
 - `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題・大学祭モードのURLと重なるため）
 - 1つの問題は、1つの分類にだけ置く（2つに置くと、パンくずリストと戻り先が、先に書いた分類になってしまう。`npm test` が見つける）
 - 単元は `unit(タグ, slug, 名前, 問題ID)` で書く。問題IDを省くと「じゅんび中」になる。問題を作るときは、`slug` と同じ問題IDにする

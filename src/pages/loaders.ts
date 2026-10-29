@@ -76,7 +76,7 @@ export function loadHome(festival: boolean) {
   return { groups: groupLinks(tree, base, base) }
 }
 
-// URL（例: grade-1/math/addition-meaning）を上からたどって分類を探す
+// URL（例: grade-1/math/addition-within-10）を上からたどって分類を探す
 export function loadGroup(path: string, festival: boolean) {
   const { base, tree } = modeOf(festival)
   const groups: Group[] = []

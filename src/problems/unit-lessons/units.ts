@@ -11,8 +11,8 @@ interface Unit {
 
 export const units = [
   {
-    id: 'addition-meaning',
-    title: 'たし算ってなに？',
+    id: 'addition-within-10',
+    title: '10までのたし算',
     arithmetic: { mode: 'add', initial: [3, 4] },
   },
 ] as const satisfies readonly Unit[]

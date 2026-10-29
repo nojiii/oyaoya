@@ -11,17 +11,12 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
   } else if (mode === 'sub') {
     if (a < 0 || a > 20 || b < 0 || b > a)
       throw new Error('最初の数は0〜20、引く数は0〜最初の数にしてください。')
-  } else if (
-    a < (mode === 'carry' || mode === 'times' ? 1 : 0) ||
-    a > 9 ||
-    b < (mode === 'carry' || mode === 'times' ? 1 : 0) ||
-    b > 9
-  ) {
-    throw new Error(
-      mode === 'carry' || mode === 'times'
-        ? 'それぞれ1〜9の数を入力してください。'
-        : 'それぞれ0〜9の数を入力してください。',
-    )
+  } else if (mode === 'add') {
+    // 合計が10を超えるたし算は、繰り上がり（carry）で扱う
+    if (a < 0 || b < 0 || a + b > 10)
+      throw new Error('0以上で、合計が10までになる2つの数を入力してください。')
+  } else if (a < 1 || a > 9 || b < 1 || b > 9) {
+    throw new Error('それぞれ1〜9の数を入力してください。')
   }
   if (mode === 'carry' && a + b < 10)
     throw new Error('合計が10以上になる2つの数を入力してください。')
@@ -35,7 +30,7 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
       ? '同じ数のまとまりと、その何こ分かを結びつけます。'
       : '実物を動かしながら、数のまとまりと計算のつながりを伝えます。'
   let steps: { say: string; why: string; do?: string }[]
-  if ((mode === 'carry' || mode === 'add') && a + b >= 10) {
+  if (mode === 'carry') {
     const need = 10 - a
     const rest = b - need
     steps = [
@@ -104,8 +99,6 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
       },
     ]
   }
-  const kind =
-    (mode === 'carry' || mode === 'add') && a + b >= 10 ? 'carry' : mode
   const advice: Record<string, { how: string; avoid: string[] }[]> = {
     carry: [
       {
@@ -235,8 +228,8 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
     answer,
     steps: steps.map((step, i) => ({
       ...step,
-      ...advice[kind][i],
-      parentNote: parentNotes[kind][i],
+      ...advice[mode][i],
+      parentNote: parentNotes[mode][i],
     })),
   }
 }
