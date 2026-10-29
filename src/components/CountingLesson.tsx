@@ -30,7 +30,6 @@ export function CountingLesson({ initial }: Props) {
   )
   return (
     <TeachingScript
-      key={n}
       flow={<CountingFlow n={n} editor={editor} />}
       editor={editor}
       prepare={{
@@ -39,7 +38,7 @@ export function CountingLesson({ initial }: Props) {
           `おはじき・ブロック・お菓子など、同じくらいの大きさのものを${n}こ`,
         ],
         point:
-          '数えたものを1こずつ横にずらしながら数えると、2回数えたり飛ばしたりせずに数えられます。最後に言った数が「全部の数」になることを、一緒に確かめましょう。',
+          '数えたものを1こずつ手前にずらしながら数えると、2回数えたり飛ばしたりせずに数えられます。最後に言った数が「全部の数」になることを、一緒に確かめましょう。',
         avoid: [
           '親が先に数えてしまう',
           '間違えたときに「ちがう」とだけ言う',
@@ -51,7 +50,7 @@ export function CountingLesson({ initial }: Props) {
         { say: countingWords.line },
         { say: countingWords.count },
         { say: countingWords.answer },
-        { say: countingWords.confirm(n) },
+        { say: `（答えたら）${countingWords.confirm}` },
       ]}
     />
   )

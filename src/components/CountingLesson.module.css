@@ -40,18 +40,18 @@
   outline-offset: 2px;
 }
 
-/* 1列に並べた様子。10こでもスマホの幅に収まる大きさにする */
+/* 1列に並べた様子。10こでスマホの幅に入りきらないときは、丸を小さくして1列のまま収める */
 .line {
   display: flex;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 4px;
   padding-block: 0.5rem;
 }
 
 .line span {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
+  flex: 0 1 22px;
+  min-width: 0;
+  aspect-ratio: 1;
   border-radius: 50%;
   background: #c8895a;
   border: 1px solid #b58f6d;

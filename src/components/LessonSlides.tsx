@@ -11,6 +11,7 @@ export interface LessonSlide {
 
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
 export function LessonSlides({
+  label,
   slides,
   currentId,
   totalKnown,
@@ -19,6 +20,8 @@ export function LessonSlides({
   onNext,
   onBack,
 }: {
+  // 読み上げで伝える、台本の名前（例: 足し算の台本）
+  label: string
   slides: LessonSlide[]
   currentId: string
   totalKnown: boolean
@@ -114,7 +117,7 @@ export function LessonSlides({
           className={styles.carousel}
           role="region"
           aria-roledescription="カルーセル"
-          aria-label="足し算の台本"
+          aria-label={label}
           tabIndex={0}
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return

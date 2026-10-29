@@ -258,6 +258,7 @@ export function AdditionFlow({
         : '次へ'
   return (
     <LessonSlides
+      label="足し算の台本"
       slides={additionPages(progress.route).map((page) => slides[page])}
       currentId={progress.page}
       totalKnown={progress.route !== null}

@@ -14,21 +14,27 @@ import {
 
 export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
   const location = useLocation()
-  const storageKey = `counting-flow:v1:${location.pathname}:${n}`
+  const storageKey = `counting-flow:v2:${location.pathname}`
   const [page, setPage] = useState<CountingPage>(() => {
     try {
-      return restoreCountingPage(sessionStorage.getItem(storageKey))
+      return restoreCountingPage(sessionStorage.getItem(storageKey), n)
     } catch {
       return 'read'
     }
   })
+  // 1ページ目で数を変えたら、そのページから始め直す
+  const [pageN, setPageN] = useState(n)
+  if (pageN !== n) {
+    setPageN(n)
+    setPage('read')
+  }
   useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, page)
+      sessionStorage.setItem(storageKey, JSON.stringify({ n, page }))
     } catch {
       // 保存できなくても、この画面で学習を続けられる。
     }
-  }, [page, storageKey])
+  }, [n, page, storageKey])
   const index = countingPages.indexOf(page)
   const slides: Record<CountingPage, LessonSlide> = {
     read: {
@@ -74,7 +80,7 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
         <>
           <TeachingPoints
             note={
-              'お子さんが**1個ずつ指でさしながら**、声に出して数えます。親は一緒に数えず、見守りましょう。\n\n数えたものは、**1個ずつ横へずらして**もらいます。数えたものとまだのものが分かれるので、2回数えたり飛ばしたりせずに、最後まで数えられます。'
+              'お子さんが**1個ずつ指でさしながら**、声に出して数えます。親は一緒に数えず、見守りましょう。\n\n数えたものは、**1個ずつ手前（お子さんの側）へずらして**もらいます。数えたものとまだのものが分かれるので、2回数えたり飛ばしたりせずに、最後まで数えられます。'
             }
           />
           <SpokenWords>{countingWords.count}</SpokenWords>
@@ -92,7 +98,7 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
             }
           />
           <SpokenWords>{countingWords.answer}</SpokenWords>
-          <SpokenWords title="答えたら">{countingWords.confirm(n)}</SpokenWords>
+          <SpokenWords title="答えたら">{countingWords.confirm}</SpokenWords>
           <button
             className={styles.secondary}
             type="button"
@@ -106,6 +112,7 @@ export function CountingFlow({ n, editor }: { n: number; editor: ReactNode }) {
   }
   return (
     <LessonSlides
+      label="数える台本"
       slides={countingPages.map((id) => slides[id])}
       currentId={page}
       totalKnown
