@@ -48,13 +48,29 @@ export function LessonSlides({
   const swipedAt = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  const carousel = useRef<HTMLDivElement>(null)
   const gesture = useRef<{
     id: number
     x: number
     y: number
     width: number
     axis: 'x' | 'y' | null
+    // 最後に動いた横の量と、はじく速さを測るための最近の位置
+    dx: number
+    samples: { x: number; t: number }[]
   } | null>(null)
+  // 横に送っていると決まったら、ブラウザに縦のスクロールを始めさせない。
+  // 始めると指の操作が取り消され、ドラッグの途中でページが元に戻ってしまう
+  useEffect(() => {
+    const element = carousel.current
+    if (!element) return
+    const onTouchMove = (event: TouchEvent) => {
+      if (gesture.current?.axis === 'x' && event.cancelable)
+        event.preventDefault()
+    }
+    element.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => element.removeEventListener('touchmove', onTouchMove)
+  }, [])
   const pageLabel = totalKnown
     ? `${index + 1} / ${slides.length}ページ`
     : `${index + 1}ページ`
@@ -96,6 +112,30 @@ export function LessonSlides({
     }
   }
 
+  // 指を離したとき：一定の距離を動かしたか、短くても素早くはじいたら送る。それ以外は元に戻す
+  const release = (x: number, t: number) => {
+    const start = gesture.current
+    gesture.current = null
+    setDragging(false)
+    if (!start || start.axis !== 'x') {
+      if (!sliding.current) setDragX(0)
+      return
+    }
+    swipedAt.current = t
+    const dx = x - start.x
+    // はじく速さは、離す直前 0.1 秒の動きで測る。動きを止めてから離したときは、はじいたとみなさない
+    const last = start.samples[start.samples.length - 1]
+    const recent = start.samples.find((sample) => t - sample.t <= 100)
+    const speed =
+      recent && t - last.t <= 60 && last.t > recent.t
+        ? (last.x - recent.x) / (last.t - recent.t)
+        : 0
+    const far = Math.abs(dx) >= Math.min(55, start.width * 0.2)
+    const flick = Math.abs(dx) >= 20 && Math.abs(speed) >= 0.3 && speed * dx > 0
+    if (far || flick) void navigate(dx < 0 ? 1 : -1)
+    else if (!sliding.current) setDragX(0)
+  }
+
   return (
     <>
       <div
@@ -113,6 +153,7 @@ export function LessonSlides({
       <div className={styles.carouselFrame}>
         <div
           className={styles.carousel}
+          ref={carousel}
           role="region"
           aria-roledescription="カルーセル"
           aria-label={label}
@@ -142,6 +183,8 @@ export function LessonSlides({
               y: event.clientY,
               width: (track.current?.getBoundingClientRect().width ?? 320) + 12,
               axis: null,
+              dx: 0,
+              samples: [{ x: event.clientX, t: event.timeStamp }],
             }
           }}
           onPointerMove={(event) => {
@@ -157,8 +200,9 @@ export function LessonSlides({
             const dx = event.clientX - start.x
             const dy = event.clientY - start.y
             if (start.axis === null) {
-              if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return
-              start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+              if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return
+              // 親指は弧を描くので、横よりやや縦に動いても（約50°まで）横のスワイプとみなす
+              start.axis = Math.abs(dx) * 1.2 >= Math.abs(dy) ? 'x' : 'y'
               // 横に動いたと分かってから指を捕まえる。ただのタップは、そのままボタンに届く
               if (start.axis === 'x') {
                 event.currentTarget.setPointerCapture(event.pointerId)
@@ -166,32 +210,30 @@ export function LessonSlides({
               }
             }
             if (start.axis !== 'x') return
+            start.dx = dx
+            start.samples = [
+              ...start.samples.filter(
+                (sample) => event.timeStamp - sample.t <= 100,
+              ),
+              { x: event.clientX, t: event.timeStamp },
+            ]
             const distance = Math.max(-start.width, Math.min(start.width, dx))
             setDragX((dx < 0 ? canNext : canBack) ? distance : distance * 0.12)
           }}
           onPointerUp={(event) => {
-            const start = gesture.current
-            if (!start || start.id !== event.pointerId) return
-            gesture.current = null
-            const dx = event.clientX - start.x
-            if (start.axis === 'x') swipedAt.current = event.timeStamp
-            if (
-              start.axis === 'x' &&
-              Math.abs(dx) >= Math.min(55, start.width * 0.2)
-            )
-              void navigate(dx < 0 ? 1 : -1)
-            else setDragX(0)
-            setDragging(false)
+            if (gesture.current?.id !== event.pointerId) return
+            release(event.clientX, event.timeStamp)
           }}
           onClickCapture={(event) => {
             if (event.timeStamp - swipedAt.current > 400) return
             event.preventDefault()
             event.stopPropagation()
           }}
-          onPointerCancel={() => {
-            gesture.current = null
-            setDragging(false)
-            if (!sliding.current) setDragX(0)
+          onPointerCancel={(event) => {
+            // ブラウザに指の操作を取り消されても、それまでに横へ動かした分で判断する
+            const start = gesture.current
+            if (start?.id !== event.pointerId) return
+            release(start.x + start.dx, event.timeStamp)
           }}
           onLostPointerCapture={(event) => {
             // 指で触れると、ブラウザは触れた部品に指を割り当てる。台本の領域が指を捕まえ直すと、
