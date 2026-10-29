@@ -14,6 +14,7 @@ export default function GroupDetail() {
   const ready = groups.filter((group) => group.count > 0)
   const preparing = groups.filter((group) => group.count === 0)
   const folded = ready.length + problems.length > 0 && preparing.length > 0
+  const shown = folded ? ready : groups
 
   const row = (group: GroupLink) => (
     <ItemLink className="row" to={group.url} empty={group.count === 0}>
@@ -38,7 +39,7 @@ export default function GroupDetail() {
       <h1 className="page-title">{name}</h1>
       {isEmpty && <p className="status">まだ登録されていません。</p>}
       <ul className="rows">
-        {(folded ? ready : groups).map((group, i) => (
+        {shown.map((group, i) => (
           <li key={group.url} style={{ animationDelay: `${i * 60}ms` }}>
             {row(group)}
           </li>
@@ -46,7 +47,7 @@ export default function GroupDetail() {
         {problems.map((problem, i) => (
           <li
             key={problem.url}
-            style={{ animationDelay: `${(groups.length + i) * 60}ms` }}
+            style={{ animationDelay: `${(shown.length + i) * 60}ms` }}
           >
             <ItemLink className="row" to={problem.url}>
               <span className="row-text">

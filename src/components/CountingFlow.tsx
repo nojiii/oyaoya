@@ -41,12 +41,6 @@ export function CountingFlow({ n }: { n: number }) {
       return 'read'
     }
   })
-  // 1ページ目で数を変えたら、そのページから始め直す
-  const [pageN, setPageN] = useState(n)
-  if (pageN !== n) {
-    setPageN(n)
-    setPage('read')
-  }
   useEffect(() => {
     try {
       sessionStorage.setItem(storageKey, JSON.stringify({ n, page }))

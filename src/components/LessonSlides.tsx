@@ -38,11 +38,14 @@ export function LessonSlides({
   useEffect(() => {
     if (previousId.current === currentId) return
     previousId.current = currentId
+    // ページの見出しへフォーカスを移す。ステージの中（閉じたダイアログなど）の見出しは選ばない
     track.current
-      ?.querySelector<HTMLElement>('[data-active="true"] h2')
+      ?.querySelector<HTMLElement>('[data-active="true"] > h2')
       ?.focus({ preventScroll: true })
   }, [currentId])
   const sliding = useRef(false)
+  // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない（送ると同時に方法を選ばないように）
+  const swipedAt = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const gesture = useRef<{
@@ -115,7 +118,10 @@ export function LessonSlides({
           aria-label={label}
           tabIndex={0}
           onKeyDown={(event) => {
-            if (event.target !== event.currentTarget) return
+            // ページを送ると見出しにフォーカスが移るので、台本の中のどこからでも ← → で送る。
+            // 文字を入れる欄の上では、カーソルの移動を優先する
+            if ((event.target as Element).closest('input, select, textarea'))
+              return
             if (event.key === 'ArrowLeft') {
               event.preventDefault()
               void navigate(-1)
@@ -141,6 +147,13 @@ export function LessonSlides({
           onPointerMove={(event) => {
             const start = gesture.current
             if (!start || start.id !== event.pointerId) return
+            // マウスのボタンを離したことが届かなかった（台本の外で離した）ときは、スワイプをやめる
+            if (event.pointerType === 'mouse' && event.buttons === 0) {
+              gesture.current = null
+              setDragging(false)
+              setDragX(0)
+              return
+            }
             const dx = event.clientX - start.x
             const dy = event.clientY - start.y
             if (start.axis === null) {
@@ -161,6 +174,7 @@ export function LessonSlides({
             if (!start || start.id !== event.pointerId) return
             gesture.current = null
             const dx = event.clientX - start.x
+            if (start.axis === 'x') swipedAt.current = event.timeStamp
             if (
               start.axis === 'x' &&
               Math.abs(dx) >= Math.min(55, start.width * 0.2)
@@ -169,12 +183,20 @@ export function LessonSlides({
             else setDragX(0)
             setDragging(false)
           }}
+          onClickCapture={(event) => {
+            if (event.timeStamp - swipedAt.current > 400) return
+            event.preventDefault()
+            event.stopPropagation()
+          }}
           onPointerCancel={() => {
             gesture.current = null
             setDragging(false)
             if (!sliding.current) setDragX(0)
           }}
-          onLostPointerCapture={() => {
+          onLostPointerCapture={(event) => {
+            // 指で触れると、ブラウザは触れた部品に指を割り当てる。台本の領域が指を捕まえ直すと、
+            // その部品から「指を失った」が伝わってくるので、台本の領域自身のものだけを見る
+            if (event.target !== event.currentTarget) return
             gesture.current = null
             setDragging(false)
             if (!sliding.current) setDragX(0)

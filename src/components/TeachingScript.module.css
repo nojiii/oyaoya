@@ -210,10 +210,12 @@
 }
 
 /* 台本。画面全体の橙（index.css）の上に、白い文字で組む。
-   上の帯の代わりに、左上の「×」と進み具合を1行に並べる */
+   上の帯の代わりに、左上の「×」と進み具合を1行に並べる。
+   :has() が使えないブラウザでも白い文字が読めるよう、台本の部分にも橙を敷いておく */
 .script {
   position: relative;
   padding-top: 12px;
+  background: var(--teach-bg);
   color: var(--teach-text);
 }
 .close {
@@ -521,33 +523,6 @@
 }
 .equation input[aria-invalid='true'] {
   outline: 3px solid #b42318;
-}
-.editableSpeech {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  line-height: 1.8;
-}
-.editableSpeech .operand {
-  display: inline;
-}
-.editableSpeech input {
-  min-width: 1.5ch;
-  max-width: 100%;
-  min-height: 44px;
-  margin: 0 0.15em;
-  padding: 0 0.1em;
-  border: none;
-  border-radius: 10px;
-  background: var(--teach-text);
-  color: var(--color-accent);
-  font: inherit;
-  text-align: center;
-}
-.editableSpeech input:focus-visible {
-  outline: 2px solid var(--teach-text);
-  outline-offset: 2px;
 }
 .editorHelp {
   margin: 0.75rem 0 0;

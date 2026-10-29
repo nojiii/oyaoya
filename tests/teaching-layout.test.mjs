@@ -55,6 +55,31 @@ test('every published script has teaching points, reading labels and only suppor
           /aria-roledescription="カルーセル"[^>]*tabindex="0"/,
           id + ': the script can be moved with the keyboard',
         )
+        // ページを分けた台本の各ページ：セリフがあれば、その後に教え方のポイントをたたんで置く。
+        // 教え方のポイントは、** や \n の文字のまま出ない
+        const slides = html
+          .split(/(?=<section[^>]*data-slide=")/)
+          .filter((chunk) => chunk.startsWith('<section'))
+        for (const slide of slides) {
+          const name = slide.match(/data-slide="(\w+)"/)?.[1]
+          const say = slide.search(/class="[^"]*spokenWords/)
+          const point = slide.search(/class="[^"]*parentNote/)
+          if (say >= 0) {
+            assert.ok(
+              point > say,
+              `${id}/${name}: teaching points after the line`,
+            )
+            assert.match(
+              slide,
+              /<details[^>]*class="[^"]*parentNote[^"]*"[^>]*data-folded/,
+              `${id}/${name}: teaching points are folded`,
+            )
+          }
+          if (point >= 0) {
+            assert.ok(!slide.includes('**'), `${id}/${name}: no literal **`)
+            assert.ok(!slide.includes('\\n'), `${id}/${name}: no literal \\n`)
+          }
+        }
         if (id === 'addition-within-10') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んでみましょう'))
@@ -77,25 +102,11 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           continue
         }
-        if (html.includes('aria-label="最初の数"')) {
-          const firstCard = html.match(
-            /<div[^>]*data-active="true"[\s\S]*?<\/form>/,
-          )?.[0]
-          assert.ok(
-            firstCard?.includes('aria-label="最初の数"'),
-            id + ': numbers are editable on the first card',
-          )
-          assert.equal(
-            (html.match(/aria-label="最初の数"/g) ?? []).length,
-            1,
-            id + ': one number editor',
-          )
-          assert.match(
-            firstCard,
-            /class="[^"]*readingBox[^"]*"[\s\S]*<form[\s\S]*aria-label="最初の数"/,
-            id + ': editable numbers are inside the reading box',
-          )
-        }
+        // ページを分けない台本でも、数字は準備の画面で変える。台本の中には数字の欄を出さない
+        assert.ok(
+          !html.includes('aria-label="最初の数"'),
+          id + ': numbers are not editable in the script',
+        )
         const headings = [...html.matchAll(/<h2[^>]*>[\s\S]*?<\/h2>/g)].filter(
           (match) =>
             match[0].replace(/<[^>]*>/g, '').includes('こう声がけしよう'),
@@ -109,7 +120,7 @@ test('every published script has teaching points, reading labels and only suppor
         )
         const notes = [
           ...html.matchAll(
-            /<(section|details)[^>]*class="[^"]*parentNote[^"]*"[^>]*>[\s\S]*?<\/>/g,
+            /<(section|details)[^>]*class="[^"]*parentNote[^"]*"[^>]*>[\s\S]*?<\/\1>/g,
           ),
         ]
         assert.equal(

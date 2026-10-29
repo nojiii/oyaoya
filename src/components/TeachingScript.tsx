@@ -373,8 +373,7 @@ export function TeachingScript({
       return 'start'
     }
   }
-  // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
-  // 台本を開いたまま問題の数字を変えたとき（部品が作り直される）に、準備の画面へ戻らず、新しい問題の台本の最初を出すため
+  // 台本を開いているかはページごと、進み具合は問題ごとに保存する
   const keys = {
     started: 'teaching-started:' + location.pathname,
     history: 'teaching-progress:' + location.pathname + ':' + question.say,
@@ -386,6 +385,13 @@ export function TeachingScript({
   )
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
+  // 準備の画面で問題の数字を変えたら、その問題の進み具合を読み直す。
+  // 部品ごと作り直すと、準備の画面で開いていた「数を変える」の欄が閉じてしまうため
+  const [historyKey, setHistoryKey] = useState(keys.history)
+  if (historyKey !== keys.history) {
+    setHistoryKey(keys.history)
+    setHistory(loadProgress(keys, [question, ...turns]).history)
+  }
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [slideWidth, setSlideWidth] = useState(320)
@@ -701,9 +707,11 @@ export function TeachingScript({
                       )}
                       <BeatView beat={cardBeat} />
                     </div>
-                    {turnIndex < script.length &&
-                      !counters &&
-                      renderVisual?.(turnIndex)}
+                    {turnIndex < script.length && !counters && renderVisual && (
+                      <div className={styles.reference}>
+                        {renderVisual(turnIndex)}
+                      </div>
+                    )}
                   </div>
                 )
               }),

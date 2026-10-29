@@ -1,4 +1,4 @@
-/* 台本の使い方の説明。画面全体を暗くして、下に文字を置く */
+/* 台本の使い方の説明。後ろの台本が透けて見える暗さの幕を全体にかけ、下に文字を置く */
 .overlay {
   position: fixed;
   inset: 0;
@@ -9,18 +9,17 @@
   max-width: 480px;
   margin: 0 auto;
   padding: 0 28px max(48px, env(safe-area-inset-bottom));
-  background: rgb(24 20 17 / 95%);
   color: #fff;
   cursor: pointer;
   touch-action: none;
 }
 .overlay::before {
-  /* 画面の幅が 480px より広いときも、左右まで暗くする */
+  /* 幕は1枚だけ。画面の幅が 480px より広いときも、左右まで覆う */
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: rgb(24 20 17 / 95%);
+  background: rgb(24 20 17 / 72%);
 }
 .overlay h2 {
   margin: 0;

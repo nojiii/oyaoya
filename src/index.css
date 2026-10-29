@@ -337,15 +337,9 @@ ul.rows li {
   display: flex;
   flex-direction: column;
 }
-.row-sub,
-.row-tag {
+.row-sub {
   font-size: 13px;
   color: var(--color-muted);
-}
-.row-tag {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 .row-arrow {
   flex: none;
@@ -429,8 +423,7 @@ a.row:active {
   font-size: 15px;
   font-weight: 400;
 }
-.row[data-empty] .row-sub,
-.row[data-empty] .row-tag {
+.row[data-empty] .row-sub {
   color: var(--color-faint);
 }
 [data-empty] .row-arrow {

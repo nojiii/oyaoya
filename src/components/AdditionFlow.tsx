@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
@@ -67,9 +67,22 @@ export function AdditionEquation({
   visible: boolean
   onReveal?: () => void
 }) {
+  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
+  const equation = useRef<HTMLParagraphElement>(null)
+  const wasVisible = useRef(visible)
+  useEffect(() => {
+    if (visible && !wasVisible.current)
+      equation.current?.focus({ preventScroll: true })
+    wasVisible.current = visible
+  }, [visible])
   return (
     <>
-      <p className={styles.equation} aria-live="polite">
+      <p
+        className={styles.equation}
+        aria-live="polite"
+        ref={equation}
+        tabIndex={-1}
+      >
         {a} ＋ {b} ＝{' '}
         {visible ? (
           <em>{a + b}</em>

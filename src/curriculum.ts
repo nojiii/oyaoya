@@ -1,6 +1,6 @@
 import type { ProblemId } from './problems'
 
-// 単元に付けるタグ。一覧の行に、単元名の上の小さなラベルとして出す
+// 単元に付けるタグ。一覧の行の小さな絵（src/pages/TagPicture.tsx）を、この並び順で決める
 export const TAGS = [
   '数の理解',
   'たし算・ひき算',

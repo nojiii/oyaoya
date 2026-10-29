@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import styles from './ScriptGuide.module.css'
 
 // 一度見たら、同じブラウザでは出さない
@@ -23,11 +23,12 @@ const FRAMES = [
   },
 ] as const
 
-// 初めて台本を開いたときに出す、使い方の説明（3段）。画面のどこをさわっても次へ進む
+// 初めて台本を開いたときに出す、使い方の説明（3段）。画面のどこをさわっても次へ進む。
+// 出している間は、後ろの台本を操作できないようにする（inert）
 export function ScriptGuide() {
   const [frame, setFrame] = useState<number | null>(() => {
     // サーバーでの描画（テスト）では出さない
-    if (typeof localStorage === 'undefined') return null
+    if (typeof window === 'undefined') return null
     try {
       return localStorage.getItem(STORAGE_KEY) === 'done' ? null : 0
     } catch {
@@ -36,20 +37,50 @@ export function ScriptGuide() {
     }
   })
   const titleId = useId()
+  const overlay = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    if (frame !== null) button.current?.focus({ preventScroll: true })
-  }, [frame])
+  const open = frame !== null
 
-  if (frame === null) return null
-  const finish = () => {
+  const finish = useCallback(() => {
     setFrame(null)
     try {
       localStorage.setItem(STORAGE_KEY, 'done')
     } catch {
       // 保存できなくても、この画面では閉じられる
     }
-  }
+  }, [])
+
+  // 出している間は、同じ台本の中のほかの部品を inert にして、フォーカスが後ろへ行かないようにする。
+  // Escape は、どこにフォーカスがあっても閉じる。閉じたら、台本の領域へフォーカスを戻す
+  useEffect(() => {
+    if (!open) return
+    const element = overlay.current
+    const parent = element?.parentElement
+    const siblings = [...(parent?.children ?? [])].filter(
+      (child) => child !== element && !child.hasAttribute('inert'),
+    )
+    for (const sibling of siblings) sibling.setAttribute('inert', '')
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') finish()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      for (const sibling of siblings) sibling.removeAttribute('inert')
+      document.removeEventListener('keydown', onKeyDown)
+      // 台本の領域（なければ、準備へ戻る「×」）へフォーカスを戻す
+      if (parent?.isConnected)
+        (
+          parent.querySelector<HTMLElement>(
+            '[aria-roledescription="カルーセル"]',
+          ) ?? parent.querySelector<HTMLElement>('button')
+        )?.focus({ preventScroll: true })
+    }
+  }, [open, finish])
+  useEffect(() => {
+    if (frame !== null) button.current?.focus({ preventScroll: true })
+  }, [frame])
+
+  if (frame === null) return null
   const last = frame === FRAMES.length - 1
   const next = () => (last ? finish() : setFrame(frame + 1))
   const { focus, title, lead } = FRAMES[frame]
@@ -60,10 +91,8 @@ export function ScriptGuide() {
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      ref={overlay}
       onClick={next}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') finish()
-      }}
     >
       <div className={styles.picture} aria-hidden="true">
         <div className={styles.phone} data-focus={focus}>
