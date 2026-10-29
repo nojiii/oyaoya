@@ -49,8 +49,10 @@ test('ordinary arithmetic and zero are calculated from the actual operands', () 
   assert.equal(arithmetic('add', 0, 0).answer, 0)
   assert.equal(arithmetic('sub', 8, 8).answer, 0)
   assert.equal(arithmetic('times', 9, 9).answer, 81)
-  assert.equal(arithmetic('add', 9, 6).steps.length, 4)
   assert.equal(arithmetic('add', 3, 4).steps.length, 3)
+  // 合計がちょうど10でも、10を作る手順にはしない
+  assert.equal(arithmetic('add', 6, 4).steps.length, 3)
+  assert.equal(arithmetic('add', 0, 10).answer, 10)
 })
 
 test('invalid inputs cannot produce a lesson', () => {
@@ -58,6 +60,8 @@ test('invalid inputs cannot produce a lesson', () => {
     ['carry', 10, 3],
     ['carry', 8, 0],
     ['add', -1, 4],
+    ['add', 9, 6],
+    ['add', 5, 6],
     ['sub', 3, 8],
     ['borrow', 20, 5],
     ['times', 0, 3],

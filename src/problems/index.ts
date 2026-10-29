@@ -13,7 +13,7 @@ interface ProblemModule {
 }
 
 export const problems = {
-  'addition-meaning': lesson('addition-meaning'),
+  'addition-within-10': lesson('addition-within-10'),
 
   // アルファベット順の位置に新しい問題を追加
   'math-easy-1': { title: '数学 易しい 第1問', default: MathEasy1 },

@@ -124,7 +124,7 @@ test('both addition routes render all steps with matching progress, counter reus
     const { additionPages } = await server.ssrLoadModule(
       '/src/components/additionFlowState.ts',
     )
-    const path = '/problems/addition-meaning'
+    const path = '/problems/addition-within-10'
     const render = (a, b) => {
       const router = createMemoryRouter(
         [
@@ -158,7 +158,9 @@ test('both addition routes render all steps with matching progress, counter reus
       [3, 4],
       [2, 5],
       [0, 0],
-      [9, 9],
+      [1, 2],
+      [2, 3],
+      [4, 6],
     ]) {
       for (const route of ['physical', 'app']) {
         const pages = additionPages(route)
@@ -184,12 +186,12 @@ test('both addition routes render all steps with matching progress, counter reus
             'only app route uses the existing playground',
           )
           assert.ok(
-            !html.includes(`全部で<!-- -->${a + b}<!-- -->個になったね`),
+            !html.includes(`全部で<!-- -->${a + b}<!-- -->こになったね`),
             'answer speech is not rendered before reveal',
           )
           if (page === 'prepare')
             assert.ok(
-              active.includes(`おはじきが${a}個と${b}個、別々に並んでいます`),
+              active.includes(`おはじきが${a}こと${b}こ、別々に並んでいます`),
             )
           if (page === 'combine' || page === 'count') {
             assert.ok(
@@ -197,6 +199,12 @@ test('both addition routes render all steps with matching progress, counter reus
                 active.indexOf('こう声をかけよう'),
             )
           }
+          if (page === 'count')
+            assert.equal(
+              /\d……/.test(active),
+              a + b > 5,
+              'parent counts aloud only when the child still has numbers left to count',
+            )
           if (page === 'answer') assert.ok(active.includes('答えを見る'))
         }
       }
@@ -212,14 +220,18 @@ test('both addition routes render all steps with matching progress, counter reus
         ).replace(/<!-- -->/g, '')
       const hidden = renderAnswer(false)
       assert.ok(hidden.includes(`${a} ＋ ${b} ＝ ？`))
-      assert.ok(!hidden.includes('こう声をかけよう'))
+      // 答えを見る前は、お子さんに答えを聞くだけで、親は答えを言わない
+      assert.ok(hidden.includes(`${a}こと${b}こ、合わせて何こだった？`))
+      assert.ok(!hidden.includes(`全部で${a + b}こ`))
       const shown = renderAnswer(true)
       assert.ok(shown.includes(`${a} ＋ ${b} ＝ ${a + b}`))
+      assert.ok(shown.includes(`「${a + b}」と答えたら`))
       assert.ok(
         shown.includes(
-          `${a}個と${b}個を合わせると、全部で${a + b}個になったね！`,
+          `そう！ ${a}こと${b}こを合わせると、全部で${a + b}こになったね！`,
         ),
       )
+      assert.ok(shown.includes('ちがう数を答えたら'))
       assert.ok(!shown.includes('答えを見る'))
     }
   } finally {

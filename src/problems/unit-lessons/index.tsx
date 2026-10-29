@@ -11,7 +11,7 @@ export function lesson(id: UnitId) {
       <ArithmeticLesson
         mode={mode}
         initial={initial}
-        additionFlow={id === 'addition-meaning'}
+        additionFlow={id === 'addition-within-10'}
       />
     )
   }

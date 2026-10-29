@@ -266,7 +266,7 @@ test('side navigation links only to groups that have problems', async () => {
     const html = renderToString(
       createElement(RouterProvider, { router }),
     ).replaceAll('<!-- -->', '')
-    assert.ok(html.includes('href="/grade-1/math/addition-meaning"'))
+    assert.ok(html.includes('href="/grade-1/math/addition-within-10"'))
     assert.ok(html.includes('href="/grade-1"'))
     for (const [slug, name] of [
       ['grade-1/math/subtraction-meaning', 'ひき算ってなに？'],

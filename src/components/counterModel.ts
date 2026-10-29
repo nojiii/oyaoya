@@ -35,7 +35,7 @@ export function counterGroups({ mode, a, b }: CounterProblem, step: number) {
           { label: 'のこり', count: a - b },
           { label: 'とったぶん', count: b, removed: true },
         ]
-  if ((mode === 'carry' || mode === 'add') && a + b >= 10) {
+  if (mode === 'carry') {
     const need = 10 - a
     if (step < 2)
       return [
