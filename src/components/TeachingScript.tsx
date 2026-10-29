@@ -35,10 +35,18 @@ interface Prepare {
   point: ReactNode
   // 言わないようにしたいこと
   avoid: string[]
+  // 使い方の3つ目（一緒に確かめる）と、教え方のポイントの1つ目。単元に合わせて書きたいときだけ書く
+  together?: string
+  approach?: string
 }
+
+// ページを分けた台本（flow）の進み具合。答えのページまで進んだら finished
+export type FlowStatus = 'start' | 'middle' | 'finished'
 
 interface Props {
   flow?: ReactNode
+  // flow の進み具合を、保存した内容から読む。準備の画面を出すか、続きから始めるかを決める
+  flowStatus?: () => FlowStatus
   // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
   // 台本の下に出す、おはじきの画面
@@ -207,11 +215,12 @@ function PrepareView({
             <div>
               <h3>一緒に確かめる</h3>
               <p>
-                {prepare.counterChoice
-                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
-                  : counters
-                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
-                    : '台本の図や身近なものを使って、一緒に答えを考えます。'}
+                {prepare.together ??
+                  (prepare.counterChoice
+                    ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
+                    : counters
+                      ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
+                      : '台本の図や身近なものを使って、一緒に答えを考えます。')}
               </p>
             </div>
           </li>
@@ -221,11 +230,12 @@ function PrepareView({
         <h2>今日の教え方のポイント</h2>
         <ul>
           <li>
-            {prepare.counterChoice
-              ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
-              : counters
-                ? '一緒におはじきを動かして考える'
-                : '図や身近なものを使って、一緒に考える'}
+            {prepare.approach ??
+              (prepare.counterChoice
+                ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
+                : counters
+                  ? '一緒におはじきを動かして考える'
+                  : '図や身近なものを使って、一緒に考える')}
           </li>
           <li>すぐに答えを教えず、お子さんが考えるのを待つ</li>
         </ul>
@@ -251,7 +261,7 @@ function PrepareView({
           <summary>声かけを先に読んでおく</summary>
           <p className={styles.flowLabel}>1. 問題を出す</p>
           <p className={styles.flowText}>{question.say}</p>
-          <p className={styles.flowLabel}>2. 解き方を順番に教える</p>
+          <p className={styles.flowLabel}>2. 順番に声をかける</p>
           <ol className={styles.flow}>
             {turns.map((turn) => (
               <li key={turn.say}>{turn.say}</li>
@@ -366,8 +376,17 @@ export function TeachingScript({
   counters,
   renderVisual,
   flow,
+  flowStatus,
 }: Props) {
   const location = useLocation()
+  // flow の進み具合。保存が読めないときは、はじめから
+  const readFlowStatus = (): FlowStatus => {
+    try {
+      return flowStatus?.() ?? 'start'
+    } catch {
+      return 'start'
+    }
+  }
   // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
   // 台本を開いたまま問題の数字を変えたとき（部品が作り直される）に、準備の画面へ戻らず、新しい問題の台本の最初を出すため
   const keys = {
@@ -375,7 +394,10 @@ export function TeachingScript({
     history: 'teaching-progress:' + location.pathname + ':' + question.say,
   }
   const [saved] = useState(() => loadProgress(keys, [question, ...turns]))
-  const [started, setStarted] = useState(saved.started)
+  // flow を最後まで終えたあとに開き直したら、準備の画面から
+  const [started, setStarted] = useState(
+    () => saved.started && !(flow && readFlowStatus() === 'finished'),
+  )
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
   const [dragX, setDragX] = useState(0)
@@ -525,7 +547,7 @@ export function TeachingScript({
             setStarted(true)
             window.scrollTo(0, 0)
           }}
-          resume={history.length > 1}
+          resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
         {navigation}
       </div>

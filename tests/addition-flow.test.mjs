@@ -14,6 +14,7 @@ test('addition routes meet at the answer, go back along their own route and requ
       additionPages,
       canAdvanceAddition,
       restoreAdditionProgress,
+      additionFlowStatus,
     } = await server.ssrLoadModule('/src/components/additionFlowState.ts')
     let physical = act(initial, { type: 'next' })
     assert.equal(physical.page, 'choose')
@@ -89,8 +90,14 @@ test('addition routes meet at the answer, go back along their own route and requ
             answerVisible: true,
           }),
         )
-        assert.equal(restored.page, page)
-        assert.equal(restored.route, route)
+        // 答えのページまで終えたあとは、最初から
+        const finished = page === 'answer'
+        assert.equal(restored.page, finished ? 'read' : page)
+        assert.equal(restored.route, finished ? null : route)
+        assert.equal(
+          additionFlowStatus(JSON.stringify({ route, page })),
+          finished ? 'finished' : page === 'read' ? 'start' : 'middle',
+        )
         assert.equal(restored.answerVisible, false)
         assert.equal(restored.appComplete, false)
       }
@@ -165,6 +172,8 @@ test('both addition routes render all steps with matching progress, counter reus
       for (const route of ['physical', 'app']) {
         const pages = additionPages(route)
         for (const [index, page] of pages.entries()) {
+          // 答えのページは保存から開き直せない（最初からになる）ので、下の AdditionAnswer で確かめる
+          if (page === 'answer') continue
           storage.set(
             `addition-flow:v1:${path}:${a}+${b}`,
             JSON.stringify({ route, page }),
@@ -205,7 +214,6 @@ test('both addition routes render all steps with matching progress, counter reus
               a + b > 5,
               'parent counts aloud only when the child still has numbers left to count',
             )
-          if (page === 'answer') assert.ok(active.includes('答えを見る'))
         }
       }
       const renderAnswer = (visible) =>
@@ -220,6 +228,7 @@ test('both addition routes render all steps with matching progress, counter reus
         ).replace(/<!-- -->/g, '')
       const hidden = renderAnswer(false)
       assert.ok(hidden.includes(`${a} ＋ ${b} ＝ ？`))
+      assert.ok(hidden.includes('答えを見る'))
       // 答えを見る前は、お子さんに答えを聞くだけで、親は答えを言わない
       assert.ok(hidden.includes(`${a}こと${b}こ、合わせて何こだった？`))
       assert.ok(!hidden.includes(`全部で${a + b}こ`))

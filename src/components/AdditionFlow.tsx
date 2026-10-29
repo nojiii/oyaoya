@@ -16,6 +16,7 @@ import {
 } from './VisualPlayground'
 import {
   additionPages,
+  additionStorageKey,
   advanceAddition,
   canAdvanceAddition,
   restoreAdditionProgress,
@@ -107,7 +108,7 @@ export function AdditionFlow({
   editor: ReactNode
 }) {
   const location = useLocation()
-  const storageKey = `addition-flow:v1:${location.pathname}:${a}+${b}`
+  const storageKey = additionStorageKey(location.pathname, a, b)
   const [progress, dispatch] = useReducer(
     advanceAddition,
     storageKey,

@@ -124,6 +124,15 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     assert.equal((prepare.match(/aria-pressed="true"/g) ?? []).length, 1)
     assert.match(prepare, /aria-pressed="true"[^>]*>5</)
     assert.ok(prepare.includes('声かけを先に読んでおく'))
+    // 準備画面の使い方と教え方のポイントは、数える単元に合わせた文
+    assert.ok(
+      prepare.includes(
+        'お子さんが数えるのを見守り、最後に言った数を一緒に確かめます。',
+      ),
+    )
+    assert.ok(prepare.includes('身近なものを、お子さんが1こずつ指さして数える'))
+    assert.ok(!prepare.includes('一緒に答えを考えます'))
+    assert.ok(prepare.includes('2. 順番に声をかける'))
     assert.ok(prepare.includes('指でさしながら、1こずつ数えてみよう。'))
     assert.ok(prepare.includes('（答えたら）最後に言った数が、全部の数だよ。'))
     assert.ok(!prepare.includes('**'))

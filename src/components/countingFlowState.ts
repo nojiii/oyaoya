@@ -1,22 +1,41 @@
+import type { FlowStatus } from './TeachingScript'
+
 export const countingPages = ['read', 'line', 'count', 'answer'] as const
 export type CountingPage = (typeof countingPages)[number]
 
-// 保存した続きから始める。数を変えたときと、最後のページまで終えたあとは、最初のページから
-export function restoreCountingPage(
-  raw: string | null,
-  n: number,
-): CountingPage {
+export function countingStorageKey(pathname: string) {
+  return `counting-flow:v2:${pathname}`
+}
+
+function parseCountingProgress(raw: string | null, n: number) {
   try {
     const saved = JSON.parse(raw ?? 'null') as {
       n?: unknown
       page?: unknown
     } | null
     const page = countingPages.find((page) => page === saved?.page)
-    if (saved?.n === n && page && page !== 'answer') return page
+    // 数を変えたら、続きは使わない
+    if (saved?.n === n && page) return page
   } catch {
     // 古い形式や壊れた保存内容は使わない。
   }
-  return 'read'
+  return null
+}
+
+// 準備の画面で、台本の続きがあるかを決める。答えのページまで進んだら、終えたものとして扱う
+export function countingFlowStatus(raw: string | null, n: number): FlowStatus {
+  const page = parseCountingProgress(raw, n)
+  if (page === 'answer') return 'finished'
+  return page && page !== 'read' ? 'middle' : 'start'
+}
+
+// 保存した続きから始める。数を変えたときと、最後のページまで終えたあとは、最初のページから
+export function restoreCountingPage(
+  raw: string | null,
+  n: number,
+): CountingPage {
+  const page = parseCountingProgress(raw, n)
+  return page && page !== 'answer' ? page : 'read'
 }
 
 // 子どもに読み上げるセリフ。準備画面の「声かけを先に読んでおく」にも同じ文を出す
