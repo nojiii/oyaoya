@@ -56,6 +56,14 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(!html.includes('おはじきの案内'))
           continue
         }
+        if (id === 'counting') {
+          assert.match(html, /data-slide="read" data-active="true"/)
+          assert.ok(html.includes('何こあるか、数えてみましょう'))
+          assert.ok(html.includes('教え方のポイント'))
+          assert.ok(html.includes('数える数'))
+          assert.ok(html.includes('台本の進み具合'))
+          continue
+        }
         if (html.includes('aria-label="最初の数"')) {
           const firstCard = html.match(
             /<div[^>]*data-active="true"[\s\S]*?<\/form>/,

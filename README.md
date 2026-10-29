@@ -136,10 +136,11 @@ src/
       index.tsx            #     その問題のタイトルと画面
     arithmetic.ts          #   計算の問題の文と、解き方の台本を、数字から作る
     unit-lessons/          #   単元ごとに1問ずつ置く教材（1つのフォルダで複数の問題を作る）
-      units.ts             #     単元の一覧（問題ID・タイトル・計算の種類と最初の数字）
+      units.ts             #     単元の一覧（問題ID・タイトル・計算の種類と最初の数字、または数える数）
   components/              # 複数の問題で使う部品
     TeachingScript.tsx     #   教えている最中に使う台本。声かけを1ページずつ出し、スワイプで進める
     ArithmeticLesson.tsx   #   計算の問題の画面（数字を変えられる台本と、おはじき）
+    CountingLesson.tsx     #   数える単元の画面（数える数を選べる台本）
     CounterDisplay.tsx     #   台本の下に出す、おはじきの画面
     LessonVisual.tsx       #   台本のステップごとの図
     SideNavigation.tsx     #   横のメニュー
@@ -182,6 +183,7 @@ tests/                     # テスト（npm test）
 
 1. [units.ts](src/problems/unit-lessons/units.ts) に単元を1つ足す。`id` が問題ID
    - `arithmetic`（計算の種類と、最初に出す数字）だけを書く。問題の文と台本は、数字から作る（[arithmetic.ts](src/problems/arithmetic.ts)）
+   - 数える単元は、`arithmetic` の代わりに `counting`（最初に出す、数える数）を書く。台本は [CountingFlow.tsx](src/components/CountingFlow.tsx)
 2. [src/problems/index.ts](src/problems/index.ts) に `'<問題ID>': lesson('<問題ID>'),` を1行足す（アルファベット順の位置に入れる）
 3. [src/curriculum.ts](src/curriculum.ts) で、その単元（「じゅんび中」の単元なら、その行）の4つ目の引数に `['<問題ID>']` を書く
 

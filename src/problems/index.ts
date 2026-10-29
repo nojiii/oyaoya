@@ -12,6 +12,7 @@ interface ProblemModule {
 // 追加するときはアルファベット順の位置に1行足す（同時に追加した人との衝突を減らすため）
 export const problems = {
   'addition-within-10': lesson('addition-within-10'),
+  counting: lesson('counting'),
 } satisfies Record<string, ProblemModule>
 
 export type ProblemId = keyof typeof problems
