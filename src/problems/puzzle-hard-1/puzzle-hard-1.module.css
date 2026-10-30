@@ -1,0 +1,98 @@
+/* 謎解き（難しい）第1問だけで使う見た目 */
+
+/* ステージに置く、4人と壁の図 */
+.figure {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+}
+
+.figure text {
+  font-family: var(--font);
+  font-weight: 900;
+  text-anchor: middle;
+}
+
+.wall {
+  fill: var(--color-muted);
+}
+
+.wallName {
+  fill: var(--color-muted);
+  font-size: 13px;
+}
+
+.body {
+  fill: var(--color-faint);
+}
+
+.head {
+  fill: #f2d4bf;
+}
+
+.eye {
+  fill: var(--color-text);
+}
+
+.name {
+  fill: var(--color-text);
+  font-size: 17px;
+}
+
+.hat[data-hat='black'] {
+  fill: var(--color-text);
+}
+
+/* 白い帽子は白地のステージに溶けるので、ここだけ細い線で形を見せる */
+.hat[data-hat='white'] {
+  fill: #fff;
+  stroke: var(--color-faint);
+  stroke-width: 2;
+}
+
+.hat[data-hat='unknown'] {
+  fill: var(--color-border);
+}
+
+.unknown {
+  fill: var(--color-muted);
+  font-size: 18px;
+}
+
+/* いま考えている人から外す人。消さずに薄くして、並びは分かるようにする */
+.dim {
+  opacity: 0.25;
+}
+
+/* 問題文。長いので、ほかの台本の問題（大きな1行）より小さくし、段落に分けて左に寄せる */
+.question {
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: var(--teach-soft);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.question p {
+  margin: 0;
+}
+
+.question p + p {
+  margin-top: 0.6em;
+}
+
+/* 「答えたのは」が付いて長いので、スマホの幅に収まるよう小さくする */
+p.equation {
+  font-size: clamp(24px, 8vw, 36px);
+}
+
+/* 答えの行と一緒に置くページの図。ステージの高さをほかのページとそろえる */
+.figure.compact {
+  max-height: 120px;
+}
+
+/* 答えを見たあとの案内。場所だけ残して見えなくする */
+.hidden {
+  visibility: hidden;
+}

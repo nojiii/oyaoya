@@ -1,0 +1,91 @@
+/* 謎解き（易しい）第1問だけで使う見た目 */
+
+/* ステージに置く、3つの箱の図 */
+.boxes {
+  display: grid;
+  /* 札の文字の長さで列の幅が変わらないよう、3等分に固定する */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.item {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+/* 箱。枠線は使わず、白地との明るさの差で見せる */
+.box {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 0.85;
+  padding: 8px;
+  border-radius: 16px;
+  background: #ecd9c3;
+}
+
+/* 選んでいる箱。台本の色（橙）にする */
+.box[data-picked] {
+  background: var(--color-accent);
+}
+
+/* 箱にはった札 */
+.label {
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 札の言葉のまとまり。Safari では文節で折り返す指定が効かないので、まとまりの中では折り返さない */
+.label > span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* 箱の下に書く、取り出したお菓子や中身。書かない箱も高さをそろえる */
+.note {
+  min-height: 1.5em;
+  /* 「まざったもの」が幅320pxの画面でも1行に収まる大きさ */
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* 「？」で中身を見たあと、フォーカスを受ける図 */
+.reveal {
+  width: 100%;
+}
+
+.reveal:focus {
+  outline: none;
+}
+
+/* 問題文。長いので、ほかの台本の問題（大きな1行）より小さくし、段落に分けて左に寄せる */
+.question {
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: var(--teach-soft);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.question p {
+  margin: 0;
+}
+
+.question p + p {
+  margin-top: 0.6em;
+}
+
+/* 答えの行。札の名前が入って長いので、スマホの幅に収まるよう小さくする */
+p.equation {
+  font-size: clamp(20px, 6vw, 28px);
+}
