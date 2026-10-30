@@ -51,7 +51,9 @@ interface Progress {
   page: Page
 }
 
-// 進み具合は、同じタブの中で保存する（準備の画面へ戻ると、台本の部品は作り直されるため）
+// 進み具合は、同じタブの中で保存する（準備の画面へ戻ると、台本の部品は作り直されるため）。
+// この見本は選んだ方法（route）と食べる数も保存するので、自分で書いている。
+// ページの位置だけを保存すればよい台本は、components/pagedFlow.ts を使う（math-easy-1 など）
 const storageKey = (pathname: string) => `sample-flow:v1:${pathname}`
 
 function readProgress(raw: string | null, eat: number): Progress | null {

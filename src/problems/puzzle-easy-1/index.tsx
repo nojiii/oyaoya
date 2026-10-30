@@ -1,13 +1,11 @@
 // 大学祭の謎解き（易しい）第1問。台本の書き方は src/problems/sample にそろえる
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
-import {
-  TeachingScript,
-  type FlowStatus,
-} from '../../components/TeachingScript'
+import { TeachingScript } from '../../components/TeachingScript'
 import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
+import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
 import styles from './puzzle-easy-1.module.css'
@@ -55,25 +53,7 @@ const pages = [
 ] as const
 type Page = (typeof pages)[number]
 
-// 進み具合は、同じタブの中で保存する（準備の画面へ戻ると、台本の部品は作り直されるため）
-const storageKey = (pathname: string) => `puzzle-easy-1-flow:v1:${pathname}`
-
-function readPage(raw: string | null): Page | null {
-  try {
-    const saved = JSON.parse(raw ?? 'null') as { page?: string } | null
-    return pages.find((page) => page === saved?.page) ?? null
-  } catch {
-    // 古い形式や壊れた保存内容は使わない
-    return null
-  }
-}
-
-// 準備の画面で、続きがあるかを決める。最後のページまで進んだら、終えたものとして扱う
-function flowStatus(raw: string | null): FlowStatus {
-  const page = readPage(raw)
-  if (!page || page === 'read') return 'start'
-  return page === 'check' ? 'finished' : 'middle'
-}
+const flow = pagedFlow('puzzle-easy-1', pages)
 
 // ステージに置く3つの箱。picked の箱を橙にし、notes があれば箱の下に書く（null は空ける）
 function Boxes({
@@ -206,32 +186,7 @@ function CheckContents({
 function PuzzleEasyFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
   const { finish } = useScriptControls()
-  const key = storageKey(useLocation().pathname)
-  const [page, setPage] = useState<Page>(() => {
-    try {
-      const saved = readPage(sessionStorage.getItem(key))
-      // 最後のページまで終えたあとは、最初から
-      if (saved && saved !== 'check') return saved
-    } catch {
-      // 読めないときは、最初から
-    }
-    return 'read'
-  })
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ page }))
-    } catch {
-      // 保存できなくても、この画面で学習を続けられる
-    }
-  }, [key, page])
-  // 「？」で答えを見たか。ページを送ると、見る前に戻す
-  const [revealed, setRevealed] = useState(false)
-  const index = pages.indexOf(page)
-  const go = (next: Page | undefined) => {
-    if (!next) return
-    setPage(next)
-    setRevealed(false)
-  }
+  const { page, revealed, reveal, next, back } = flow.usePages()
   // 答えを見るまでは進めない。最後のページから先はない
   const canNext = page === 'answer' ? revealed : page !== 'check'
 
@@ -303,7 +258,7 @@ function PuzzleEasyFlow() {
     answer: {
       id: 'answer',
       title: '答えを確認しましょう！',
-      stage: <Answer visible={revealed} onReveal={() => setRevealed(true)} />,
+      stage: <Answer visible={revealed} onReveal={reveal} />,
       content: (
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
@@ -356,9 +311,7 @@ function PuzzleEasyFlow() {
       id: 'check',
       section: 'たしかめ',
       title: 'ひとりで残りの箱を当ててみましょう',
-      stage: (
-        <CheckContents visible={revealed} onReveal={() => setRevealed(true)} />
-      ),
+      stage: <CheckContents visible={revealed} onReveal={reveal} />,
       content: (
         <>
           <div className={flowStyles.answer} aria-live="polite">
@@ -397,8 +350,8 @@ function PuzzleEasyFlow() {
       currentId={page}
       totalKnown
       canNext={canNext}
-      onNext={() => go(pages[index + 1])}
-      onBack={() => go(pages[index - 1])}
+      onNext={next}
+      onBack={back}
     />
   )
 }
@@ -408,9 +361,7 @@ export default function PuzzleEasy1() {
   return (
     <TeachingScript
       flow={<PuzzleEasyFlow />}
-      flowStatus={() =>
-        flowStatus(sessionStorage.getItem(storageKey(location.pathname)))
-      }
+      flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
       picture={<Boxes />}
       prepare={{

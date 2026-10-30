@@ -1,13 +1,11 @@
 // 大学祭の数学（易しい）第1問。台本の書き方は src/problems/sample にそろえる
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
-import {
-  TeachingScript,
-  type FlowStatus,
-} from '../../components/TeachingScript'
+import { TeachingScript } from '../../components/TeachingScript'
 import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
+import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
 import figureWhole from './images/band-1.webp'
@@ -33,25 +31,7 @@ const words = {
 const pages = ['read', 'whole', 'discount', 'price', 'answer'] as const
 type Page = (typeof pages)[number]
 
-// 進み具合は、同じタブの中で保存する（準備の画面へ戻ると、台本の部品は作り直されるため）
-const storageKey = (pathname: string) => `math-easy-1-flow:v1:${pathname}`
-
-function readPage(raw: string | null): Page | null {
-  try {
-    const saved = JSON.parse(raw ?? 'null') as { page?: string } | null
-    return pages.find((page) => page === saved?.page) ?? null
-  } catch {
-    // 古い形式や壊れた保存内容は使わない
-    return null
-  }
-}
-
-// 準備の画面で、続きがあるかを決める。最後のページまで進んだら、終えたものとして扱う
-function flowStatus(raw: string | null): FlowStatus {
-  const page = readPage(raw)
-  if (!page || page === 'read') return 'start'
-  return page === 'answer' ? 'finished' : 'middle'
-}
+const flow = pagedFlow('math-easy-1', pages)
 
 // ノートセットの絵に描く3冊。左上の位置・傾き・表紙の色（クラス名）。最後の1冊がいちばん手前
 const NOTEBOOKS = [
@@ -157,32 +137,7 @@ function Equation({
 function MathEasyFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
   const { finish } = useScriptControls()
-  const key = storageKey(useLocation().pathname)
-  const [page, setPage] = useState<Page>(() => {
-    try {
-      const saved = readPage(sessionStorage.getItem(key))
-      // 最後のページまで終えたあとは、最初から
-      if (saved && saved !== 'answer') return saved
-    } catch {
-      // 読めないときは、最初から
-    }
-    return 'read'
-  })
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ page }))
-    } catch {
-      // 保存できなくても、この画面で学習を続けられる
-    }
-  }, [key, page])
-  // 「？」で答えを見たか。ページを送ると、見る前に戻す
-  const [revealed, setRevealed] = useState(false)
-  const index = pages.indexOf(page)
-  const go = (next: Page | undefined) => {
-    if (!next) return
-    setPage(next)
-    setRevealed(false)
-  }
+  const { page, revealed, reveal, next, back } = flow.usePages()
 
   const slides: Record<Page, LessonSlide> = {
     read: {
@@ -257,7 +212,7 @@ function MathEasyFlow() {
     answer: {
       id: 'answer',
       title: '答えを確認しましょう！',
-      stage: <Equation visible={revealed} onReveal={() => setRevealed(true)} />,
+      stage: <Equation visible={revealed} onReveal={reveal} />,
       content: revealed && (
         <button className={flowStyles.finish} type="button" onClick={finish}>
           終わる
@@ -273,8 +228,8 @@ function MathEasyFlow() {
       currentId={page}
       totalKnown
       canNext={page !== 'answer'}
-      onNext={() => go(pages[index + 1])}
-      onBack={() => go(pages[index - 1])}
+      onNext={next}
+      onBack={back}
     />
   )
 }
@@ -284,9 +239,7 @@ export default function MathEasy1() {
   return (
     <TeachingScript
       flow={<MathEasyFlow />}
-      flowStatus={() =>
-        flowStatus(sessionStorage.getItem(storageKey(location.pathname)))
-      }
+      flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す値札
       picture={<PriceTag />}
       prepare={{

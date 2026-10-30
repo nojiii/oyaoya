@@ -263,15 +263,6 @@ main:has([data-script-running]) .page-title {
   display: none;
 }
 
-/* ProblemSections（動きのない問題ページ）の見出し */
-section.step {
-  margin: 1.5rem 0;
-}
-section.step h2 {
-  font-size: 20px;
-  font-weight: 900;
-}
-
 /* ステージ：上に置く「見るもの」（キャラクターや図）。将来、キャラクターは Rive の <canvas> に替える */
 .stage {
   display: grid;

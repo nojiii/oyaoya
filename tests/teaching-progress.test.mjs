@@ -108,11 +108,22 @@ test('flow lessons resume in the middle and start over from preparation after fi
         router.dispose()
       }
     }
+    // middle は途中のページ。答えのページのあとに、たしかめがある台本は answer も途中として確かめる
+    // （大学祭の問題は pagedFlow でページの位置だけを保存する）
+    const pagedLesson = (id, middle, last) => ({
+      path: `/problems/${id}`,
+      flowKey: `/problems/${id}`,
+      prefix: `${id}-flow:v1:`,
+      middle,
+      last,
+      progress: (page) => JSON.stringify({ page }),
+    })
     const lessons = [
       {
         path: '/problems/addition-within-10',
         flowKey: '/problems/addition-within-10:3+4',
         prefix: 'addition-flow:v1:',
+        middle: 'count',
         last: 'check',
         progress: (page) =>
           JSON.stringify({ route: page === 'read' ? null : 'physical', page }),
@@ -121,11 +132,16 @@ test('flow lessons resume in the middle and start over from preparation after fi
         path: '/problems/counting',
         flowKey: '/problems/counting',
         prefix: 'counting-flow:v2:',
+        middle: 'count',
         last: 'give',
         progress: (page) => JSON.stringify({ n: 5, page }),
       },
+      pagedLesson('math-easy-1', 'discount', 'answer'),
+      pagedLesson('math-hard-1', 'center', 'answer'),
+      pagedLesson('puzzle-easy-1', 'answer', 'check'),
+      pagedLesson('puzzle-hard-1', 'answer', 'check'),
     ]
-    for (const { path, flowKey, prefix, last, progress } of lessons) {
+    for (const { path, flowKey, prefix, middle, last, progress } of lessons) {
       storage.clear()
       const started = `teaching-started:${path}`
       const flow = prefix + flowKey
@@ -135,7 +151,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
       assert.ok((await render(path)).includes('data-script-running'), path)
 
       // 途中のページ → 台本の続き。準備に戻ると「途中から台本にもどる」
-      storage.set(flow, progress('count'))
+      storage.set(flow, progress(middle))
       assert.ok((await render(path)).includes('data-script-running'), path)
       storage.set(started, 'false')
       let html = await render(path)
@@ -144,8 +160,10 @@ test('flow lessons resume in the middle and start over from preparation after fi
 
       // 答えのページはまだ途中（このあとに、たしかめがある）
       storage.set(started, 'true')
-      storage.set(flow, progress('answer'))
-      assert.ok((await render(path)).includes('data-script-running'), path)
+      if (last !== 'answer') {
+        storage.set(flow, progress('answer'))
+        assert.ok((await render(path)).includes('data-script-running'), path)
+      }
 
       // 最後のページ（たしかめ）まで終えた → 開き直すと準備の画面から、「台本をはじめる」
       storage.set(flow, progress(last))
