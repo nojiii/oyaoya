@@ -9,6 +9,7 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
 import {
@@ -393,11 +394,10 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          <img
+          {/* 「？」で答えを見たら、おやじいが喜ぶ（ページを移ると、答えはまた隠れる） */}
+          <Oyajii
             className={styles.answerMascot}
-            src="/mascot.png"
-            alt=""
-            draggable={false}
+            motion={answerShown ? 'correct' : null}
           />
           <AdditionEquation
             a={a}

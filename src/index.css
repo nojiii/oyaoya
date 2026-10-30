@@ -263,7 +263,7 @@ main:has([data-script-running]) .page-title {
   display: none;
 }
 
-/* ステージ：上に置く「見るもの」（キャラクターや図）。将来、キャラクターは Rive の <canvas> に替える */
+/* ステージ：上に置く「見るもの」（キャラクターや図） */
 .stage {
   display: grid;
   place-items: center;
@@ -278,7 +278,6 @@ main:has([data-script-running]) .page-title {
   width: 180px;
   height: auto;
   aspect-ratio: 1;
-  object-fit: contain;
 }
 
 /* 見出しの上の小さなラベル */

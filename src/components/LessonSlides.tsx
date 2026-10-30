@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import styles from './TeachingScript.module.css'
 import flowStyles from './AdditionFlow.module.css'
+import { Oyajii } from './Oyajii'
 
 export interface LessonSlide {
   id: string
@@ -295,16 +296,9 @@ export function LessonSlides({
                   transform: `translateX(calc(${(i - index) * 100}% + ${(i - index) * 12}px))`,
                 }}
               >
-                {/* ステージ：お子さんと一緒に見るもの。キャラクターは将来 Rive の <canvas> に替える */}
+                {/* ステージ：お子さんと一緒に見るもの */}
                 <div className={flowStyles.stage}>
-                  {slide.stage ?? (
-                    <img
-                      className={flowStyles.stageMascot}
-                      src="/mascot.png"
-                      alt=""
-                      draggable={false}
-                    />
-                  )}
+                  {slide.stage ?? <Oyajii className={flowStyles.stageMascot} />}
                 </div>
                 <h2 className={flowStyles.title} tabIndex={-1}>
                   {slide.section && (

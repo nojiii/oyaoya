@@ -5,6 +5,9 @@ import { cleanup } from '@testing-library/react'
 // 画面を操作するテストでは、それらをここで差し替え、テストごとに元へ戻す
 const restores = []
 
+// テストでは通信しない。おやじい（Rive）の絵と描画エンジンは読み込まず、枠だけを描く
+globalThis.fetch = () => new Promise(() => {})
+
 afterEach(() => {
   cleanup()
   while (restores.length) restores.pop()()
@@ -53,7 +56,14 @@ export function stubAnimations() {
     return animation
   })
   stub(Element.prototype, 'getAnimations', () => [])
-  stub(window, 'matchMedia', () => ({ matches: false }))
+  // 動きを減らす設定はオフ。変化を見張る仕組み（おやじい（Rive）が使う）は、何もしない
+  stub(window, 'matchMedia', () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+  }))
   return animations
 }
 

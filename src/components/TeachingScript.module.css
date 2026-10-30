@@ -25,7 +25,6 @@
   width: 180px;
   height: auto;
   aspect-ratio: 1;
-  object-fit: contain;
 }
 
 /* はじめる前に。大事なこと（やること・いちばん大事なこと）は大きく太く、
@@ -452,9 +451,9 @@
 }
 .mascot {
   display: block;
+  flex: none;
   width: 56px;
   height: 56px;
-  object-fit: contain;
 }
 .readAloudHeading {
   margin: 0;
