@@ -1,0 +1,39 @@
+/* 準備の画面と台本の間に出す幕。台本と同じ全面の橙に、おやじいと一言だけを置く */
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: var(--teach-bg);
+  color: var(--teach-text);
+  /* 幕が出ている間は、後ろのボタンを押せないようにする */
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.message {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  opacity: 0;
+}
+
+/* キャラクターは将来 Rive の <canvas> に替える */
+.mascot {
+  display: block;
+  width: 160px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.words {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  text-align: center;
+}

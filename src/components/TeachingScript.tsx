@@ -1,10 +1,13 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
+import { ScriptGuide } from './ScriptGuide'
+import { ScriptControls } from './scriptControls'
+import { ScriptCurtain, type Curtain } from './ScriptCurtain'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
 
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
@@ -35,21 +38,27 @@ interface Prepare {
   point: ReactNode
   // 言わないようにしたいこと
   avoid: string[]
+  // 使い方の3つ目（一緒に確かめる）と、教え方のポイントの1つ目。単元に合わせて書きたいときだけ書く
+  together?: string
+  approach?: string
 }
+
+// ページを分けた台本（flow）の進み具合。最後のページ（たしかめ）まで進んだら finished
+export type FlowStatus = 'start' | 'middle' | 'finished'
 
 interface Props {
   flow?: ReactNode
-  // 問題ごとに、マスコットと「こう声かけしよう」の見出しを非表示にできる。
-  showSpeaker?: boolean
-  // 問題ごとに、解説カードの見出しと終了カードを非表示にできる。
-  showRevealHeading?: boolean
-  showFinish?: boolean
+  // flow の進み具合を、保存した内容から読む。準備の画面を出すか、続きから始めるかを決める
+  flowStatus?: () => FlowStatus
   // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
   // 台本の下に出す、おはじきの画面
   counters?: CounterProblem
   // 問題の数字を変える入力欄
   editor?: ReactNode
+  // 準備の画面のステージに大きく出す図（なければ、問題の数字を変える欄を出す）。
+  // 図があるときは、数字を変える欄は下の「数を変える」にたたむ
+  picture?: ReactNode
   prepare: Prepare
   // 教える問題。台本の上部に常時表示する
   question: Turn
@@ -130,45 +139,22 @@ function beatsOf(turn: Turn): Beat[] {
   return beats
 }
 
-function GuideIcon({
-  kind,
-}: {
-  kind: 'list' | 'prepare' | 'script' | 'together'
-}) {
-  const paths = {
-    list: 'M4 5h3v3H4zM11 6.5h9M4 11h3v3H4zM11 12.5h9M4 17h3v3H4zM11 18.5h9',
-    prepare: 'M8 4H5v16h14V4h-3M9 3h6v4H9zM8 12l2 2 5-5M8 17h8',
-    script: 'M4 4h16v12H9l-5 4V4zM8 8h8M8 12h5',
-    together:
-      'M10 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0M2 20v-3a5 5 0 0 1 10 0v3M12 20v-3a5 5 0 0 1 10 0v3',
-  }
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={paths[kind]} />
-    </svg>
-  )
-}
-
 function PrepareView({
   counters,
   editor,
+  picture,
   prepare,
   question,
   turns,
   onStart,
   resume,
-}: Props & { onStart: () => void; resume?: boolean }) {
-  const guideId = useId()
+  startButton,
+}: Props & {
+  onStart: (button: HTMLButtonElement) => void
+  resume?: boolean
+  // 「終わる」の幕が縮んでいく先
+  startButton?: Ref<HTMLButtonElement>
+}) {
   const symbol =
     counters?.mode === 'times'
       ? '×'
@@ -182,60 +168,48 @@ function PrepareView({
     : prepare.goal
   return (
     <div className={styles.prepare}>
+      {/* ステージ：今日の問題の図を大きく出す。キャラクターは将来 Rive の <canvas> に替える */}
+      <div className={styles.stage}>
+        {picture ?? editor ?? (
+          <img
+            className={styles.stageMascot}
+            src="/mascot.png"
+            alt=""
+            draggable={false}
+          />
+        )}
+      </div>
+
+      {/* 大事なこと：大きく太く */}
       <header className={styles.prepareHeading}>
         <h2 className={styles.prepareTitle}>この学習でやること</h2>
         <p className={styles.learning}>{learning}</p>
       </header>
-      {editor}
-      <section className={styles.quickGuide} aria-labelledby={guideId}>
-        <h2 id={guideId}>使い方は3ステップ</h2>
-        <ol className={styles.guideSteps}>
-          <li>
-            <span className={styles.stepNumber}>1</span>
-            <GuideIcon kind="prepare" />
-            <div>
-              <h3>準備する</h3>
-              <p>この画面で、今日の問題と教え方を確認します。</p>
-            </div>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>2</span>
-            <GuideIcon kind="script" />
-            <div>
-              <h3>台本を見て教える</h3>
-              <p>「台本」でセリフを読み、お子さんに声をかけます。</p>
-            </div>
-          </li>
-          <li>
-            <span className={styles.stepNumber}>3</span>
-            <GuideIcon kind="together" />
-            <div>
-              <h3>一緒に確かめる</h3>
-              <p>
-                {prepare.counterChoice
-                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
-                  : counters
-                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
-                    : '台本の図や身近なものを使って、一緒に答えを考えます。'}
-              </p>
-            </div>
-          </li>
-        </ol>
+      <section className={styles.prepareHeading}>
+        <h2 className={styles.prepareTitle}>今日の教え方のポイント</h2>
+        <p className={styles.keyPoint}>
+          <mark>すぐに答えを教えず</mark>、お子さんが考えるのを待つ
+        </p>
       </section>
-      <section className={styles.teachingPoints}>
-        <h2>今日の教え方のポイント</h2>
-        <ul>
-          <li>
-            {prepare.counterChoice
-              ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
-              : counters
-                ? '一緒におはじきを動かして考える'
-                : '図や身近なものを使って、一緒に考える'}
-          </li>
-          <li>すぐに答えを教えず、お子さんが考えるのを待つ</li>
-        </ul>
+
+      {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない） */}
+      <div className={styles.folds}>
+        {picture != null && editor != null && (
+          <details className={styles.extraNote}>
+            <summary>数を変える</summary>
+            <div className={styles.foldEditor}>{editor}</div>
+          </details>
+        )}
         <details className={styles.extraNote}>
           <summary>詳しい教え方・気をつけたいこと</summary>
+          <p>
+            {prepare.approach ??
+              (prepare.counterChoice
+                ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
+                : counters
+                  ? '一緒におはじきを動かして考える'
+                  : '図や身近なものを使って、一緒に考える')}
+          </p>
           <div>{prepare.point}</div>
           <ul>
             {prepare.avoid.map((text) => (
@@ -250,23 +224,51 @@ function PrepareView({
                 : `用意するもの：${prepare.materials.join('・')}`}
           </p>
         </details>
-      </section>
-      {!prepare.counterChoice && (
         <details className={styles.extraNote}>
-          <summary>声かけを先に読んでおく</summary>
-          <p className={styles.flowLabel}>1. 問題を出す</p>
-          <p className={styles.flowText}>{question.say}</p>
-          <p className={styles.flowLabel}>2. 解き方を順番に教える</p>
-          <ol className={styles.flow}>
-            {turns.map((turn) => (
-              <li key={turn.say}>{turn.say}</li>
-            ))}
+          <summary>使い方は3ステップ</summary>
+          <ol className={styles.guideSteps}>
+            <li>
+              <b>準備する</b>
+              この画面で、今日の問題と教え方を確認します。
+            </li>
+            <li>
+              <b>台本を見て教える</b>
+              「台本」でセリフを読み、お子さんに声をかけます。
+            </li>
+            <li>
+              <b>一緒に確かめる</b>
+              {prepare.together ??
+                (prepare.counterChoice
+                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
+                  : counters
+                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
+                    : '台本の図や身近なものを使って、一緒に答えを考えます。')}
+            </li>
           </ol>
         </details>
-      )}
+        {!prepare.counterChoice && (
+          <details className={styles.extraNote}>
+            <summary>声かけを先に読んでおく</summary>
+            <p className={styles.flowLabel}>1. 問題を出す</p>
+            <p className={styles.flowText}>{question.say}</p>
+            <p className={styles.flowLabel}>2. 順番に声をかける</p>
+            <ol className={styles.flow}>
+              {turns.map((turn) => (
+                <li key={turn.say}>{turn.say}</li>
+              ))}
+            </ol>
+          </details>
+        )}
+      </div>
+
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
-        <button className={styles.primary} type="button" onClick={onStart}>
+        <button
+          className={styles.primary}
+          type="button"
+          ref={startButton}
+          onClick={(event) => onStart(event.currentTarget)}
+        >
           {resume ? '途中から台本にもどる' : '台本をはじめる'}
         </button>
       </div>
@@ -299,12 +301,12 @@ function announcement(beat: Beat) {
 }
 
 // 1画面の中身。行動は1つだけにして、それ以外の情報は出さない
-function BeatView({ beat, showSpeaker }: { beat: Beat; showSpeaker: boolean }) {
+function BeatView({ beat }: { beat: Beat }) {
   switch (beat.kind) {
     case 'do':
       return <p className={styles.main}>{beat.text}</p>
     case 'say':
-      return <TeachingStep step={beat} showSpeaker={showSpeaker} />
+      return <TeachingStep step={beat} />
     case 'show':
       return <div className={styles.reference}>{beat.content}</div>
     case 'finish':
@@ -368,28 +370,43 @@ export function TeachingScript({
   question,
   turns,
   editor,
+  picture,
   counters,
   renderVisual,
   flow,
-  showSpeaker = true,
-  showRevealHeading = true,
-  showFinish = true,
+  flowStatus,
 }: Props) {
   const location = useLocation()
-  // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
-  // 台本を開いたまま問題の数字を変えたとき（部品が作り直される）に、準備の画面へ戻らず、新しい問題の台本の最初を出すため
+  // flow の進み具合。保存が読めないときは、はじめから
+  const readFlowStatus = (): FlowStatus => {
+    try {
+      return flowStatus?.() ?? 'start'
+    } catch {
+      return 'start'
+    }
+  }
+  // 台本を開いているかはページごと、進み具合は問題ごとに保存する
   const keys = {
     started: 'teaching-started:' + location.pathname,
     history: 'teaching-progress:' + location.pathname + ':' + question.say,
   }
   const [saved] = useState(() => loadProgress(keys, [question, ...turns]))
-  const [started, setStarted] = useState(saved.started)
+  // flow を最後まで終えたあとに開き直したら、準備の画面から
+  const [started, setStarted] = useState(
+    () => saved.started && !(flow && readFlowStatus() === 'finished'),
+  )
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
+  // 準備の画面で問題の数字を変えたら、その問題の進み具合を読み直す。
+  // 部品ごと作り直すと、準備の画面で開いていた「数を変える」の欄が閉じてしまうため
+  const [historyKey, setHistoryKey] = useState(keys.history)
+  if (historyKey !== keys.history) {
+    setHistoryKey(keys.history)
+    setHistory(loadProgress(keys, [question, ...turns]).history)
+  }
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [slideWidth, setSlideWidth] = useState(320)
-  const [dotTarget, setDotTarget] = useState<number | null>(null)
   const track = useRef<HTMLDivElement>(null)
   const sliding = useRef(false)
   const gesture = useRef<{
@@ -399,14 +416,32 @@ export function TeachingScript({
     axis: 'x' | 'y' | null
   } | null>(null)
   const menu = useMenuLink()
+  const startButton = useRef<HTMLButtonElement>(null)
+  // 幕は、準備と台本のどちらの画面でも、外側の div の最初の子に置く。
+  // 同じ位置に置くと、幕が出ている間に画面を切り替えても、幕が作り直されずに動き続ける
+  const [curtain, setCurtain] = useState<Curtain | null>(null)
+  const play = (next: Curtain) => {
+    // 幕が出ている間に、もう一度押されても何もしない
+    if (curtain) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      next.swap()
+    else setCurtain(next)
+  }
+  const curtainView = curtain && (
+    <ScriptCurtain
+      curtain={curtain}
+      returnTo={startButton}
+      onDone={() => setCurtain(null)}
+    />
+  )
 
   // 教える台本には確認・発展を混ぜず、問題から手順へ順番に進む。
   const script: Turn[] = [question, ...turns]
   const FINISH = script.length
   const sectionOf = (turn: number): Section =>
-    showFinish && turn === FINISH ? 'finish' : turn === 0 ? 'question' : 'guide'
+    turn === FINISH ? 'finish' : turn === 0 ? 'question' : 'guide'
   const beatsAt = ({ turn }: Position): Beat[] =>
-    showFinish && turn === FINISH ? [{ kind: 'finish' }] : beatsOf(script[turn])
+    turn === FINISH ? [{ kind: 'finish' }] : beatsOf(script[turn])
   const position = history[history.length - 1]
   const index = position.turn
   const section = sectionOf(index)
@@ -436,20 +471,11 @@ export function TeachingScript({
     position.beat < beats.length - 1
       ? go({ ...position, beat: position.beat + 1 })
       : go(ask(index + 1))
-  const start = () => {
-    setHistory([START])
-    setStarted(true)
-    window.scrollTo(0, 0)
-  }
   const back = () => {
     if (history.length > 1) setHistory(history.slice(0, -1))
     else setStarted(false)
   }
-  const canAdvance =
-    beat.kind !== 'finish' &&
-    (showFinish ||
-      index < script.length - 1 ||
-      position.beat < beats.length - 1)
+  const canAdvance = beat.kind !== 'finish'
   const canBack = history.length > 1
   const activeCardIndex =
     script
@@ -463,7 +489,6 @@ export function TeachingScript({
     const element = track.current
     if (!element) return
     sliding.current = true
-    setDotTarget(activeCardIndex + (delta < 0 ? 1 : -1))
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches
@@ -483,7 +508,6 @@ export function TeachingScript({
       await animation.finished
       flushSync(() => {
         setDragX(0)
-        setDotTarget(null)
         if (delta < 0) advance()
         else back()
       })
@@ -493,53 +517,74 @@ export function TeachingScript({
     }
   }
 
-  const navigation = (
-    <nav className={styles.pageNavigation} aria-label="学習ページの移動">
-      <Link to={menu.url} viewTransition>
-        <GuideIcon kind="list" />
-        <span>単元一覧</span>
-      </Link>
-      <button
-        type="button"
-        aria-current={!started ? 'page' : undefined}
-        onClick={() => {
-          setStarted(false)
-          window.scrollTo(0, 0)
-        }}
+  // 準備の画面へ戻る（台本の進み具合は残る）
+  const toPrepare = () => {
+    setStarted(false)
+    window.scrollTo(0, 0)
+  }
+  // 「終わる」。幕を下ろして、準備の画面へ戻る。reset は、幕で隠れている間に台本を最初に戻すとき
+  const finish = (reset?: () => void) =>
+    play({
+      kind: 'finish',
+      swap: () => {
+        reset?.()
+        toPrepare()
+      },
+    })
+  // 台本の左上の「×」。台本が薄れて、準備の画面に入れ替わる（index.css の ::view-transition）。
+  // 対応していないブラウザでは、すぐに切り替える
+  const leave = () => {
+    if (curtain) return
+    if ('startViewTransition' in document)
+      document.startViewTransition(() => flushSync(toPrepare))
+    else toPrepare()
+  }
+  const close = (
+    <button
+      className={styles.close}
+      type="button"
+      aria-label="準備にもどる"
+      onClick={leave}
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        aria-hidden="true"
       >
-        <GuideIcon kind="prepare" />
-        <span>準備</span>
-      </button>
-      <button
-        type="button"
-        aria-current={started ? 'page' : undefined}
-        onClick={() => {
-          setStarted(true)
-          window.scrollTo(0, 0)
-        }}
-      >
-        <GuideIcon kind="script" />
-        <span>台本</span>
-      </button>
-    </nav>
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
   )
 
   if (!started)
     return (
       <div className={styles.lessonPage}>
+        {curtainView}
         <PrepareView
           counters={counters}
           editor={editor}
+          picture={picture}
           prepare={prepare}
           question={question}
           turns={turns}
-          onStart={() => {
-            setStarted(true)
-            window.scrollTo(0, 0)
-          }}
-          resume={history.length > 1}
+          startButton={startButton}
+          onStart={(button) =>
+            play({
+              kind: 'start',
+              from: button,
+              swap: () => {
+                setStarted(true)
+                window.scrollTo(0, 0)
+              },
+            })
+          }
+          resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
-        {navigation}
       </div>
     )
 
@@ -549,17 +594,24 @@ export function TeachingScript({
         className={`${styles.script} ${styles.lessonPage}`}
         data-script-running
       >
-        {flow}
-        {navigation}
+        {curtainView}
+        {close}
+        <ScriptControls.Provider value={{ finish: () => finish() }}>
+          {flow}
+        </ScriptControls.Provider>
+        <ScriptGuide />
       </div>
     )
 
   return (
-    // data-script-running がある間は、ページのパンくずリストと見出しを隠す（index.css）
+    // data-script-running がある間は、画面全体を橙にし、上の帯と見出しを隠す（index.css）
     <div
       className={`${styles.script} ${styles.lessonPage}`}
       data-script-running
     >
+      {curtainView}
+      {close}
+      <ScriptGuide />
       <div
         className={styles.pageDots}
         role="img"
@@ -665,7 +717,7 @@ export function TeachingScript({
           >
             {[
               ...script.map((turn) => beatsOf(turn)),
-              ...(showFinish ? [[{ kind: 'finish' } as Beat]] : []),
+              [{ kind: 'finish' } as Beat],
             ].flatMap((turnBeats, turnIndex) =>
               turnBeats.map((cardBeat, beatIndex) => {
                 const active =
@@ -696,82 +748,31 @@ export function TeachingScript({
                       beatIndex === 0 &&
                       !question.sayContent && (
                         <div className={styles.firstQuestion}>
-                          {editor ?? question.show}
+                          {question.show}
                         </div>
                       )}
                     <div className={styles.readingContent}>
-                      {cardBeat.kind !== 'say' &&
-                        (cardBeat.kind !== 'show' || showRevealHeading) && (
-                          <h2 className={styles.heading}>
-                            <span aria-hidden="true">
-                              {HEADINGS[cardBeat.kind][0]}{' '}
-                            </span>
+                      {cardBeat.kind !== 'say' && (
+                        <h2 className={styles.heading}>
+                          <span aria-hidden="true">
+                            {HEADINGS[cardBeat.kind][0]}{' '}
+                          </span>
 
-                            {HEADINGS[cardBeat.kind][1]}
-                          </h2>
-                        )}
-                      <BeatView beat={cardBeat} showSpeaker={showSpeaker} />
+                          {HEADINGS[cardBeat.kind][1]}
+                        </h2>
+                      )}
+                      <BeatView beat={cardBeat} />
                     </div>
-                    {turnIndex < script.length &&
-                      !counters &&
-                      renderVisual?.(turnIndex)}
+                    {turnIndex < script.length && !counters && renderVisual && (
+                      <div className={styles.reference}>
+                        {renderVisual(turnIndex)}
+                      </div>
+                    )}
                   </div>
                 )
               }),
             )}
           </div>
-        </div>
-        <div
-          className={styles.pagination}
-          role="group"
-          aria-label={`台本 ${activeCardIndex + 1} / ${totalBeats + 1}ページ`}
-        >
-          <button
-            className={styles.pageButton}
-            type="button"
-            aria-label="前のページ"
-            disabled={!canBack || dotTarget !== null}
-            onClick={() => void swipe(1)}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="m15 5-7 7 7 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <button
-            className={styles.pageButton}
-            type="button"
-            aria-label="次のページ"
-            disabled={!canAdvance || dotTarget !== null}
-            onClick={() => void swipe(-1)}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="m9 5 7 7-7 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
         </div>
       </div>
       {counters && section !== 'finish' && (
@@ -786,12 +787,14 @@ export function TeachingScript({
           <Link className={styles.primary} to={menu.url} viewTransition>
             {menu.label}
           </Link>
-          <button type="button" onClick={start}>
-            もういちど はじめから
+          <button
+            type="button"
+            onClick={() => finish(() => setHistory([START]))}
+          >
+            終わる
           </button>
         </div>
       )}
-      {navigation}
     </div>
   )
 }

@@ -1,0 +1,63 @@
+/* 数える数を選ぶ欄。準備の画面と台本の最初のページのステージに置く */
+.numberChoice {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.numberChoice legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+.numberChoice div {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.numberChoice button {
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: var(--input-bg, var(--color-soft));
+  color: var(--color-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.numberChoice button[aria-pressed='true'] {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.numberChoice button:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 1列に並べた様子。10こでスマホの幅に入りきらないときは、丸を小さくして1列のまま収める */
+.line {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding-block: 0.5rem;
+}
+
+.line span {
+  flex: 0 1 var(--piece-size, 26px);
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--color-accent);
+}

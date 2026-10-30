@@ -1,0 +1,15 @@
+/* 数学（難しい）第1問だけで使う見た目 */
+
+/* ステージに置く問題の図。白地の画像なので、角だけ丸める */
+.figure {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  border-radius: 16px;
+  object-fit: contain;
+}
+
+/* 単位（㎠）が付いて式が長いので、スマホの幅に収まるよう小さくする */
+p.equation {
+  font-size: clamp(22px, 8vw, 40px);
+}

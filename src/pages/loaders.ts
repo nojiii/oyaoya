@@ -12,7 +12,7 @@ export interface PageLink {
 }
 
 // 一覧に並べる分類。count はその中（下の段も含む）にある問題の数。
-// tag の index は、タグの色分けに使う番号
+// tag の index は、TAGS の中での順番
 export interface GroupLink extends PageLink {
   count: number
   tag?: { name: string; index: number }
@@ -62,7 +62,7 @@ function problemLinks(ids: ProblemId[], base: string): PageLink[] {
   }))
 }
 
-// 上から順にたどった分類を、パンくずリスト用の名前とURLにする
+// 上から順にたどった分類を、戻り先と見出しのラベル用の名前とURLにする
 function toCrumbs(groups: Group[], base: string): PageLink[] {
   let url = base
   return groups.map((group) => {
@@ -100,8 +100,6 @@ export function loadGroup(path: string, festival: boolean) {
   return {
     lesson,
     name: group.name,
-    // 一番上の段で何番目の分類の中にいるか（ページの色分けに使う）
-    rootIndex: tree.indexOf(groups[0]),
     crumbs,
     groups: groupLinks(siblings, current.url, base),
     problems: problemLinks(group.problems ?? [], base),
@@ -136,9 +134,8 @@ export function loadProblem(id: string, festival: boolean) {
   const { base, tree } = modeOf(festival)
   const { title, default: Component } = problems[id]
   const groups = groupsOf(id, tree)
-  const rootIndex = Math.max(0, tree.indexOf(groups[0]))
   // 教材へ直接進む単元は、戻り先を1つ上の単元選択画面にする。
   const parent = groups.at(-1)
   if (!parent?.children?.length && parent?.problems?.length === 1) groups.pop()
-  return { title, Component, rootIndex, crumbs: toCrumbs(groups, base) }
+  return { title, Component, crumbs: toCrumbs(groups, base) }
 }

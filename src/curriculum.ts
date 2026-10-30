@@ -1,6 +1,6 @@
 import type { ProblemId } from './problems'
 
-// 単元に付けるタグ。一覧の行に出す。並び順が色の順番になる（index.css の [data-tag] と合わせる）
+// 単元に付けるタグ。一覧の行の小さな絵（src/pages/TagPicture.tsx）を、この並び順で決める
 export const TAGS = [
   '数の理解',
   'たし算・ひき算',
@@ -44,7 +44,7 @@ export const curriculum: Group[] = [
         name: '算数',
         children: [
           unit('数の理解', 'matching-groups', '同じ仲間を見つけよう'),
-          unit('数の理解', 'counting', '数を正しく数えよう'),
+          unit('数の理解', 'counting', '数を正しく数えよう', ['counting']),
           unit('数の理解', 'numbers-to-10', '0から10までの数'),
           unit('数の理解', 'order-and-position', '何番目？ どこにある？'),
           unit('数の理解', 'comparing-numbers', '数の大きさと順番'),

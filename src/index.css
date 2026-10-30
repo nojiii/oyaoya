@@ -1,57 +1,63 @@
 :root {
+  /* 書体は Noto Sans JP の 400・700・900 だけを使う（index.html で読み込む） */
+  --font:
+    'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
   --color-bg: #ffffff;
-  --color-grid: #f2e6d3;
-  --color-text: #333333;
-  --color-accent: #c8895a;
-  --color-border: #e7dfd6;
-  --color-muted: #8a7a68;
-}
-
-/* 色分け。一番上の段の分類（学年など）ごとに、淡い背景色（--tone-bg）と濃い文字色（--tone-ink）を変える。
-   色を増やすときは、src/pages/ItemLink.tsx の TONE_COUNT も合わせる */
-[data-tone] {
-  --tone-bg: oklch(0.95 0.04 var(--tone-hue));
-  --tone-ink: oklch(0.5 0.1 var(--tone-hue));
-}
-[data-tone='0'] {
-  --tone-hue: 55;
-}
-[data-tone='1'] {
-  --tone-hue: 95;
-}
-[data-tone='2'] {
-  --tone-hue: 150;
-}
-[data-tone='3'] {
-  --tone-hue: 230;
-}
-[data-tone='4'] {
-  --tone-hue: 300;
-}
-[data-tone='5'] {
-  --tone-hue: 10;
+  /* 面（行・ステージ・たたんだ欄など）。枠線や影は使わず、地との明るさの差だけで分ける */
+  --color-soft: #f6f4f1;
+  --color-text: #1a1714;
+  --color-muted: #6b645c;
+  --color-faint: #a9a299;
+  --color-accent: #c2410c;
+  --color-accent-soft: #fdeadf;
+  --color-border: #e9e4dd;
+  /* 台本の画面だけ、全面を橙にする（文字は白） */
+  --teach-bg: #c2410c;
+  --teach-text: #ffffff;
+  /* 橙の上でも読める濃さにする（白 5.18:1、補足 4.76:1、面の上の白 6.32:1、面の上の補足 5.81:1） */
+  --teach-muted: #fff3ec;
+  /* 橙の上の面（教え方のポイント・選ぶボタン・札など）。白を重ねると文字が読みにくくなるので、黒を少し重ねる */
+  --teach-soft: rgb(0 0 0 / 12%);
+  --teach-stage: #ffffff;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* 画面全体に、薄い線で方眼紙の模様を敷く */
 html {
-  background-color: #fff3df;
-  background-image:
-    linear-gradient(var(--color-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background: var(--color-bg);
+  /* スマホで押したときに、ボタンの形と関係なく四角い色の枠が出るのを消す（押した手応えは各ボタンの :active で出す） */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Sans', sans-serif;
+  font-family: var(--font);
+  font-size: 15px;
   max-width: 480px;
   margin: 0 auto;
   padding: 0 1.25rem 2rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--color-text);
+  /* 日本語を文節で折り返し、行末に1文字だけ残さない */
+  word-break: auto-phrase;
+}
+h1,
+h2,
+h3 {
+  text-wrap: pretty;
+}
+
+/* 台本を進めている間（data-script-running）は、画面全体を橙にする */
+html:has([data-script-running]) {
+  background: var(--teach-bg);
+}
+html:has([data-script-running]) body {
+  color: var(--teach-text);
+}
+/* 台本の画面では、上の帯（戻る・メニュー）を出さない。台本の「×」で準備へ戻る */
+html:has([data-script-running]) .site-header {
+  display: none;
 }
 
 a {
@@ -74,8 +80,24 @@ main.is-loading {
 .site-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1.25rem 0 0.5rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 60px;
+  padding: 0.5rem 0;
+  margin-right: -0.5rem;
+}
+.back-link {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -0.6rem;
+  border-radius: 50%;
+  color: var(--color-text);
+}
+.back-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 .menu-trigger {
   display: inline-flex;
@@ -85,9 +107,9 @@ main.is-loading {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-bg);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
   color: var(--color-text);
   font: inherit;
   font-size: 1.75rem;
@@ -110,10 +132,8 @@ main.is-loading {
   padding: max(1rem, env(safe-area-inset-top)) 1.25rem
     max(1.5rem, env(safe-area-inset-bottom));
   border: none;
-  border-right: 1px solid var(--color-border);
   background: var(--color-bg);
   color: var(--color-text);
-  box-shadow: 8px 0 32px rgb(74 59 42 / 15%);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -121,7 +141,7 @@ main.is-loading {
   animation: sheet-enter 0.22s ease-out;
 }
 .side-sheet::backdrop {
-  background: rgb(40 30 20 / 40%);
+  background: rgb(26 23 20 / 45%);
 }
 .side-sheet-heading {
   display: flex;
@@ -132,39 +152,41 @@ main.is-loading {
 .side-sheet-heading h2 {
   margin: 0;
   font-size: 1.15rem;
+  font-weight: 900;
 }
 .sheet-link {
   display: block;
-  padding: 0.7rem 0.5rem;
+  padding: 0.7rem 0.75rem;
   min-height: 44px;
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--color-text);
   overflow-wrap: anywhere;
 }
 a.sheet-link:hover,
 .sheet-link[aria-current='page'] {
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+  background: var(--color-soft);
   text-decoration: none;
 }
 .sheet-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
+  margin-top: 1.5rem;
 }
 .sheet-section h3 {
   margin: 0 0 0.5rem;
-  font-size: 0.8rem;
+  padding: 0 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   color: var(--color-muted);
 }
 .sheet-group summary {
-  padding: 0.75rem 0.5rem;
+  padding: 0.75rem;
   min-height: 44px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
 }
 .sheet-unit {
-  padding-left: 1.25rem;
-  font-size: 0.9rem;
+  padding-left: 1.5rem;
+  font-size: 14px;
 }
 /* 中身がまだない項目は、色を薄くして押せないことを示す（一覧の .row[data-empty] と同じ考え方） */
 .sheet-link[data-empty] {
@@ -172,12 +194,12 @@ a.sheet-link:hover,
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
-  color: var(--color-muted);
+  color: var(--color-faint);
   cursor: default;
 }
 .sheet-sub {
   flex: none;
-  font-size: 0.75rem;
+  font-size: 12px;
 }
 @keyframes sheet-enter {
   from {
@@ -194,33 +216,22 @@ a.sheet-link:hover,
 }
 .site-logo {
   font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: inherit;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
 }
 .site-logo:hover {
   text-decoration: none;
 }
 
-nav.breadcrumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.1rem 0.4rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.8rem;
-  color: var(--color-muted);
-}
-nav.breadcrumb .separator {
-  opacity: 0.6;
-}
-
-/* ページの見出し */
+/* ページの見出し：その画面で伝えること */
 .page-title {
   width: fit-content;
-  margin: 0.5rem 0 1rem;
-  font-size: 1.75rem;
-  line-height: 1.3;
+  margin: 0.25rem 0 1.5rem;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
   view-transition-name: page-title;
 }
 
@@ -230,8 +241,18 @@ nav.breadcrumb .separator {
   margin-top: 2rem;
 }
 
-/* 台本（TeachingScript）を進めている間は、画面の情報を減らすため、パンくずリストと見出しを隠す */
-main:has([data-script-running]) :is(nav.breadcrumb, .page-title) {
+/* 問題の画面では、単元名を小さなラベルにする（大きく出すのは、各画面で伝えること） */
+.page-title[data-small] {
+  margin: 0 0 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+/* 台本（TeachingScript）を進めている間は、画面の情報を減らすため、見出しを隠す */
+main:has([data-script-running]) .page-title {
   display: none;
 }
 
@@ -240,146 +261,79 @@ section.step {
   margin: 1.5rem 0;
 }
 section.step h2 {
-  border-left: 4px solid var(--color-accent);
-  padding-left: 0.5rem;
+  font-size: 20px;
+  font-weight: 900;
 }
 
-/* Home */
-.hero {
-  text-align: center;
-  padding-top: 1rem;
+/* ステージ：上に置く「見るもの」（キャラクターや図）。将来、キャラクターは Rive の <canvas> に替える */
+.stage {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  margin: 0.5rem 0 0;
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--color-soft);
 }
-.logo {
-  font-size: 2.75rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-.tagline {
-  font-size: 0.95rem;
-  margin: 0.75rem 0 0.5rem;
-}
-.mascot {
+.stage-mascot {
   display: block;
   width: 180px;
   height: auto;
-  margin: 0.5rem auto;
-}
-.home-start {
-  margin-top: 1.5rem;
-}
-.home-lead {
-  font-weight: bold;
-  font-size: 1.05rem;
-  margin: 0 0 0.15rem;
-}
-.home-sub {
-  color: var(--color-muted);
-  font-size: 0.9rem;
-  margin: 0;
-}
-.footer-note {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #a0917f;
-  margin-top: 2rem;
+  aspect-ratio: 1;
+  object-fit: contain;
 }
 
-/* 一覧に並べる項目。ホームではタイル（.tile）、分類のページでは行（.row）にする */
-ul.tiles,
+/* 見出しの上の小さなラベル */
+.context {
+  margin: 0.25rem 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+/* Home */
+.home-start {
+  margin-top: 1.75rem;
+}
+.home-start .row[data-empty] {
+  margin-top: 0.5rem;
+}
+.home-lead {
+  margin: 0.25rem 0 1.25rem;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+/* 一覧に並べる項目（行） */
 ul.rows {
+  display: grid;
+  gap: 0.5rem;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 /* 上から順に、少しずつ遅れて出す（遅れは各ページが animation-delay で付ける） */
-ul.tiles li,
 ul.rows li {
   animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 .item-name {
   width: fit-content;
-  font-weight: bold;
-}
-
-/* タイル */
-ul.tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-/* 数が奇数のときは、最後の1枚を横いっぱいにする */
-ul.tiles li:last-child:nth-child(odd) {
-  grid-column: span 2;
-}
-.tile {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 6.5rem;
-  padding: 1rem;
-  border-radius: 1.25rem;
-  background: var(--tone-bg);
-  color: var(--color-text);
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-}
-.tile-number {
-  position: absolute;
-  top: -0.25rem;
-  right: 0.75rem;
-  font-size: 4rem;
-  font-weight: 800;
-  line-height: 1.2;
-  color: var(--tone-ink);
-  opacity: 0.18;
-}
-.tile .item-name {
-  font-size: 1.05rem;
-}
-.tile-sub {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: var(--tone-ink);
-}
-
-/* 行 */
-ul.rows {
-  display: grid;
-  gap: 0.75rem;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.5;
 }
 .row {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  background: var(--color-bg);
-  box-shadow: 0 4px 16px rgba(74, 59, 42, 0.06);
+  gap: 0.75rem;
+  min-height: 72px;
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  border-radius: 18px;
+  background: var(--color-soft);
   color: var(--color-text);
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-}
-.row-badge {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: var(--tone-bg);
-  font-weight: 800;
-  color: var(--tone-ink);
-}
-/* 問題は、分類と見分けられるように濃い色にする */
-.row-badge[data-kind='problem'] {
-  background: var(--tone-ink);
-  color: #fff;
+  transition: transform 0.15s;
 }
 .row-text {
   flex: 1;
@@ -388,106 +342,128 @@ ul.rows {
   flex-direction: column;
 }
 .row-sub {
-  font-size: 0.8rem;
+  font-size: 13px;
   color: var(--color-muted);
-}
-/* 単元のタグ。タグごとに色を変える（curriculum.ts の TAGS の順番） */
-.row-tag {
-  width: fit-content;
-  margin-bottom: 0.2rem;
-  padding: 0.05rem 0.55rem;
-  border-radius: 999px;
-  background: oklch(0.95 0.04 var(--tag-hue, 55));
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: oklch(0.45 0.1 var(--tag-hue, 55));
-}
-.row-tag[data-tag='1'] {
-  --tag-hue: 230;
-}
-.row-tag[data-tag='2'] {
-  --tag-hue: 150;
-}
-.row-tag[data-tag='3'] {
-  --tag-hue: 300;
 }
 .row-arrow {
   flex: none;
-  font-size: 1.4rem;
-  line-height: 1;
-  color: var(--tone-ink);
+  display: grid;
+  color: var(--color-accent);
 }
-
-/* 押せる項目は、マウスを乗せると浮き、押すと沈む */
-a.tile:hover,
 a.row:hover {
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(74, 59, 42, 0.12);
-  transform: translateY(-2px);
 }
-a.tile:active,
 a.row:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
+}
+
+/* 単元の小さな絵（TagPicture）。白い面に、分野ごとの形を置く */
+.row-picture {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-left: -0.5rem;
+  border-radius: 16px;
+  background: var(--color-bg);
+}
+.row-picture > span {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 42px;
+}
+.row-picture i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+.row-picture i[data-piece='a'] {
+  background: #e2553a;
+}
+.row-picture i[data-piece='b'] {
+  background: #2f62d8;
+}
+.row-picture i[data-piece='square'] {
+  border-radius: 2px;
+  background: #2f62d8;
+}
+.row-picture i[data-piece='triangle'] {
+  border-radius: 0;
+  background: #1f8a4c;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.row-picture i[data-piece^='bar'] {
+  height: 6px;
+  border-radius: 3px;
+}
+.row-picture i[data-piece='bar-long'] {
+  width: 40px;
+}
+.row-picture i[data-piece='bar-mid'] {
+  width: 28px;
+  background: #2f62d8;
+}
+.row-picture i[data-piece='bar-short'] {
+  width: 16px;
+  background: #1f8a4c;
+}
+.row:has(.row-picture) {
+  min-height: 88px;
 }
 
 /* 中身がまだない項目は、色を薄くして押せないことを示す */
-.tile[data-empty] {
-  background: color-mix(in oklch, var(--tone-bg) 45%, var(--color-bg));
-}
 .row[data-empty] {
-  border-style: dashed;
-  box-shadow: none;
+  min-height: 0;
+  padding-block: 0.5rem;
+  background: transparent;
+  color: var(--color-faint);
 }
-.tile[data-empty],
-.row[data-empty],
-[data-empty] .tile-sub {
-  font-weight: normal;
-  color: var(--color-muted);
+.row[data-empty] .item-name {
+  font-size: 15px;
+  font-weight: 400;
 }
-[data-empty] .item-name {
-  font-weight: normal;
-}
-[data-empty] .tile-number {
-  opacity: 0.1;
-}
-[data-empty] .row-badge {
-  opacity: 0.5;
+.row[data-empty] .row-sub {
+  color: var(--color-faint);
 }
 [data-empty] .row-arrow {
   display: none;
 }
 
-/* 分類のページの見出し */
-.group-head {
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 1.25rem;
-  padding: 1.25rem 1.25rem 1.1rem;
-  border-radius: 1.5rem;
-  background: var(--tone-bg);
+/* じゅんび中の項目は、たたんで件数だけを見せる */
+.more {
+  margin-top: 1rem;
+  color: var(--color-muted);
 }
-/* 右上の飾りの丸 */
-.group-head::before {
-  content: '';
-  position: absolute;
-  top: -3rem;
-  right: -2rem;
-  width: 8rem;
-  height: 8rem;
-  border-radius: 50%;
-  background: #fff;
-  opacity: 0.45;
+.more summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none;
 }
-.group-head .page-title {
-  position: relative;
-  margin: 0;
+.more summary::-webkit-details-marker {
+  display: none;
 }
-.group-head p {
-  position: relative;
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--tone-ink);
+.more summary::after {
+  content: '＋';
+  color: var(--color-faint);
+}
+.more[open] summary::after {
+  content: '－';
+}
+.more ul.rows {
+  gap: 0;
+}
+.more ul.rows li {
+  animation: none;
 }
 
 @keyframes rise {
@@ -517,7 +493,6 @@ main:has(a[data-moving='true']) .page-title {
 
 /* 動きを減らす設定の人には、出入りや切り替えの動きを付けない */
 @media (prefers-reduced-motion: reduce) {
-  ul.tiles li,
   ul.rows li {
     animation: none;
   }
