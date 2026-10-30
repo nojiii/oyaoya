@@ -1,5 +1,5 @@
 // 大学祭の数学（難しい）第1問。台本の書き方は src/problems/sample にそろえる
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import {
   TeachingScript,
@@ -11,10 +11,13 @@ import { TeachingPoints } from '../../components/TeachingPoints'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
 import figureQuestion from './images/figure-1.webp'
-import figureDiagonal from './images/figure-2.webp'
-import figureRectangle from './images/figure-3.webp'
-import figureCenter from './images/figure-4.webp'
-import figurePink from './images/figure-5.webp'
+import figureDiagonal from './images/figure-6.webp'
+import figureRectangle from './images/figure-7.webp'
+// 4・5ページ目は同じ図を使う
+import figureCenter from './images/figure-8.webp'
+import figureDimensions from './images/figure-9.webp'
+import figureArea from './images/figure-4.webp'
+import figureWhiteArea from './images/figure-10.webp'
 import styles from './math-hard-1.module.css'
 
 const QUESTION_TEXT =
@@ -23,10 +26,18 @@ const QUESTION_TEXT =
 // 子どもに読み上げるセリフ。台本のページと準備画面の「声かけを先に読んでおく」の両方で使う
 const words = {
   diagonal:
-    '長方形に対角線を引くと面積を均等に分けられるのはわかる？それを使って補助線を引いてみよう',
-  rectangle: 'この真ん中に出来た長方形は何×何になるかな？',
-  center: '真ん中の長方形は何㎠になるかな？',
-  pink: '真ん中の長方形以外の白い部分はピンクの部分と同じだよね？そしたら白い三角形の面積を求めたらピンクの面積もでるんじゃない？',
+    'まず、左上にあるピンクの三角形に注目してみよう。点線を引くと長方形ができるよ。',
+  rectangle:
+    '長方形をななめの線で分けると、同じ大きさの三角形が2つできるんだ。だから、このピンクと白の三角形は同じ面積だよ。',
+  center:
+    '他の三角形も同じように分けられるよ。つまり、ピンクと白の三角形の合計面積は同じなんだ。',
+  pink: 'でも、真ん中に小さな長方形が残っているね。まずはこの長方形の面積を求めてみよう。',
+  dimensions: '横の長さは8−4で4cm。縦の長さは7−5で2cmになるよ。',
+  area: '長方形の面積は、4×2で8㎠だね。',
+  whiteArea:
+    '白い部分の面積72㎠から8㎠を引くと白い三角形の面積は64㎠になるね。',
+  answer:
+    '白とピンクの三角形は同じ面積だったね。だからピンクの部分の面積は64㎠になるね',
 }
 
 // 台本のページ。左へスワイプで次、右へで前
@@ -36,6 +47,9 @@ const pages = [
   'rectangle',
   'center',
   'pink',
+  'dimensions',
+  'area',
+  'whiteArea',
   'answer',
 ] as const
 type Page = (typeof pages)[number]
@@ -64,53 +78,6 @@ function Figure({ src, alt }: { src: string; alt: string }) {
   return <img className={styles.figure} src={src} alt={alt} draggable={false} />
 }
 
-// ステージに置く式。お子さんが答えてから「？」を押して、答えを見る
-function Equation({
-  visible,
-  onReveal,
-}: {
-  visible: boolean
-  onReveal: () => void
-}) {
-  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
-  const equation = useRef<HTMLParagraphElement>(null)
-  const wasVisible = useRef(visible)
-  useEffect(() => {
-    if (visible && !wasVisible.current)
-      equation.current?.focus({ preventScroll: true })
-    wasVisible.current = visible
-  }, [visible])
-  return (
-    <>
-      <p
-        className={`${flowStyles.equation} ${styles.equation}`}
-        aria-live="polite"
-        ref={equation}
-        tabIndex={-1}
-      >
-        72㎠ − 8㎠ ＝{' '}
-        {visible ? (
-          <em>64㎠</em>
-        ) : (
-          <button
-            className={flowStyles.reveal}
-            type="button"
-            aria-label="答えを見る"
-            onClick={onReveal}
-          >
-            ？
-          </button>
-        )}
-      </p>
-      {!visible && (
-        <p className={flowStyles.revealHint}>
-          お子さんが答えたら、「？」をタップ
-        </p>
-      )}
-    </>
-  )
-}
-
 function MathHardFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
   const { finish } = useScriptControls()
@@ -132,13 +99,10 @@ function MathHardFlow() {
       // 保存できなくても、この画面で学習を続けられる
     }
   }, [key, page])
-  // 「？」で答えを見たか。ページを送ると、見る前に戻す
-  const [revealed, setRevealed] = useState(false)
   const index = pages.indexOf(page)
   const go = (next: Page | undefined) => {
     if (!next) return
     setPage(next)
-    setRevealed(false)
   }
 
   const slides: Record<Page, LessonSlide> = {
@@ -156,71 +120,141 @@ function MathHardFlow() {
     diagonal: {
       id: 'diagonal',
       title: '補助線を引いてみましょう',
-      stage: <Figure src={figureDiagonal} alt="対角線を引いた図形" />,
+      stage: (
+        <Figure
+          src={figureDiagonal}
+          alt="左上のピンクの三角形に点線を引いて、長方形を作った図"
+        />
+      ),
       content: (
         <>
           <SpokenWords>{words.diagonal}</SpokenWords>
           <TeachingPoints
             folded
-            note="長方形の対角線の性質をしっかりと確認し、それを活かせるように補助線を引きましょう"
+            note="まずは4つある三角形のうち1つに注目して補助線を引いてみましょう"
           />
         </>
       ),
     },
     rectangle: {
       id: 'rectangle',
-      title: '長方形の情報を整理しましょう',
+      title: 'ピンクと白の三角形の面積をくらべましょう',
       stage: (
-        <Figure src={figureRectangle} alt="補助線によってできた長方形の図" />
+        <Figure
+          src={figureRectangle}
+          alt="点線の長方形が、同じ印を付けたピンクと白の三角形に分かれた図"
+        />
       ),
       content: (
         <>
           <SpokenWords>{words.rectangle}</SpokenWords>
           <TeachingPoints
             folded
-            note={
-              '補助線によってできた長方形の情報を整理しましょう\n\n面積を分けて考えると、複雑な図形でも計算しやすくなります。'
-            }
+            note="長方形の性質を利用して、白とピンクの三角形の面積が同じことを確認しましょう"
           />
         </>
       ),
     },
     center: {
       id: 'center',
-      title: '真ん中の長方形の面積を計算しましょう',
-      stage: <Figure src={figureCenter} alt="真ん中の長方形の面積を考える図" />,
+      title: 'ほかの三角形も同じように考えましょう',
+      stage: (
+        <Figure
+          src={figureCenter}
+          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
+        />
+      ),
       content: (
         <>
           <SpokenWords>{words.center}</SpokenWords>
-          <TeachingPoints folded note="真ん中の長方形の面積を計算しましょう" />
+          <TeachingPoints
+            folded
+            note="すべての白とピンクの三角形の面積が同じであり、合計面積も同じことを確認しましょう"
+          />
         </>
       ),
     },
     pink: {
       id: 'pink',
-      title: 'ピンクの部分の面積を求めましょう',
+      title: '真ん中に残った長方形に注目しましょう',
       stage: (
-        <Figure src={figurePink} alt="白い三角形とピンクの部分を考える図" />
+        <Figure
+          src={figureCenter}
+          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
+        />
       ),
       content: (
         <>
           <SpokenWords>{words.pink}</SpokenWords>
+          <TeachingPoints folded note="残った真ん中の長方形に注目しましょう" />
+        </>
+      ),
+    },
+    dimensions: {
+      id: 'dimensions',
+      title: '長方形の横と縦の長さを求めましょう',
+      stage: (
+        <Figure
+          src={figureDimensions}
+          alt="真ん中の長方形の横に4cm、縦に2cmと書いた図"
+        />
+      ),
+      content: (
+        <>
+          <SpokenWords>{words.dimensions}</SpokenWords>
           <TeachingPoints
             folded
-            note="この長方形を除いた白い部分とピンクの部分は同じ面積になるはずです。これより、ピンクの色の面積を求めましょう"
+            note="図より、長方形の辺の長さを確認しましょう"
           />
         </>
       ),
     },
-    // 最後のページ：答えは先に言わず、お子さんが答えてから「？」で見る。見たら「終わる」で準備の画面へ戻る
+    area: {
+      id: 'area',
+      title: '長方形の面積を求めましょう',
+      stage: <Figure src={figureArea} alt="真ん中の長方形に8㎠と書いた図" />,
+      content: (
+        <>
+          <SpokenWords>{words.area}</SpokenWords>
+          <TeachingPoints folded note="長方形の面積を求めましょう" />
+        </>
+      ),
+    },
+    whiteArea: {
+      id: 'whiteArea',
+      title: '白い三角形の面積を求めましょう',
+      stage: (
+        <Figure
+          src={figureWhiteArea}
+          alt="白い部分から真ん中の長方形を除いた、4つの白い三角形をぬった図"
+        />
+      ),
+      content: (
+        <>
+          <SpokenWords>{words.whiteArea}</SpokenWords>
+          <TeachingPoints
+            folded
+            note="長方形を除いた白い部分の面積を求めましょう"
+          />
+        </>
+      ),
+    },
+    // 最後のページ：声かけを終えたら準備の画面へ戻る
     answer: {
       id: 'answer',
-      title: '答えを確認しましょう！',
-      stage: <Equation visible={revealed} onReveal={() => setRevealed(true)} />,
-      content: revealed && (
-        <button className={flowStyles.finish} type="button" onClick={finish}>
-          終わる
-        </button>
+      title: 'ピンクの部分の面積を確かめましょう',
+      stage: <Figure src={figureQuestion} alt="数学の問題に使う図形" />,
+      content: (
+        <>
+          <SpokenWords>{words.answer}</SpokenWords>
+          <TeachingPoints
+            folded
+            note="白い三角形とピンクの三角形は同じ面積なので、白い三角形の面積がそのままピンクの部分の面積になることを確認しましょう"
+          />
+          <button className={flowStyles.finish} type="button" onClick={finish}>
+            終わる
+          </button>
+        </>
       ),
     },
   }
@@ -265,6 +299,10 @@ export default function MathHard1() {
         { say: words.rectangle },
         { say: words.center },
         { say: words.pink },
+        { say: words.dimensions },
+        { say: words.area },
+        { say: words.whiteArea },
+        { say: words.answer },
       ]}
     />
   )
