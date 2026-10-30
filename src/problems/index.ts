@@ -4,8 +4,8 @@ import { lesson } from './unit-lessons'
 // 新しく作る大学祭用の画面ファイルをインポートする（ファイルの作成場所に合わせてパスを変えてください）
 import MathEasy1 from './MathEasy1'
 import MathHard1 from './math-hard-1'
-import PuzzleEasy1 from './PuzzleEasy1'
-import PuzzleHard1 from './PuzzleHard1'
+import PuzzleEasy1 from './puzzle-easy-1'
+import PuzzleHard1 from './puzzle-hard-1'
 import * as sample from './sample'
 
 interface ProblemModule {
