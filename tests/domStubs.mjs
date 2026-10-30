@@ -1,9 +1,14 @@
-import { afterEach } from 'vitest'
+import { afterEach, beforeEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // happy-dom（ブラウザの代わり）は、要素の大きさを持たず、アニメーションやポインターの捕捉もしない。
 // 画面を操作するテストでは、それらをここで差し替え、テストごとに元へ戻す
 const restores = []
+
+// テストでは通信しない。おやじい（Rive）の絵と描画エンジンは読み込まず、枠だけを描く
+beforeEach(() => {
+  stub(globalThis, 'fetch', () => new Promise(() => {}))
+})
 
 afterEach(() => {
   cleanup()
@@ -53,7 +58,14 @@ export function stubAnimations() {
     return animation
   })
   stub(Element.prototype, 'getAnimations', () => [])
-  stub(window, 'matchMedia', () => ({ matches: false }))
+  // 動きを減らす設定はオフ。変化を見張る仕組み（おやじい（Rive）が使う）は、何もしない
+  stub(window, 'matchMedia', () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+  }))
   return animations
 }
 

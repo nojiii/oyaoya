@@ -27,6 +27,7 @@
 | サイト全体の色・余白・文字サイズを変える         | [src/index.css](src/index.css)                                                                            |
 | 新しい種類のページ（URL）を増やす                | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                                    |
 | サイト全体で使う画像を置く                       | [public/](public/)                                                                                        |
+| キャラクター（おやじい）の絵や動きを変える       | [public/oyajii.riv](public/oyajii.riv)（手順は[キャラクター（おやじい）](#キャラクターおやじい)）         |
 | CI・デプロイの設定を変える                       | `.github/` と `firebase.json`（オーナーのレビューが必要）                                                 |
 
 それ以外のファイル（`tsconfig*.json`、`eslint.config.js` など）は道具の設定で、普段は触らない。
@@ -350,6 +351,26 @@ URLの先頭に `/festival` を付けると、同じ3種類のページが大学
 問題のページでは、枠（`Layout.tsx` と `ProblemDetail.tsx`）が上の帯（戻るボタン）と単元名の見出しを出し、その下にその問題の画面（`src/problems/<問題ID>/index.tsx`）を表示する。
 
 問題はビルドのときにプログラムへ含まれるので、問題を直しても、`main` へマージして再デプロイされるまで本番には反映されない。開発中（`npm run dev`）は、保存するたびに画面へ反映される。
+
+## キャラクター（おやじい）
+
+おやじいは [Rive](https://rive.app/) で作ったアニメーション。[public/oyajii.riv](public/oyajii.riv) を [src/components/oyajiiFile.ts](src/components/oyajiiFile.ts) がアプリを開いたときに1回だけ読み込み、[src/components/Oyajii.tsx](src/components/Oyajii.tsx) がそれを使い回して描く。画面に置くときは `<Oyajii className="…" />` と書き、大きさは `className` で決める。
+
+ふだんは待機（`idle`）をくり返す。`motion` を渡すと、その値に変わるたびに次の動きを1回して、待機に戻る。
+
+| `motion`  | 動き                     | 使っている場所                                             |
+| --------- | ------------------------ | ---------------------------------------------------------- |
+| `start`   | ぴょんと跳ねて手を振る   | 台本をはじめるときの幕（「はじめましょう」）               |
+| `finish`  | 目を細めてお辞儀する     | 台本を終わるときの幕（「おつかれさまでした」）             |
+| `correct` | 跳ねて腕を上げる         | 足し算の答えのページで「？」を押したとき                   |
+| `talk`    | 口を動かして身ぶりをする | ページ送りのない台本の、声かけのカード（セリフのアイコン） |
+
+`oyajii.riv` は Rive エディターから書き出したもので、これ自体は編集できない。絵や動きを変えるときは、Rive エディター上の元のファイルを直して「Export → For Runtime」で書き出し、`public/oyajii.riv` を差し替える。次の名前はアプリが使っているので変えない。
+
+- ステートマシン：`State Machine 1`
+- ViewModel：`Oyajii`（トリガー `start`・`finish`・`correct`・`talk`）
+
+Rive の描画エンジン（wasm）は、外部の CDN からではなくアプリと一緒に配信する（本体の wasm が動かない古い端末のための予備も同じ）。JS と wasm の版は合わせる必要があるので、`package.json` には `@rive-app/react-canvas` だけを書き、wasm はそれが使っている `@rive-app/canvas` から読む。同じものを読んでいるかは [tests/oyajii.test.mjs](tests/oyajii.test.mjs) で確かめている。
 
 ## バックエンドについて
 

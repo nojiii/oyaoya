@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from 'react-router'
+import { Oyajii } from '../components/Oyajii'
 import { ItemLink } from './ItemLink'
 import { RowArrow } from './RowArrow'
 import type { loadHome } from './loaders'
@@ -10,14 +11,9 @@ export default function Home() {
 
   return (
     <>
-      {/* ステージ：上に「見るもの」を置く。キャラクターは将来 Rive の <canvas> に替える */}
+      {/* ステージ：上に「見るもの」を置く */}
       <div className="stage">
-        <img
-          className="stage-mascot"
-          src="/mascot.png"
-          alt="おやじい"
-          draggable={false}
-        />
+        <Oyajii className="stage-mascot" label="おやじい" />
       </div>
 
       <section className="home-start">

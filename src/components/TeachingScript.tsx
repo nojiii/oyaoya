@@ -5,6 +5,7 @@ import { useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
+import { Oyajii } from './Oyajii'
 import { ScriptGuide } from './ScriptGuide'
 import { ScriptControls } from './scriptControls'
 import { ScriptCurtain, type Curtain } from './ScriptCurtain'
@@ -168,16 +169,9 @@ function PrepareView({
     : prepare.goal
   return (
     <div className={styles.prepare}>
-      {/* ステージ：今日の問題の図を大きく出す。キャラクターは将来 Rive の <canvas> に替える */}
+      {/* ステージ：今日の問題の図を大きく出す */}
       <div className={styles.stage}>
-        {picture ?? editor ?? (
-          <img
-            className={styles.stageMascot}
-            src="/mascot.png"
-            alt=""
-            draggable={false}
-          />
-        )}
+        {picture ?? editor ?? <Oyajii className={styles.stageMascot} />}
       </div>
 
       {/* 大事なこと：大きく太く */}
@@ -300,13 +294,13 @@ function announcement(beat: Beat) {
   }
 }
 
-// 1画面の中身。行動は1つだけにして、それ以外の情報は出さない
-function BeatView({ beat }: { beat: Beat }) {
+// 1画面の中身。行動は1つだけにして、それ以外の情報は出さない。active は、今出しているページか
+function BeatView({ beat, active }: { beat: Beat; active: boolean }) {
   switch (beat.kind) {
     case 'do':
       return <p className={styles.main}>{beat.text}</p>
     case 'say':
-      return <TeachingStep step={beat} />
+      return <TeachingStep step={beat} active={active} />
     case 'show':
       return <div className={styles.reference}>{beat.content}</div>
     case 'finish':
@@ -761,7 +755,7 @@ export function TeachingScript({
                           {HEADINGS[cardBeat.kind][1]}
                         </h2>
                       )}
-                      <BeatView beat={cardBeat} />
+                      <BeatView beat={cardBeat} active={active} />
                     </div>
                     {turnIndex < script.length && !counters && renderVisual && (
                       <div className={styles.reference}>

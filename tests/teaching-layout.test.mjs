@@ -174,13 +174,14 @@ test('every published script has teaching points, reading labels and only suppor
             id + ': emphasis markers are not shown',
           )
         }
-        const mascot = html.indexOf('/mascot.png')
+        const mascot = html.indexOf('data-oyajii')
         const start = html.indexOf(headings[0][0], mascot)
         const readingBox = html.indexOf('readingBox', start)
         const readingText = html.indexOf('readAloudText', readingBox)
         const point = html.indexOf('教え方のポイント', readingText)
         assert.ok(
-          mascot < start &&
+          mascot >= 0 &&
+            mascot < start &&
             start < readingBox &&
             readingBox < readingText &&
             readingText < point,
