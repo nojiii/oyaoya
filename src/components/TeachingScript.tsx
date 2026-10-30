@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
 import { useHomeUrl } from '../pages/festival'
@@ -7,6 +7,7 @@ import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
 import { ScriptGuide } from './ScriptGuide'
 import { ScriptControls } from './scriptControls'
+import { ScriptCurtain, type Curtain } from './ScriptCurtain'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
 
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
@@ -147,7 +148,13 @@ function PrepareView({
   turns,
   onStart,
   resume,
-}: Props & { onStart: () => void; resume?: boolean }) {
+  startButton,
+}: Props & {
+  onStart: (button: HTMLButtonElement) => void
+  resume?: boolean
+  // 「終わる」の幕が縮んでいく先
+  startButton?: Ref<HTMLButtonElement>
+}) {
   const symbol =
     counters?.mode === 'times'
       ? '×'
@@ -256,7 +263,12 @@ function PrepareView({
 
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
-        <button className={styles.primary} type="button" onClick={onStart}>
+        <button
+          className={styles.primary}
+          type="button"
+          ref={startButton}
+          onClick={(event) => onStart(event.currentTarget)}
+        >
           {resume ? '途中から台本にもどる' : '台本をはじめる'}
         </button>
       </div>
@@ -404,6 +416,24 @@ export function TeachingScript({
     axis: 'x' | 'y' | null
   } | null>(null)
   const menu = useMenuLink()
+  const startButton = useRef<HTMLButtonElement>(null)
+  // 幕は、準備と台本のどちらの画面でも、外側の div の最初の子に置く。
+  // 同じ位置に置くと、幕が出ている間に画面を切り替えても、幕が作り直されずに動き続ける
+  const [curtain, setCurtain] = useState<Curtain | null>(null)
+  const play = (next: Curtain) => {
+    // 幕が出ている間に、もう一度押されても何もしない
+    if (curtain) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      next.swap()
+    else setCurtain(next)
+  }
+  const curtainView = curtain && (
+    <ScriptCurtain
+      curtain={curtain}
+      returnTo={startButton}
+      onDone={() => setCurtain(null)}
+    />
+  )
 
   // 教える台本には確認・発展を混ぜず、問題から手順へ順番に進む。
   const script: Turn[] = [question, ...turns]
@@ -492,6 +522,15 @@ export function TeachingScript({
     setStarted(false)
     window.scrollTo(0, 0)
   }
+  // 「終わる」。幕を下ろして、準備の画面へ戻る。reset は、幕で隠れている間に台本を最初に戻すとき
+  const finish = (reset?: () => void) =>
+    play({
+      kind: 'finish',
+      swap: () => {
+        reset?.()
+        toPrepare()
+      },
+    })
   // 台本の左上の「×」
   const close = (
     <button
@@ -518,6 +557,7 @@ export function TeachingScript({
   if (!started)
     return (
       <div className={styles.lessonPage}>
+        {curtainView}
         <PrepareView
           counters={counters}
           editor={editor}
@@ -525,10 +565,17 @@ export function TeachingScript({
           prepare={prepare}
           question={question}
           turns={turns}
-          onStart={() => {
-            setStarted(true)
-            window.scrollTo(0, 0)
-          }}
+          startButton={startButton}
+          onStart={(button) =>
+            play({
+              kind: 'start',
+              from: button,
+              swap: () => {
+                setStarted(true)
+                window.scrollTo(0, 0)
+              },
+            })
+          }
           resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
       </div>
@@ -540,8 +587,9 @@ export function TeachingScript({
         className={`${styles.script} ${styles.lessonPage}`}
         data-script-running
       >
+        {curtainView}
         {close}
-        <ScriptControls.Provider value={{ toPrepare }}>
+        <ScriptControls.Provider value={{ finish: () => finish() }}>
           {flow}
         </ScriptControls.Provider>
         <ScriptGuide />
@@ -554,6 +602,7 @@ export function TeachingScript({
       className={`${styles.script} ${styles.lessonPage}`}
       data-script-running
     >
+      {curtainView}
       {close}
       <ScriptGuide />
       <div
@@ -733,10 +782,7 @@ export function TeachingScript({
           </Link>
           <button
             type="button"
-            onClick={() => {
-              setHistory([START])
-              toPrepare()
-            }}
+            onClick={() => finish(() => setHistory([START]))}
           >
             終わる
           </button>

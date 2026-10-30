@@ -214,7 +214,7 @@ export function AdditionCheck({
 // 数（a・b）は準備の画面で決める。台本の中では変えない
 export function AdditionFlow({ a, b }: { a: number; b: number }) {
   // 答えのページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
-  const { toPrepare } = useScriptControls()
+  const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
   const [progress, dispatch] = useReducer(
@@ -442,7 +442,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
         />
       ),
       content: (
-        <AdditionCheck a={c} b={d} visible={checkShown} onFinish={toPrepare}>
+        <AdditionCheck a={c} b={d} visible={checkShown} onFinish={finish}>
           {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
           {progress.route === 'app' && (
             <VisualPlayground
