@@ -60,3 +60,41 @@ export function counterGroups({ mode, a, b }: CounterProblem, step: number) {
       ]
     : [{ label: 'あわせたかず', count: a + b }]
 }
+
+// おはじきの画面で、どこまで動かしたか。completed（できた）は、動かし終えてから少し待ち、
+// その並びを questionKey に覚えてから true にする（VisualPlayground が progressKey を渡す）
+export function counterProgress(
+  problem: CounterProblem | undefined,
+  pieces: { green: boolean; side: 'left' | 'right' }[],
+  countedIds: number[],
+  questionKey: string,
+) {
+  const addition = problem?.mode === 'add' || problem?.mode === 'carry'
+  const subtraction = problem?.mode === 'sub' || problem?.mode === 'borrow'
+  const split = addition || subtraction
+  const orangeCount = pieces.filter((piece) => piece.side === 'left').length
+  const greenCount = pieces.length - orangeCount
+  const moved = subtraction
+    ? greenCount
+    : addition
+      ? pieces.filter((piece) => piece.green && piece.side === 'left').length
+      : countedIds.length
+  const targetCount = split ? problem.b : pieces.length
+  const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${pieces.map((piece) => piece.side).join(',')}-${countedIds.join(',')}`
+  const wrongSide =
+    addition && pieces.some((piece) => !piece.green && piece.side === 'right')
+  const completed =
+    split && !wrongSide && moved === targetCount && questionKey === progressKey
+  return {
+    addition,
+    subtraction,
+    split,
+    orangeCount,
+    greenCount,
+    moved,
+    targetCount,
+    progressKey,
+    wrongSide,
+    completed,
+  }
+}

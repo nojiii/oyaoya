@@ -1,23 +1,20 @@
-﻿import { test } from 'node:test'
+﻿import { test } from 'vitest'
 import assert from 'node:assert/strict'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { createTestServer } from './viteServer.mjs'
 
 test('every published script has teaching points, reading labels and only supported resource invitations', async () => {
-  const server = await createTestServer()
   const previousStorage = globalThis.sessionStorage
   globalThis.sessionStorage = {
     getItem: (key) => (key.startsWith('teaching-started:') ? 'true' : null),
     setItem() {},
   }
   try {
-    const { problems } = await server.ssrLoadModule('/src/problems/index.ts')
-    const { loadProblem } = await server.ssrLoadModule('/src/pages/loaders.ts')
-    const { default: ProblemDetail } = await server.ssrLoadModule(
-      '/src/pages/ProblemDetail.tsx',
-    )
+    const { problems } = await import('../src/problems/index.ts')
+    const { loadProblem } = await import('../src/pages/loaders.ts')
+    const { default: ProblemDetail } =
+      await import('../src/pages/ProblemDetail.tsx')
     for (const id of Object.keys(problems)) {
       // 大学祭用の問題（math- や puzzle- で始まるID）はテストを除外する。台本を作った問題だけ確かめる
       if (
@@ -206,6 +203,5 @@ test('every published script has teaching points, reading labels and only suppor
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage
-    await server.close()
   }
 })

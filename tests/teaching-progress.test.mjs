@@ -1,23 +1,20 @@
-import { test } from 'node:test'
+import { test } from 'vitest'
 import assert from 'node:assert/strict'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { createTestServer } from './viteServer.mjs'
 
 // 台本の進み具合の復元（sessionStorage）を、問題のページを描いて確かめる
 test('saved progress decides whether the preparation or the script opens', async () => {
-  const server = await createTestServer()
   const storage = new Map()
   globalThis.sessionStorage = {
     getItem: (key) => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, String(value)),
   }
   try {
-    const { loadProblem } = await server.ssrLoadModule('/src/pages/loaders.ts')
-    const { default: ProblemDetail } = await server.ssrLoadModule(
-      '/src/pages/ProblemDetail.tsx',
-    )
+    const { loadProblem } = await import('../src/pages/loaders.ts')
+    const { default: ProblemDetail } =
+      await import('../src/pages/ProblemDetail.tsx')
     const path = '/problems/addition-within-10'
     const render = async () => {
       const router = createMemoryRouter(
@@ -58,9 +55,7 @@ test('saved progress decides whether the preparation or the script opens', async
     assert.equal(await render(), 'script')
 
     // 最後まで終えた問題 → 準備の画面から
-    const { arithmetic } = await server.ssrLoadModule(
-      '/src/problems/arithmetic.ts',
-    )
+    const { arithmetic } = await import('../src/problems/arithmetic.ts')
     // 数える手順の代わりに、考え方を聞く手順を台本に表示する。
     const finish = arithmetic('add', 3, 4).steps.length + 1
     storage.set(
@@ -73,23 +68,20 @@ test('saved progress decides whether the preparation or the script opens', async
     assert.equal(await render(), 'prepare')
   } finally {
     delete globalThis.sessionStorage
-    await server.close()
   }
 })
 
 // ページを分けた台本（flow）の単元では、flow の進み具合で準備の画面とボタンの文字が決まる
 test('flow lessons resume in the middle and start over from preparation after finishing', async () => {
-  const server = await createTestServer()
   const storage = new Map()
   globalThis.sessionStorage = {
     getItem: (key) => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, String(value)),
   }
   try {
-    const { loadProblem } = await server.ssrLoadModule('/src/pages/loaders.ts')
-    const { default: ProblemDetail } = await server.ssrLoadModule(
-      '/src/pages/ProblemDetail.tsx',
-    )
+    const { loadProblem } = await import('../src/pages/loaders.ts')
+    const { default: ProblemDetail } =
+      await import('../src/pages/ProblemDetail.tsx')
     const render = async (path) => {
       const router = createMemoryRouter(
         [
@@ -173,6 +165,5 @@ test('flow lessons resume in the middle and start over from preparation after fi
     }
   } finally {
     delete globalThis.sessionStorage
-    await server.close()
   }
 })

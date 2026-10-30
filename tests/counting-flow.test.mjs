@@ -1,12 +1,10 @@
-import { test } from 'node:test'
+import { test } from 'vitest'
 import assert from 'node:assert/strict'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { createTestServer } from './viteServer.mjs'
 
 test('counting renders every page, lets the parent pick 1 to 10 and follows one path without branching', async () => {
-  const server = await createTestServer()
   const previousStorage = globalThis.sessionStorage
   const storage = new Map()
   globalThis.sessionStorage = {
@@ -14,16 +12,12 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     setItem: (key, value) => storage.set(key, String(value)),
   }
   try {
-    const { CountingFlow } = await server.ssrLoadModule(
-      '/src/components/CountingFlow.tsx',
-    )
-    const { loadProblem } = await server.ssrLoadModule('/src/pages/loaders.ts')
-    const { default: ProblemDetail } = await server.ssrLoadModule(
-      '/src/pages/ProblemDetail.tsx',
-    )
-    const { countingPages, restoreCountingPage } = await server.ssrLoadModule(
-      '/src/components/countingFlowState.ts',
-    )
+    const { CountingFlow } = await import('../src/components/CountingFlow.tsx')
+    const { loadProblem } = await import('../src/pages/loaders.ts')
+    const { default: ProblemDetail } =
+      await import('../src/pages/ProblemDetail.tsx')
+    const { countingPages, restoreCountingPage } =
+      await import('../src/components/countingFlowState.ts')
     const path = '/problems/counting'
     const render = (element) => {
       const router = createMemoryRouter([{ path, element }], {
@@ -155,6 +149,5 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage
-    await server.close()
   }
 })

@@ -113,7 +113,11 @@ GitHubのリポジトリ設定（Settings → Advanced Security）で、次を�
 
 ### テストについて
 
-テストは [tests/](tests/) に置き、`npm test` で動かす（CIでも `build` ジョブの中で走る）。Node の組み込みのテスト（`node:test`）を使う。ページやローダーを確かめるテストは、[tests/viteServer.mjs](tests/viteServer.mjs) の Vite で `src` のファイルを読み込んで動かす。
+テストは [tests/](tests/) に置き、`npm test` で動かす（CIでも `build` ジョブの中で走る）。[Vitest](https://vitest.dev/) を使う。設定は [vite.config.ts](vite.config.ts) の `test` で、アプリと同じ Vite の設定のまま `src` のファイルを `import` できる。`npx vitest` で起動すると、ファイルを保存するたびに関係するテストだけを動かし直す。
+
+- ふつうのテストは Node.js の上で動かす。ページの HTML を確かめるときは、`react-dom/server` の `renderToString` で描く
+- 押す・スワイプするなどの操作を確かめるテストは、ファイルの先頭に `// @vitest-environment happy-dom` と書き、[Testing Library](https://testing-library.com/docs/react-testing-library/intro/) で描いて操作する（例: [teaching-carousel.test.mjs](tests/teaching-carousel.test.mjs)）。happy-dom は要素の大きさやアニメーションを持たないので、[domStubs.mjs](tests/domStubs.mjs) で差し替える
+- ソースコードを文字列として読んで中身を取り出すテストは書かない（書き方を変えただけで壊れるため）。計算は関数に切り出して呼び、操作は画面を描いて確かめる
 
 画面の見た目や構成は変更が多く、テストの維持コストが効果を上回るので、見た目はテストせず、プレビューURLでの目視で確かめる。次のようなところにテストを書く。
 

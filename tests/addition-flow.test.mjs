@@ -1,160 +1,153 @@
-import { test } from 'node:test'
+import { test } from 'vitest'
 import assert from 'node:assert/strict'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { createTestServer } from './viteServer.mjs'
 
 test('addition routes meet at the answer, go back along their own route and require an explicit reveal', async () => {
-  const server = await createTestServer()
-  try {
-    const {
-      advanceAddition: act,
-      initialAdditionProgress: initial,
-      additionPages,
-      canAdvanceAddition,
-      restoreAdditionProgress,
-      additionFlowStatus,
-      additionCheck,
-    } = await server.ssrLoadModule('/src/components/additionFlowState.ts')
-    let physical = act(initial, { type: 'next' })
-    assert.equal(physical.page, 'choose')
-    assert.deepEqual(
-      act(physical, { type: 'next' }),
-      physical,
-      'choice cannot be skipped',
-    )
-    physical = act(physical, { type: 'choose', route: 'physical' })
-    // 選んでもページは進まず、スワイプ（next）で進む
-    assert.equal(physical.page, 'choose')
-    assert.equal(canAdvanceAddition(physical), true)
-    physical = act(physical, { type: 'next' })
-    assert.equal(additionPages(physical.route).length, 8)
-    for (const page of ['prepare', 'combine', 'count']) {
-      assert.equal(physical.page, page)
-      assert.equal(physical.answerVisible, false)
-      physical = act(physical, { type: 'next' })
-    }
-    assert.equal(physical.page, 'answer')
+  const {
+    advanceAddition: act,
+    initialAdditionProgress: initial,
+    additionPages,
+    canAdvanceAddition,
+    restoreAdditionProgress,
+    additionFlowStatus,
+    additionCheck,
+  } = await import('../src/components/additionFlowState.ts')
+  let physical = act(initial, { type: 'next' })
+  assert.equal(physical.page, 'choose')
+  assert.deepEqual(
+    act(physical, { type: 'next' }),
+    physical,
+    'choice cannot be skipped',
+  )
+  physical = act(physical, { type: 'choose', route: 'physical' })
+  // 選んでもページは進まず、スワイプ（next）で進む
+  assert.equal(physical.page, 'choose')
+  assert.equal(canAdvanceAddition(physical), true)
+  physical = act(physical, { type: 'next' })
+  assert.equal(additionPages(physical.route).length, 8)
+  for (const page of ['prepare', 'combine', 'count']) {
+    assert.equal(physical.page, page)
     assert.equal(physical.answerVisible, false)
-    // 答えを見るまでは、たしかめへ進めない
-    assert.equal(act(physical, { type: 'next' }).page, 'answer')
-    physical = act(physical, { type: 'reveal' })
-    assert.equal(physical.answerVisible, true)
-    // たしかめ：話してもらう → ひとりで解く。ひとりで解くページが最後で、答えはまた「？」で見る
     physical = act(physical, { type: 'next' })
-    assert.equal(physical.page, 'explain')
+  }
+  assert.equal(physical.page, 'answer')
+  assert.equal(physical.answerVisible, false)
+  // 答えを見るまでは、たしかめへ進めない
+  assert.equal(act(physical, { type: 'next' }).page, 'answer')
+  physical = act(physical, { type: 'reveal' })
+  assert.equal(physical.answerVisible, true)
+  // たしかめ：話してもらう → ひとりで解く。ひとりで解くページが最後で、答えはまた「？」で見る
+  physical = act(physical, { type: 'next' })
+  assert.equal(physical.page, 'explain')
+  assert.equal(physical.answerVisible, false)
+  assert.equal(act(physical, { type: 'reveal' }).answerVisible, false)
+  physical = act(physical, { type: 'next' })
+  assert.equal(physical.page, 'check')
+  assert.equal(physical.answerVisible, false)
+  physical = act(physical, { type: 'reveal' })
+  assert.equal(physical.answerVisible, true)
+  assert.equal(canAdvanceAddition(physical), false)
+  assert.equal(act(physical, { type: 'next' }).page, 'check')
+  for (const page of [
+    'explain',
+    'answer',
+    'count',
+    'combine',
+    'prepare',
+    'choose',
+    'read',
+  ]) {
+    physical = act(physical, { type: 'back' })
+    assert.equal(physical.page, page)
     assert.equal(physical.answerVisible, false)
-    assert.equal(act(physical, { type: 'reveal' }).answerVisible, false)
-    physical = act(physical, { type: 'next' })
-    assert.equal(physical.page, 'check')
-    assert.equal(physical.answerVisible, false)
-    physical = act(physical, { type: 'reveal' })
-    assert.equal(physical.answerVisible, true)
-    assert.equal(canAdvanceAddition(physical), false)
-    assert.equal(act(physical, { type: 'next' }).page, 'check')
-    for (const page of [
-      'explain',
-      'answer',
-      'count',
-      'combine',
-      'prepare',
-      'choose',
-      'read',
-    ]) {
-      physical = act(physical, { type: 'back' })
-      assert.equal(physical.page, page)
-      assert.equal(physical.answerVisible, false)
-    }
-    assert.deepEqual(act(physical, { type: 'back' }), physical)
+  }
+  assert.deepEqual(act(physical, { type: 'back' }), physical)
 
-    let app = act(act(initial, { type: 'next' }), {
-      type: 'choose',
-      route: 'app',
-    })
-    assert.equal(app.page, 'choose')
-    app = act(app, { type: 'next' })
-    assert.equal(app.page, 'app')
-    assert.equal(additionPages(app.route).length, 6)
-    assert.equal(canAdvanceAddition(app), false)
-    assert.equal(
-      act(app, { type: 'next' }).page,
-      'app',
-      'counter work must finish first',
-    )
-    assert.equal(act(app, { type: 'reveal' }).answerVisible, false)
-    app = act(app, { type: 'app-status', complete: true })
-    assert.equal(canAdvanceAddition(app), true)
-    const completed = act(app, { type: 'next' })
-    assert.equal(completed.page, 'answer')
-    assert.equal(completed.answerVisible, false)
-    assert.equal(act(completed, { type: 'reveal' }).answerVisible, true)
-    app = act(completed, { type: 'back' })
-    assert.equal(app.page, 'app')
-    app = act(app, { type: 'app-status', complete: false })
-    assert.equal(
-      canAdvanceAddition(app),
-      false,
-      'resetting counters clears completion',
-    )
-    app = act(app, { type: 'back' })
-    assert.equal(app.page, 'choose')
-    app = act(app, { type: 'choose', route: 'physical' })
-    assert.equal(app.page, 'choose')
-    assert.equal(act(app, { type: 'next' }).page, 'prepare')
-    assert.equal(
-      app.appComplete,
-      false,
-      'changing routes clears counter completion',
-    )
-    assert.deepEqual(act(app, { type: 'restart' }), initial)
+  let app = act(act(initial, { type: 'next' }), {
+    type: 'choose',
+    route: 'app',
+  })
+  assert.equal(app.page, 'choose')
+  app = act(app, { type: 'next' })
+  assert.equal(app.page, 'app')
+  assert.equal(additionPages(app.route).length, 6)
+  assert.equal(canAdvanceAddition(app), false)
+  assert.equal(
+    act(app, { type: 'next' }).page,
+    'app',
+    'counter work must finish first',
+  )
+  assert.equal(act(app, { type: 'reveal' }).answerVisible, false)
+  app = act(app, { type: 'app-status', complete: true })
+  assert.equal(canAdvanceAddition(app), true)
+  const completed = act(app, { type: 'next' })
+  assert.equal(completed.page, 'answer')
+  assert.equal(completed.answerVisible, false)
+  assert.equal(act(completed, { type: 'reveal' }).answerVisible, true)
+  app = act(completed, { type: 'back' })
+  assert.equal(app.page, 'app')
+  app = act(app, { type: 'app-status', complete: false })
+  assert.equal(
+    canAdvanceAddition(app),
+    false,
+    'resetting counters clears completion',
+  )
+  app = act(app, { type: 'back' })
+  assert.equal(app.page, 'choose')
+  app = act(app, { type: 'choose', route: 'physical' })
+  assert.equal(app.page, 'choose')
+  assert.equal(act(app, { type: 'next' }).page, 'prepare')
+  assert.equal(
+    app.appComplete,
+    false,
+    'changing routes clears counter completion',
+  )
+  assert.deepEqual(act(app, { type: 'restart' }), initial)
 
-    for (const route of ['physical', 'app']) {
-      for (const page of additionPages(route)) {
-        const restored = restoreAdditionProgress(
-          JSON.stringify({
-            route,
-            page,
-            appComplete: true,
-            answerVisible: true,
-          }),
-        )
-        // たしかめの最後のページまで終えたあとは、最初から
-        const finished = page === 'check'
-        assert.equal(restored.page, finished ? 'read' : page)
-        assert.equal(restored.route, finished ? null : route)
-        assert.equal(
-          additionFlowStatus(JSON.stringify({ route, page })),
-          finished ? 'finished' : page === 'read' ? 'start' : 'middle',
-        )
-        assert.equal(restored.answerVisible, false)
-        assert.equal(restored.appComplete, false)
-      }
+  for (const route of ['physical', 'app']) {
+    for (const page of additionPages(route)) {
+      const restored = restoreAdditionProgress(
+        JSON.stringify({
+          route,
+          page,
+          appComplete: true,
+          answerVisible: true,
+        }),
+      )
+      // たしかめの最後のページまで終えたあとは、最初から
+      const finished = page === 'check'
+      assert.equal(restored.page, finished ? 'read' : page)
+      assert.equal(restored.route, finished ? null : route)
+      assert.equal(
+        additionFlowStatus(JSON.stringify({ route, page })),
+        finished ? 'finished' : page === 'read' ? 'start' : 'middle',
+      )
+      assert.equal(restored.answerVisible, false)
+      assert.equal(restored.appComplete, false)
     }
-    // ひとりで解く問題は、10までのたし算のままで、答えが元の問題と1だけ違う
-    for (let a = 0; a <= 10; a++) {
-      for (let b = 0; a + b <= 10; b++) {
-        const [c, d] = additionCheck(a, b)
-        assert.ok(c >= 0 && d >= 0 && c + d <= 10, `${a}+${b} → ${c}+${d}`)
-        assert.equal(Math.abs(c + d - (a + b)), 1, `${a}+${b} → ${c}+${d}`)
-      }
+  }
+  // ひとりで解く問題は、10までのたし算のままで、答えが元の問題と1だけ違う
+  for (let a = 0; a <= 10; a++) {
+    for (let b = 0; a + b <= 10; b++) {
+      const [c, d] = additionCheck(a, b)
+      assert.ok(c >= 0 && d >= 0 && c + d <= 10, `${a}+${b} → ${c}+${d}`)
+      assert.equal(Math.abs(c + d - (a + b)), 1, `${a}+${b} → ${c}+${d}`)
     }
-    for (const invalid of [
-      null,
-      '{',
-      '{}',
-      '{"route":"app","page":"count"}',
-      '{"route":null,"page":"answer"}',
-    ]) {
-      assert.deepEqual(restoreAdditionProgress(invalid), initial)
-    }
-  } finally {
-    await server.close()
+  }
+  for (const invalid of [
+    null,
+    '{',
+    '{}',
+    '{"route":"app","page":"count"}',
+    '{"route":null,"page":"answer"}',
+  ]) {
+    assert.deepEqual(restoreAdditionProgress(invalid), initial)
   }
 })
 
 test('both addition routes render all steps with matching progress, counter reuse and gated answers', async () => {
-  const server = await createTestServer()
   const previousStorage = globalThis.sessionStorage
   const storage = new Map()
   globalThis.sessionStorage = {
@@ -163,10 +156,9 @@ test('both addition routes render all steps with matching progress, counter reus
   }
   try {
     const { AdditionFlow, AdditionAnswer, AdditionCheck, AdditionEquation } =
-      await server.ssrLoadModule('/src/components/AdditionFlow.tsx')
-    const { additionPages, additionCheck } = await server.ssrLoadModule(
-      '/src/components/additionFlowState.ts',
-    )
+      await import('../src/components/AdditionFlow.tsx')
+    const { additionPages, additionCheck } =
+      await import('../src/components/additionFlowState.ts')
     const path = '/problems/addition-within-10'
     const render = (a, b) => {
       const router = createMemoryRouter(
@@ -332,6 +324,5 @@ test('both addition routes render all steps with matching progress, counter reus
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage
-    await server.close()
   }
 })
