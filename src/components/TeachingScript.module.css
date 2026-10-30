@@ -266,6 +266,17 @@
 }
 
 /* 台本は横にスワイプ。縦スクロールとピンチズームはブラウザに任せる */
+/* スワイプを受ける範囲（LessonSlides）。左右は body の余白（1.25rem）まで、
+   下は画面の下端まで広げる（はみ出す 3rem は .lessonPage と body の下の余白に重ねる）。
+   上の 12px は .script の padding-top */
+.swipeArea {
+  /* 中の進み具合の margin-top を外へ出さない（出ると、その分だけ縦にスクロールできてしまう） */
+  display: flow-root;
+  margin: 0 -1.25rem -3rem;
+  padding: 0 1.25rem 3rem;
+  min-height: calc(100dvh - 12px);
+  touch-action: pan-y pinch-zoom;
+}
 .carouselFrame {
   position: relative;
 }
