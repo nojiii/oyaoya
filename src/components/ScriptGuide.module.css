@@ -160,7 +160,7 @@
 }
 .dots i[data-on='true'] {
   width: 20px;
-  background: #ffb48a;
+  background: var(--color-accent-bright);
 }
 
 /* 次へ進むボタン（画面のどこをさわっても進む。キーボードではこのボタンで進む） */

@@ -9,6 +9,7 @@ import {
 } from 'react-router'
 import { useHomeUrl } from './festival'
 import type { PageLink } from './loaders'
+import { DebugThemePanel } from '../components/DebugThemePanel'
 import { SideNavigation } from '../components/SideNavigation'
 
 // 上の帯。ホームではロゴ、それ以外の画面では1つ上の一覧へ戻るボタンを左に置き、メニューは右に置く
@@ -56,11 +57,16 @@ export function Layout() {
   return (
     <>
       <Header />
-      <main className={navigation.state === 'loading' ? 'is-loading' : ''}>
+      {/* tabIndex：押したボタンが消えたとき（デバッグを終えるなど）に、本文へフォーカスを移せるようにする */}
+      <main
+        className={navigation.state === 'loading' ? 'is-loading' : ''}
+        tabIndex={-1}
+      >
         <Outlet />
       </main>
       {/* ページを移ったら一番上から表示し、ブラウザの「戻る」では元の位置に戻す */}
       <ScrollRestoration />
+      <DebugThemePanel />
     </>
   )
 }
