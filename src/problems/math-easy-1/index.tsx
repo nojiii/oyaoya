@@ -28,6 +28,8 @@ const words = {
   price: 'ノートセットの代金は、図のどこかな？ どんな式で求められるかな？',
   ask: 'じゃあ、計算してみよう。代金はいくらになったかな？',
   right: `正解！ ${LIST_PRICE}円のノートセットが、${SALE_PRICE}円で買えるね！`,
+  wrong:
+    'おしい！ 払うのは、図のどの部分だったかな？ もう一度、一緒に見てみよう。',
   explain: `どうやって${SALE_PRICE}円になったのか、おしえてくれる？`,
 }
 
@@ -231,16 +233,27 @@ function MathEasyFlow() {
       content: (
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
-            <SpokenWords title={`${SALE_PRICE}円と答えたら`}>
-              {words.right}
-            </SpokenWords>
+            <>
+              <SpokenWords title={`${SALE_PRICE}円と答えたら`}>
+                {words.right}
+              </SpokenWords>
+              <SpokenWords title="ちがう答えだったら" minor>
+                {words.wrong}
+              </SpokenWords>
+              <TeachingPoints
+                folded
+                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。前のページに戻って、図の青い部分を一緒に確かめましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
+              />
+            </>
           ) : (
-            <SpokenWords>{words.ask}</SpokenWords>
+            <>
+              <SpokenWords>{words.ask}</SpokenWords>
+              <TeachingPoints
+                folded
+                note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
+              />
+            </>
           )}
-          <TeachingPoints
-            folded
-            note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
-          />
         </div>
       ),
     },
