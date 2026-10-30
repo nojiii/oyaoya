@@ -147,8 +147,6 @@ src/
     CounterDisplay.tsx     #   台本の下に出す、おはじきの画面
     LessonVisual.tsx       #   台本のステップごとの図
     SideNavigation.tsx     #   横のメニュー
-    ProblemStory.tsx       #   標準の構成（問題・解き方・教え方・声掛け例）。スクロールで読み進める（今は使っている問題がない）
-    ProblemSections.tsx    #   同じ構成を、動きなしで上から並べる（今は使っている問題がない）
   pages/                   # 問題以外のページと、全ページ共通の枠
 tests/                     # テスト（npm test）
 ```
@@ -204,9 +202,7 @@ tests/                     # テスト（npm test）
 ### 問題の画面の書き方
 
 - 親が教えている最中に使う画面にするときは、[TeachingScript](src/components/TeachingScript.tsx) に台本を渡す（書き方は[教えている最中に使う台本](#教えている最中に使う台本)）
-- 標準の構成（問題 → 解き方 → 教え方 → 声掛け例）にするときは、[ProblemStory](src/components/ProblemStory.tsx) に4つの章を渡す。見出しは部品側が付けるので、中身だけを書く（書き方は[スクロールで読み進める画面](#スクロールで読み進める画面)）
-- 動きのない画面にしたいときは、[ProblemSections](src/components/ProblemSections.tsx) に4つの中身を渡す。文章は、段落 `<p>`・箇条書き `<ul><li>`・番号付きリスト `<ol><li>` で書く
-- 標準の構成に収まらない問題は、これらの部品を使わずに自由に組み立ててよい
+- 台本の形に収まらない問題は、TeachingScript を使わずに自由に組み立ててよい
 - 上の帯の戻るボタン（1つ上の一覧へ）と、単元名の見出しはページの枠が出すので、問題の画面には書かない
 - 文章はソースコードに直接書く。文言を1か所に集める仕組み（国際化対応など）は、必要になった時点で入れる
 - 文章は画像の中に入れず、文字で書く（将来、問題の文章を検索できるようにするため）
@@ -264,31 +260,6 @@ tests/                     # テスト（npm test）
 - `show` は問題（`question`）でだけ使う。答えの入った図は問題には入れず、ステップの `reveal` に書く
 - 文言は、チームでのロールプレイ（親役・子役に分かれて台本どおりに進める）で詰まったところを直していく
 
-### スクロールで読み進める画面
-
-今は使っている問題がないが、部品として残している。
-
-`ProblemStory` は、章（問題・解き方・教え方・声掛け例）ごとに1枚のパネルを出す。パネルはスクロールするとふわっと現れて画面に固定され、スクロールに合わせて中の文章が1つずつ入れ替わり、最後まで進むと消えて次の章のパネルに替わる。1つの文章が出ている状態を「ステップ」と呼ぶ。
-
-```tsx
-<ProblemStory
-  question={{
-    steps: ['あかい りんごが 3こ、', 'あおい りんごが 2こ あります。'],
-    // 図はその問題のフォルダに作る
-    visual: (step) => <Scene count={step === 0 ? 3 : 5} />,
-  }}
-  howToSolve={{ steps: [...] }}
-  howToTeach={{ steps: [...] }}
-  examplePhrases={{ steps: [...] }}
-/>
-```
-
-- `steps` に、ステップごとの文章を順に書く。1ステップは1〜2文にする（長いと画面に収まらない）。強調したい言葉は `<strong>` で囲む
-- `visual` は図で、省略できる。今のステップ番号（0始まり）を受け取るので、ステップごとに見た目を変える。図はその問題のフォルダに作る
-- 図の動きは、ステップに応じて `data-*` 属性やクラスを切り替え、CSSの `transition` で付ける。スクロール量を自分で調べる必要はない
-- 教え方と声掛け例は、`visual` を省略すると標準の図（ポイントの番号、おやじいの吹き出し）になる
-- 画面の高さやブラウザの幅を変えて、文章が図や画面の端に重ならないか確かめる
-
 ## 階層を変える
 
 階層は [src/curriculum.ts](src/curriculum.ts) の1ファイルに書く。問題のフォルダは階層と無関係なので、動かさない。
@@ -332,12 +303,11 @@ export const curriculum: Group[] = [
 
 書き間違いは `npm run typecheck` が見つける。CIでも走るので、エラーが残ったままではマージできない。
 
-| エラーメッセージ                                                               | 原因                                                                                    |
-| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `src/curriculum.ts` で `Type '"..."' is not assignable to type ...`            | 問題IDの書き間違いか、[src/problems/index.ts](src/problems/index.ts) にまだ足していない |
-| `src/problems/index.ts` で `Property 'title' is missing ...`                   | その問題の `index.tsx` に `export const title = '...'` がない                           |
-| 問題の `index.tsx` で `Property '...' is missing ... required in type 'Props'` | `ProblemStory`（または `ProblemSections`）に4つの中身を渡していない                     |
-| `src/problems/index.ts` で `lesson('...')` に `is not assignable`              | `units.ts` にない問題IDを書いている（書き間違いか、`units.ts` にまだ足していない）      |
+| エラーメッセージ                                                    | 原因                                                                                    |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `src/curriculum.ts` で `Type '"..."' is not assignable to type ...` | 問題IDの書き間違いか、[src/problems/index.ts](src/problems/index.ts) にまだ足していない |
+| `src/problems/index.ts` で `Property 'title' is missing ...`        | その問題の `index.tsx` に `export const title = '...'` がない                           |
+| `src/problems/index.ts` で `lesson('...')` に `is not assignable`   | `units.ts` にない問題IDを書いている（書き間違いか、`units.ts` にまだ足していない）      |
 
 ## 大学祭モード
 
