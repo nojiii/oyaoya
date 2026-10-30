@@ -30,12 +30,10 @@ export type AdditionAction =
   | { type: 'choose'; route: AdditionRoute }
   | { type: 'app-status'; complete: boolean }
 
+// 方法を選ぶページは、選ぶまで進めない（選んだら、スワイプで進む）。答えのページが最後
 export function canAdvanceAddition(state: AdditionProgress) {
-  return (
-    state.page !== 'choose' &&
-    state.page !== 'answer' &&
-    (state.page !== 'app' || state.appComplete)
-  )
+  if (state.page === 'choose') return state.route !== null
+  return state.page !== 'answer' && (state.page !== 'app' || state.appComplete)
 }
 
 export function advanceAddition(
@@ -45,11 +43,12 @@ export function advanceAddition(
   switch (action.type) {
     case 'restart':
       return { ...initialAdditionProgress }
+    // 方法を選ぶだけで、ページは進めない。進むのは、選んだあとのスワイプ（next）
     case 'choose':
       if (state.page !== 'choose') return state
       return {
         route: action.route,
-        page: action.route === 'physical' ? 'prepare' : 'app',
+        page: 'choose',
         appComplete: false,
         answerVisible: false,
       }

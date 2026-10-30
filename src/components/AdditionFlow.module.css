@@ -1,12 +1,8 @@
-.pageCount {
-  margin: -0.5rem 0 0.25rem;
-  text-align: center;
-  color: var(--color-text);
-  font-size: 0.85rem;
-}
+/* ページを分けた台本（LessonSlides）の1ページ。画面全体の橙（index.css）の上に、白い文字で組む。
+   上から、ステージ（見るもの）→ 見出し → 教え方のポイント → セリフ → 次のページの案内 */
 
 .slide {
-  gap: 1.25rem;
+  gap: 1rem;
   align-self: start;
   overflow-wrap: anywhere;
 }
@@ -23,98 +19,249 @@
   line-height: 1.8;
 }
 
+/* ステージ：お子さんと一緒に見るもの。どのページも同じ高さにして、下の文字の位置を動かさない */
+.stage {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.75rem;
+  min-height: 256px;
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--teach-stage);
+  color: var(--color-text);
+}
+
+.answerMascot {
+  display: block;
+  width: 96px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.stageMascot {
+  display: block;
+  width: 180px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+/* 見出し。セリフのないページでは大きく、セリフのあるページでは小さなラベルにしてセリフを主役にする */
 .title {
-  margin: 0;
-  font-size: clamp(1.1rem, 4.6vw, 1.35rem);
-  line-height: 1.6;
+  margin: 0.25rem 0 0;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.slide:has(.spokenWords) > .title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--teach-muted);
+}
+
+.title:focus {
+  outline: none;
 }
 
 .problem {
-  padding-block: 0.5rem;
+  width: 100%;
 }
 
-.equation {
+/* ステージの外（橙の上）に置いた問題の式。台本の中では数は変えない */
+.slide > .problem {
   margin: 0;
+  padding: 1rem;
+  border-radius: 20px;
+  background: var(--teach-soft);
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.2;
   text-align: center;
-  font-size: clamp(1.6rem, 7vw, 2.1rem);
-  font-weight: 700;
+}
+
+/* 答えのページの式。答え（または ？）だけを橙の面にする */
+.equation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: clamp(40px, 13vw, 56px);
+  font-weight: 900;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.equation em,
+.reveal {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0 0.15em;
+  border-radius: 16px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-style: normal;
+}
+
+/* 答えを見る「？」。お子さんが答えてから押す */
+.reveal {
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.reveal:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.revealHint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
 }
 
 .choices {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.5rem;
 }
 
 .choices button {
   display: grid;
-  gap: 0.5rem;
-  padding: 1rem;
-  border: 1.5px solid #b58f6d;
-  border-radius: 1rem;
-  background: #fffdf8;
-  color: var(--color-text);
+  grid-template-columns: 1fr 26px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1rem 1.1rem;
+  border: none;
+  border-radius: 18px;
+  background: var(--teach-soft);
+  color: var(--teach-text);
   text-align: left;
   font: inherit;
   cursor: pointer;
 }
 
 .choices strong {
-  font-size: 1.05rem;
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.choices span {
-  font-size: 0.9rem;
+.choices strong + span {
+  display: block;
+  font-size: 13px;
   line-height: 1.7;
+  color: var(--teach-muted);
+}
+
+/* 選んだ方法は白い面にして、右の丸にチェックを入れる */
+.check {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--teach-soft);
+  color: transparent;
+}
+
+.choices button[aria-pressed='true'] {
+  background: var(--teach-text);
+  color: var(--color-text);
+}
+
+.choices button[aria-pressed='true'] strong + span {
+  color: var(--color-muted);
+}
+
+.choices button[aria-pressed='true'] .check {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.after {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--teach-text);
 }
 
 .note {
-  padding: 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  background: #faf6f0;
-  font-size: 0.8rem;
+  font-size: 13px;
   line-height: 1.8;
+  color: var(--teach-muted);
 }
 
+/* 読み上げるセリフ。「こう声をかけよう」は小さな札、セリフは大きく太く */
 .spokenWords {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
-  border: 2px solid #b58f6d;
-  border-radius: 0.75rem;
-  background: white;
+  gap: 0.5rem;
 }
 
 .spokenWords h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  justify-self: start;
   margin: 0;
-  font-size: 0.95rem;
-}
-
-.spokenWords svg {
-  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--teach-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .spokenWords p {
   margin: 0;
 }
 
+/* 主のセリフの代わりに言う控えのセリフは、小さく細くする */
+.spokenWords[data-minor] h3 {
+  padding: 0;
+  background: none;
+  color: var(--teach-muted);
+}
+
+.spokenWords[data-minor] p {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0;
+}
+
+/* 1つにまとめたおはじき */
+.counterTogether {
+  max-width: 260px;
+  padding: 1.5rem 1rem;
+  border-radius: 18px;
+  background: var(--color-soft);
+}
+
 .counterGroups {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  padding-block: 0.25rem;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .counterGroup {
   display: grid;
   gap: 0.75rem;
   align-content: start;
+  padding: 1rem 0.5rem;
+  border-radius: 18px;
+  background: var(--plate-bg, var(--color-soft));
   text-align: center;
+  font-size: 13px;
   font-weight: 700;
+  color: var(--color-muted);
 }
 
 .pieces {
@@ -122,78 +269,84 @@
   flex-wrap: wrap;
   justify-content: center;
   align-content: start;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
 .pieces span {
-  width: 24px;
-  height: 24px;
+  width: var(--piece-size, 24px);
+  height: var(--piece-size, 24px);
   border-radius: 50%;
-  background: #c8895a;
-  border: 1px solid #b58f6d;
+  background: #e2553a;
 }
 
 .pieces span[data-green='true'] {
-  background: #8c9a78;
-  border-color: #788566;
+  background: #2f62d8;
 }
 
 .answer {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
-.navigation {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.75rem;
-}
-
-.navigation button,
-.primary,
-.secondary,
-.openCounters {
-  min-height: 48px;
-  padding: 0.75rem 1rem;
-  border: 1px solid #b58f6d;
-  border-radius: 0.85rem;
-  background: #fffdf8;
-  color: var(--color-text);
+/* 終わる。台本の最後に、準備の画面へ戻るボタン */
+.finish {
+  min-height: 56px;
+  margin-top: 0.5rem;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--teach-text);
+  color: var(--color-accent);
   font: inherit;
+  font-size: 17px;
   font-weight: 700;
-  text-align: center;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-.primary,
-.navigation .primary {
-  background: #fff0bd;
-}
-
+/* アプリのおはじきを開くボタン（ステージの中） */
 .openCounters {
   display: block;
   width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .help {
-  font-size: 0.85rem;
+  font-size: 13px;
+  color: var(--teach-muted);
 }
 
-.navigation button:disabled {
-  opacity: 0.45;
-  cursor: default;
+/* 次のページの名前。ボタンではなく、左へスワイプした先を示す案内。右に寄せ、右端に右向きの矢印を置く */
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  text-align: right;
+  margin: 1.5rem 0 0;
+  font-size: 12px;
+  color: var(--teach-muted);
 }
 
-.choices button:hover {
-  background: #fff3df;
+.next b {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--teach-text);
+}
+
+.next svg {
+  flex: none;
 }
 
 .choices button:focus-visible,
-.navigation button:focus-visible,
-.primary:focus-visible,
-.secondary:focus-visible {
-  outline: 3px solid var(--color-accent);
+.finish:focus-visible {
+  outline: 3px solid var(--teach-text);
   outline-offset: 3px;
 }

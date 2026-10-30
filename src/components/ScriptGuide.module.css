@@ -1,0 +1,182 @@
+/* 台本の使い方の説明。後ろの台本が透けて見える暗さの幕を全体にかけ、下に文字を置く */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 28px max(48px, env(safe-area-inset-bottom));
+  color: #fff;
+  cursor: pointer;
+  touch-action: none;
+}
+.overlay::before {
+  /* 幕は1枚だけ。画面の幅が 480px より広いときも、左右まで覆う */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgb(24 20 17 / 72%);
+}
+.overlay h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+.lead {
+  margin: 12px 0 0;
+  color: #e9e1da;
+  font-size: 15px;
+}
+
+/* 小さな画面の絵。説明している部分だけを明るくする */
+.picture {
+  position: relative;
+  height: 220px;
+  margin-bottom: 24px;
+}
+.phone {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 116px;
+  height: 200px;
+  margin-left: -58px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--teach-bg);
+}
+.pages {
+  position: absolute;
+  inset: 0;
+}
+.pages i {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  height: 78px;
+  border-radius: 6px;
+  background: var(--teach-stage);
+}
+.pages b {
+  position: absolute;
+  left: 14px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--teach-text);
+  opacity: 0.7;
+}
+.pages b:nth-of-type(1) {
+  top: 104px;
+  right: 30px;
+}
+.pages b:nth-of-type(2) {
+  top: 122px;
+  right: 14px;
+}
+.pages b:nth-of-type(3) {
+  top: 140px;
+  right: 40px;
+}
+.pages [data-part] {
+  transition: opacity 0.3s;
+}
+.phone[data-focus='stage'] [data-part='read'],
+.phone[data-focus='read'] [data-part='stage'] {
+  opacity: 0.18;
+}
+.phone[data-focus='swipe'] .pages {
+  animation: page 2.4s ease-in-out infinite;
+}
+.finger {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  border-radius: 50%;
+  background: #fff;
+  animation: finger 2.4s ease-in-out infinite;
+}
+@keyframes finger {
+  0%,
+  10% {
+    transform: translateX(46px);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(46px);
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(-46px);
+    opacity: 1;
+  }
+  70%,
+  100% {
+    transform: translateX(-46px);
+    opacity: 0;
+  }
+}
+@keyframes page {
+  0%,
+  20% {
+    transform: none;
+  }
+  55%,
+  80% {
+    transform: translateX(-30px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .finger,
+  .phone[data-focus='swipe'] .pages {
+    animation: none;
+  }
+}
+
+/* 何段目か */
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 30px;
+}
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 30%);
+}
+.dots i[data-on='true'] {
+  width: 20px;
+  background: #ffb48a;
+}
+
+/* 次へ進むボタン（画面のどこをさわっても進む。キーボードではこのボタンで進む） */
+.next {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #d9cfc6;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.next:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}

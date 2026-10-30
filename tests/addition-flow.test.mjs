@@ -24,6 +24,10 @@ test('addition routes meet at the answer, go back along their own route and requ
       'choice cannot be skipped',
     )
     physical = act(physical, { type: 'choose', route: 'physical' })
+    // 選んでもページは進まず、スワイプ（next）で進む
+    assert.equal(physical.page, 'choose')
+    assert.equal(canAdvanceAddition(physical), true)
+    physical = act(physical, { type: 'next' })
     assert.equal(additionPages(physical.route).length, 6)
     for (const page of ['prepare', 'combine', 'count']) {
       assert.equal(physical.page, page)
@@ -46,6 +50,8 @@ test('addition routes meet at the answer, go back along their own route and requ
       type: 'choose',
       route: 'app',
     })
+    assert.equal(app.page, 'choose')
+    app = act(app, { type: 'next' })
     assert.equal(app.page, 'app')
     assert.equal(additionPages(app.route).length, 4)
     assert.equal(canAdvanceAddition(app), false)
@@ -72,7 +78,8 @@ test('addition routes meet at the answer, go back along their own route and requ
     app = act(app, { type: 'back' })
     assert.equal(app.page, 'choose')
     app = act(app, { type: 'choose', route: 'physical' })
-    assert.equal(app.page, 'prepare')
+    assert.equal(app.page, 'choose')
+    assert.equal(act(app, { type: 'next' }).page, 'prepare')
     assert.equal(
       app.appComplete,
       false,
@@ -125,9 +132,8 @@ test('both addition routes render all steps with matching progress, counter reus
     setItem: (key, value) => storage.set(key, String(value)),
   }
   try {
-    const { AdditionFlow, AdditionAnswer } = await server.ssrLoadModule(
-      '/src/components/AdditionFlow.tsx',
-    )
+    const { AdditionFlow, AdditionAnswer, AdditionEquation } =
+      await server.ssrLoadModule('/src/components/AdditionFlow.tsx')
     const { additionPages } = await server.ssrLoadModule(
       '/src/components/additionFlowState.ts',
     )
@@ -137,11 +143,7 @@ test('both addition routes render all steps with matching progress, counter reus
         [
           {
             path,
-            element: createElement(AdditionFlow, {
-              a,
-              b,
-              editor: createElement('p', null, `${a} ＋ ${b} ＝ ？`),
-            }),
+            element: createElement(AdditionFlow, { a, b }),
           },
         ],
         { initialEntries: [path] },
@@ -183,11 +185,17 @@ test('both addition routes render all steps with matching progress, counter reus
             html.indexOf(`data-slide="${page}" data-active="true"`),
           )
           assert.ok(active.includes(titles[page]), `${route}/${page}: title`)
+          // 数は準備の画面で決める。台本の中では変えられない
+          assert.ok(
+            !html.includes('<input'),
+            `${route}/${page}: no number input`,
+          )
           assert.match(active, /aria-hidden="false"/)
           assert.ok(html.includes(`${index + 1} / ${pages.length}ページ`))
+          // 台本はスワイプだけで送る（前へ・次へのボタンはない）
           assert.ok(
-            html.includes('aria-label="前のページ"') &&
-              html.includes('aria-label="次のページ"'),
+            !html.includes('aria-label="前のページ"') &&
+              !html.includes('aria-label="次のページ"'),
           )
           assert.equal(
             (html.match(/<dialog /g) ?? []).length,
@@ -202,10 +210,11 @@ test('both addition routes render all steps with matching progress, counter reus
             assert.ok(
               active.includes(`おはじきが${a}こと${b}こ、別々に並んでいます`),
             )
+          // 読み上げるセリフを主役にして、教え方のポイントはその下にたたんでおく
           if (page === 'combine' || page === 'count') {
             assert.ok(
-              active.indexOf('教え方のポイント') <
-                active.indexOf('こう声をかけよう'),
+              active.indexOf('こう声をかけよう') <
+                active.indexOf('教え方のポイント'),
             )
           }
           if (page === 'count')
@@ -216,23 +225,32 @@ test('both addition routes render all steps with matching progress, counter reus
             )
         }
       }
+      // 式と答えを見る「？」はステージ（AdditionEquation）、声かけは AdditionAnswer に出す。
+      // 文字の確かめは、タグを取り除いた文で行う
       const renderAnswer = (visible) =>
         renderToString(
-          createElement(AdditionAnswer, {
-            a,
-            b,
-            visible,
-            onReveal() {},
-            onRestart() {},
-          }),
+          createElement(
+            'div',
+            null,
+            createElement(AdditionEquation, { a, b, visible }),
+            createElement(AdditionAnswer, {
+              a,
+              b,
+              visible,
+              onFinish() {},
+            }),
+          ),
         ).replace(/<!-- -->/g, '')
-      const hidden = renderAnswer(false)
+      const textOf = (html) => html.replace(/<[^>]*>/g, '')
+      const hiddenHtml = renderAnswer(false)
+      const hidden = textOf(hiddenHtml)
       assert.ok(hidden.includes(`${a} ＋ ${b} ＝ ？`))
-      assert.ok(hidden.includes('答えを見る'))
+      assert.ok(hiddenHtml.includes('aria-label="答えを見る"'))
       // 答えを見る前は、お子さんに答えを聞くだけで、親は答えを言わない
       assert.ok(hidden.includes(`${a}こと${b}こ、合わせて何こだった？`))
       assert.ok(!hidden.includes(`全部で${a + b}こ`))
-      const shown = renderAnswer(true)
+      const shownHtml = renderAnswer(true)
+      const shown = textOf(shownHtml)
       assert.ok(shown.includes(`${a} ＋ ${b} ＝ ${a + b}`))
       assert.ok(shown.includes(`「${a + b}」と答えたら`))
       assert.ok(
@@ -241,7 +259,7 @@ test('both addition routes render all steps with matching progress, counter reus
         ),
       )
       assert.ok(shown.includes('ちがう数を答えたら'))
-      assert.ok(!shown.includes('答えを見る'))
+      assert.ok(!shownHtml.includes('答えを見る'))
     }
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage

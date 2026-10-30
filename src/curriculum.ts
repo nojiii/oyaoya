@@ -1,6 +1,6 @@
 import type { ProblemId } from './problems'
 
-// 単元に付けるタグ。一覧の行に出す。並び順が色の順番になる（index.css の [data-tag] と合わせる）
+// 単元に付けるタグ。一覧の行の小さな絵（src/pages/TagPicture.tsx）を、この並び順で決める
 export const TAGS = [
   '数の理解',
   'たし算・ひき算',

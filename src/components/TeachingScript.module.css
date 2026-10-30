@@ -1,629 +1,347 @@
-/* はじめる前に */
+/* 準備の画面と台本。色・書体は index.css の変数を使う。
+   枠線・影・グラデーションは使わず、面の明るさの差と、文字の大きさ・太さで強弱をつける */
+
 .lessonPage {
-  --bottom-tabs-height: calc(
-    48px + 0.7rem + 2px + env(safe-area-inset-bottom, 0px)
-  );
-  padding-bottom: calc(var(--bottom-tabs-height) + 1rem);
+  padding-bottom: 1rem;
 }
-.lessonPage .actions {
-  bottom: calc(var(--bottom-tabs-height) + 0.5rem);
-}
-.pageNavigation {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 2.5rem);
-  max-width: calc(480px - 2.5rem);
-  z-index: 5;
+
+/* ステージ：上に置く「見るもの」。準備の画面では、今日の問題の図を大きく出す */
+.stage {
+  --input-bg: var(--color-bg);
+  --plate-bg: var(--color-bg);
+  --piece-size: 28px;
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0.35rem 0.35rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
-  background: #fffdf8;
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  box-shadow: 0 4px 16px rgb(74 59 42 / 6%);
+  place-items: center;
+  align-content: center;
+  gap: 1.25rem;
+  min-height: 240px;
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--color-soft);
+  color: var(--color-text);
 }
-.pageNavigation :is(a, button) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.stageMascot {
+  display: block;
+  width: 180px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+/* はじめる前に。大事なこと（やること・いちばん大事なこと）は大きく太く、
+   それ以外は小さく細くして、同じ形の折りたたみの行に並べる */
+.prepare {
+  display: grid;
+  gap: 1.5rem;
+}
+.prepareHeading {
+  display: grid;
   gap: 0.25rem;
-  min-height: 48px;
-  padding: 0.5rem;
-  border: 0;
-  border-radius: 1rem;
-  background: transparent;
-  color: #333333;
+}
+.prepareTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+.learning {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+/* いちばん大事なこと。淡い橙の面の中には、この大きな一文だけを置く */
+.keyPoint {
+  margin: 0.25rem 0 0;
+  padding: 1.1rem 1.25rem;
+  border-radius: 20px;
+  background: var(--color-accent-soft);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.55;
+}
+.keyPoint mark {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: #ffd2b5;
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.startHelp {
+  margin: 0.5rem 0 -1rem;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+/* たたんでおく行（数を変える・詳しい教え方・使い方・声かけを先に読む）。入れ子にせず縦に並べる */
+.folds {
+  display: grid;
+  gap: 6px;
+}
+.extraNote {
+  border-radius: 16px;
+  background: var(--color-soft);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+.extraNote summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 1rem;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text);
+  cursor: pointer;
+  list-style: none;
+}
+.extraNote summary::-webkit-details-marker {
+  display: none;
+}
+.extraNote summary::after {
+  content: '＋';
+  color: var(--color-faint);
+}
+.extraNote[open] summary::after {
+  content: '－';
+}
+.extraNote > :not(summary) {
+  margin-inline: 1rem;
+}
+.extraNote > :last-child {
+  margin-bottom: 1rem;
+}
+.extraNote ul {
+  padding-left: 1.25rem;
+}
+.extraNote summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.guideSteps {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0;
+  padding-left: 1.25rem;
+}
+.guideSteps b {
+  display: block;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.flow {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+.flowLabel {
+  margin: 0.5rem 0 0.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.flowText {
+  margin: 0 0 0.5rem;
+}
+/* 準備の画面のステージの中の、数を変える欄（図がない単元だけ） */
+.stage .equation {
+  font-size: 40px;
+}
+.stage .equation input {
+  min-height: 60px;
+}
+/* 「数を変える」の折りたたみの中の、数を変える欄 */
+.foldEditor {
+  --input-bg: var(--color-bg);
+  padding-bottom: 0.25rem;
+}
+.foldEditor .equation {
+  font-size: 36px;
+}
+.foldEditor .equation input {
+  min-height: 56px;
+}
+
+/* 決めるボタン。片手で押せるように、画面の下に固定する */
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0 max(0.75rem, env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  z-index: 4;
+}
+.actions[data-stack='true'] {
+  flex-direction: column;
+}
+.actions :is(button, a) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 58px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-soft);
+  color: var(--color-text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 17px;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   touch-action: manipulation;
 }
-.pageNavigation [aria-current='page'] {
-  color: #333333;
-  background: var(--tone-bg, #f8eee6);
-  font-weight: 700;
+.actions .primary {
+  background: var(--color-accent);
+  color: #fff;
 }
-.pageNavigation svg {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
+.actions :is(button, a):active {
+  transform: scale(0.98);
 }
-.pageNavigation span {
-  white-space: nowrap;
-}
-.pageNavigation :is(a, button):focus-visible {
+.actions :is(button, a):focus-visible {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
-.prepare {
-  padding-bottom: 1rem;
+
+/* 台本。画面全体の橙（index.css）の上に、白い文字で組む。
+   上の帯の代わりに、左上の「×」と進み具合を1行に並べる。
+   :has() が使えないブラウザでも白い文字が読めるよう、台本の部分にも橙を敷いておく */
+.script {
+  position: relative;
+  padding-top: 12px;
+  background: var(--teach-bg);
+  color: var(--teach-text);
 }
-.prepareTitle {
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.3;
-}
-.prepareHeading {
-  padding: 1.1rem 1.25rem;
-  border-radius: 1.25rem;
-  background: #f8eee6;
-  margin-bottom: 1rem;
-}
-.prepareHeading p {
-  color: #333333;
-}
-.prepareHeading .prepareTitle {
-  font-size: 1rem;
-  color: #333333;
-}
-.learning {
-  margin: 0.5rem 0 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.7;
-}
-.quickGuide,
-.teachingPoints {
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.quickGuide h2,
-.teachingPoints h2 {
-  margin: 0 0 0.85rem;
-  font-size: 1.1rem;
-}
-.guideSteps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 1.1rem;
-}
-.guideSteps li {
-  display: grid;
-  grid-template-columns: 26px 24px 1fr;
-  align-items: start;
-  gap: 0.6rem;
-}
-.stepNumber {
+.close {
+  position: absolute;
+  top: 6px;
+  left: -10px;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #f8eee6;
-  color: #333333;
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-.guideSteps svg {
-  color: #333333;
-  margin-top: 2px;
-}
-.guideSteps h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-.guideSteps p {
-  margin: 0.25rem 0 0;
-  font-size: 1rem;
-  line-height: 1.65;
-}
-.teachingPoints ul {
-  margin: 0;
-  padding-left: 1.3rem;
-}
-.teachingPoints li + li {
-  margin-top: 0.4rem;
-}
-.teachingPoints .extraNote {
-  margin-top: 0.6rem;
-}
-.startHelp {
-  margin: 1rem 0 0;
-  text-align: center;
-  font-size: 1rem;
-}
-.facts {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-}
-.facts > div {
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  background: var(--color-bg);
-  box-shadow: 0 4px 16px rgb(74 59 42 / 6%);
-}
-.facts dt {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #333333;
-}
-.facts dd {
-  margin: 0.35rem 0 0;
-}
-.prepare .actions button {
-  border-radius: 1.25rem;
-  min-height: 56px;
-}
-.prepare > .numberEditor {
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
-  padding: 0.5rem 1rem;
-}
-.facts dd:last-child {
-  margin-bottom: 0;
-}
-.facts ul {
-  margin: 0;
-  padding-left: 1.25rem;
-}
-.flow {
-  margin: 0.25rem 0 0;
-  padding-left: 1.5rem;
-}
-/* 声掛けの流れの、区切りの見出しと問題の文 */
-.flowLabel {
-  margin: 0.75rem 0 0;
-  font-weight: bold;
-}
-.flowText {
-  margin: 0.25rem 0 0 1.5rem;
-}
-
-/* 台本 */
-.script {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.firstQuestion {
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-}
-.firstQuestion svg {
-  max-width: 100%;
-  height: auto;
-}
-.firstQuestion p {
-  margin: 0.25rem 0;
-}
-.question {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-  background: var(--color-bg);
-  box-shadow: 0 4px 16px rgba(74, 59, 42, 0.08);
-}
-.question h2,
-.notes h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  color: #333333;
-}
-.numberEditor {
-  min-width: 0;
-  margin: 0 0 0.75rem;
-  font-size: 0.9rem;
-  font-weight: normal;
-}
-fieldset.numberEditor {
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-}
-.numberEditor legend {
-  font-weight: bold;
-  color: #333333;
-}
-.toolOption {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 48px;
-  padding: 0.5rem 0;
-}
-.toolOption input {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  accent-color: var(--color-accent);
-}
-.numberEditor summary {
-  min-height: 44px;
-  padding: 0.5rem 0;
-  color: #333333;
-  cursor: pointer;
-}
-.numberFields {
-  display: flex;
-  gap: 0.75rem;
-}
-.numberField {
-  flex: 1;
-  min-width: 0;
-}
-.numberField label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-.numberField input {
-  width: 100%;
-  min-height: 44px;
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: #333333;
-  font: inherit;
-  font-size: 16px;
-}
-.editorHelp {
-  font-size: 0.8rem;
-  color: #333333;
-}
-.editorError {
-  color: #a32e24;
-}
-.applyNumbers {
-  min-height: 44px;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border: none;
-  border-radius: 10px;
-  background: #a36235;
-  color: #fff;
-  font: inherit;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--teach-text);
   cursor: pointer;
 }
-.numberEditor :is(input, button, summary):focus-visible {
-  outline: 2px solid var(--color-accent);
+.close:focus-visible {
+  outline: 2px solid var(--teach-text);
   outline-offset: 2px;
 }
-.question > div {
-  max-height: 28svh;
-  overflow: auto;
-  font-size: 1rem;
+.script .actions {
+  background: var(--teach-bg);
 }
-.question p {
-  margin: 0.25rem 0;
+.script .actions :is(button, a) {
+  background: var(--teach-soft);
+  color: var(--teach-text);
 }
-.question svg {
-  max-width: 100%;
-  max-height: 18svh;
-}
-.notes {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid var(--color-border);
-  color: #333333;
-  font-size: 0.9rem;
-}
-.notes h2:not(:first-child) {
-  margin-top: 1.25rem;
-}
-.notes ul {
-  margin-bottom: 0;
-  padding-left: 1.25rem;
-}
-.reference {
-  overflow: auto;
-  text-align: center;
-}
-.reference svg {
-  max-width: 100%;
+.script .actions .primary {
+  background: var(--teach-text);
+  color: var(--color-accent);
 }
 
-/* 戻るボタン・進み具合 */
-.progress {
+/* 台本の進み具合。今のページまでを白で塗る */
+.pageDots {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.85rem;
-  color: #333333;
+  gap: 4px;
+  margin: 14px 0 22px 44px;
 }
-.back {
-  min-height: 44px;
-  padding: 0.5rem;
-  border: none;
-  background: none;
-  font: inherit;
-  color: #333333;
-  cursor: pointer;
-}
-.progressStatus {
-  display: grid;
+.pageDots span {
   flex: 1;
-  gap: 0.4rem;
-  font-size: 1rem;
-  color: #333333;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 30%);
 }
-.progressTrack {
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e7dfd6;
-}
-.progressTrack > span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background: #a86a3c;
-  transform-origin: left;
-  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.progressTrack[data-dragging='true'] > span {
-  transition: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .progressTrack > span {
-    transition: none;
-  }
-}
-/* 今どの区切りか（問題・いっしょに解く・確かめ） */
-.where {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  font-weight: bold;
-}
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 0.4rem;
-}
-.dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--color-border);
-}
-.dot[data-done='true'] {
-  background: var(--color-accent);
+.pageDots :is([data-done='true'], [data-current='true']) {
+  background: var(--teach-text);
 }
 
 /* 台本は横にスワイプ。縦スクロールとピンチズームはブラウザに任せる */
-.carousel {
-  overflow: hidden;
-  padding: 0.25rem;
-  border-radius: 1.75rem;
+/* スワイプを受ける範囲（LessonSlides）。左右は body の余白（1.25rem）まで、
+   下は画面の下端まで広げる（はみ出す 3rem は .lessonPage と body の下の余白に重ねる）。
+   上の 12px は .script の padding-top */
+.swipeArea {
+  /* 中の進み具合の margin-top を外へ出さない（出ると、その分だけ縦にスクロールできてしまう） */
+  display: flow-root;
+  margin: 0 -1.25rem -3rem;
+  padding: 0 1.25rem 3rem;
+  min-height: calc(100dvh - 12px);
   touch-action: pan-y pinch-zoom;
 }
+.carouselFrame {
+  position: relative;
+}
+.carousel {
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+.carousel:focus-visible {
+  outline: 2px solid var(--teach-text);
+  outline-offset: 3px;
+}
 .dragTrack {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   will-change: transform;
   transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .dragTrack[data-dragging='true'] {
   transition: none;
 }
-.swipeHint {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin: 0;
-  font-size: 0.95rem;
-  color: #333333;
+.dragTrack > .panel {
+  grid-area: 1 / 1;
+  min-width: 0;
 }
-.actions:empty {
-  display: none;
+.dragTrack > .panel[data-active='false'] {
+  pointer-events: none;
 }
-/* 台本カードは内容を上から並べ、グリッド内で高さを揃える。 */
+/* 台本の1ページ。上から、ステージ → 見出し → 教え方のポイント → セリフ の順に並べる */
 .panel {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   gap: 1rem;
   min-height: 0;
-  padding: 1.25rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1.75rem;
-  background: var(--color-bg);
-  box-shadow: 0 4px 16px rgba(74, 59, 42, 0.06);
+}
+.firstQuestion,
+.reference {
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--teach-stage);
+  color: var(--color-text);
 }
 .readingContent {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 0.75rem;
+  gap: 1rem;
 }
-.pageCue {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-  color: #333333;
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-.pageCue svg {
-  flex-shrink: 0;
-}
-.carouselFrame {
-  position: relative;
-}
-.pagination {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.pageButton {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  place-items: center;
-  width: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 0.5rem;
-  background: #fffdf8ed;
-  color: #333333;
-  font: inherit;
+/* 何をする画面か（すること・解説を確認する・おしまい） */
+.heading {
+  align-self: flex-start;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--teach-soft);
+  font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
-  touch-action: manipulation;
-  pointer-events: auto;
+  letter-spacing: 0.06em;
 }
-.pageButton:first-child {
-  left: -16px;
-}
-.pageButton:last-child {
-  right: -16px;
-}
-.pageButton:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.pageButton:focus-visible {
-  outline: 2px solid #80522f;
-  outline-offset: 3px;
-}
-.pageDots {
-  display: flex;
-  justify-content: center;
-  position: relative;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin: 0 5px;
-}
-.pageDots span {
-  width: 9px;
-  height: 9px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: #dfd5c9;
-}
-.pageDots [data-done='true'] {
-  background: #c6a17f;
-}
-.pageDots [data-current='true'] {
-  background: #a36235;
-  box-shadow: 0 0 0 3px #a3623526;
-}
-.pageIndicator {
-  position: absolute;
-  top: -1px;
-  left: -4px;
-  width: 14px;
-  height: 8px;
-  border-radius: 999px;
-  background: #a36235;
-  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.pageDots[data-dragging='true'] .pageIndicator {
-  transition: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pageIndicator {
-    transition: none;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .pageCue[data-invite='true'] svg {
-    animation: swipe-invite 1.6s ease-in-out 3;
-  }
-  @keyframes swipe-invite {
-    0%,
-    100% {
-      transform: translateX(0);
-      opacity: 0.6;
-    }
-    50% {
-      transform: translateX(-8px);
-      opacity: 1;
-    }
-  }
-  .pageDots span {
-    transition:
-      width 0.2s ease,
-      background-color 0.2s ease;
-  }
-}
-.panelNotes {
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  font-size: 1rem;
-  line-height: 1.7;
-  color: #333333;
-}
-.panelNotes section + section {
-  margin-top: 0.85rem;
-}
-.panelNotes h3 {
-  margin: 0 0 0.25rem;
-  font-size: 0.85rem;
-  color: #333333;
-}
-.panelNotes p {
-  margin: 0 0 0.5rem;
-}
-.panelNotes ul {
+.main {
   margin: 0;
-  padding-left: 1.25rem;
-}
-.panelNotes .teachGuide {
-  margin-bottom: 0.75rem;
-  padding: 1rem;
-  border-left: 4px solid var(--color-accent);
-  border-radius: 0 12px 12px 0;
-  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
-  color: #333333;
-}
-.panelNotes .teachGuide h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-}
-.panelNotes .teachGuide p {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.8;
-}
-.extraNote {
-  color: #333333;
-  font-size: 1rem;
-}
-.extraNote summary {
-  min-height: 48px;
-  padding: 0.65rem 0;
-  cursor: pointer;
-}
-.extraNote > div,
-.extraNote > ul {
-  margin-bottom: 0.75rem;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.6;
 }
 
 /* 画面には出さず、読み上げだけで伝える文 */
@@ -636,271 +354,152 @@ fieldset.numberEditor {
   white-space: nowrap;
 }
 
-/* 何をする画面か（✋ すること・💬 声をかける など） */
-.heading {
-  align-self: center;
+/* 教え方のポイント。セリフのあるページでは、見出しだけを出してたたんでおく */
+.parentNote {
+  overflow-wrap: anywhere;
+}
+.parentNoteHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.parentNoteHeader h3 {
   margin: 0;
-  padding: 0.15rem 1rem;
-  border: 1px solid var(--color-accent);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  color: #333333;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--teach-muted);
+}
+.parentNoteHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--teach-muted);
+}
+.parentNoteBody {
+  display: grid;
+  gap: 0.75rem;
+  font-size: 16px;
+  line-height: 1.85;
+}
+.parentNoteBody p {
+  margin: 0;
+}
+.parentNoteBody strong {
+  font-weight: 700;
+}
+.parentNote[data-folded] {
+  border-radius: 18px;
+  background: var(--teach-soft);
+}
+.parentNote[data-folded] .parentNoteHeader {
+  min-height: 50px;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.parentNote[data-folded] .parentNoteHeader::-webkit-details-marker {
+  display: none;
+}
+.parentNote[data-folded] .parentNoteHeader::after {
+  content: '＋';
+  margin-left: auto;
+  color: var(--teach-muted);
+}
+.parentNote[data-folded][open] .parentNoteHeader::after {
+  content: '－';
+}
+/* たたんでいる間は、見出しと「＋」だけを見せる（補足は読み上げだけで伝える） */
+.parentNote[data-folded] .parentNoteHint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.parentNote[data-folded] .parentNoteHeader h3 {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.parentNote[data-folded] .parentNoteBody {
+  padding: 0 1rem 1rem;
+  color: var(--teach-muted);
+  font-size: 14px;
+}
+.parentNote[data-folded] .parentNoteBody strong {
+  color: var(--teach-text);
+}
+.parentNote[data-folded] .parentNoteHeader:focus-visible {
+  outline: 2px solid var(--teach-text);
+  outline-offset: 2px;
 }
 
-/* する・待つ 画面の本文 */
-.main {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: bold;
-  line-height: 1.6;
-  text-align: center;
-  word-break: auto-phrase;
-}
-.expect {
-  margin: 0;
-  font-size: 0.85rem;
-  text-align: center;
-  color: #333333;
-}
-
-/* おやじいの右に声がけの案内を並べ、その下に読み上げる言葉を置く */
+/* 読み上げるセリフ。台本の画面でいちばん大きく太い文字にする */
 .speech {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  max-width: 100%;
-  align-items: flex-start;
   gap: 0.5rem;
 }
-.speech > div {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-}
 .speechIntro {
-  display: grid;
-  grid-template-columns: clamp(4rem, 20vw, 7rem) minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 2vw, 0.75rem);
+  gap: 0.75rem;
 }
 .mascot {
   display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  align-self: center;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
 }
-.label {
-  margin: 0 0 0.25rem;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #333333;
+.readAloudHeading {
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--teach-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 .readingBox {
   min-width: 0;
-  max-width: 100%;
-  margin: 0;
-  padding: 1.25rem clamp(0.75rem, 3vw, 1.25rem);
-  border: 2px solid #b58f6d;
-  border-radius: 0.75rem;
-  background: var(--color-bg);
-  color: #333333;
   overflow-wrap: anywhere;
 }
-.readAloudIcon {
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 0.75rem;
-  padding: 4px;
-  border-radius: 50%;
-  background: #fff0bd;
+.label {
+  margin: 0 0 0.25rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teach-muted);
 }
 .readAloudText {
   min-width: 0;
-  font-size: clamp(1.3rem, 5.5vw, 1.6rem);
-  font-weight: bold;
-  line-height: 1.6;
-  /* 狭い画面でも、長い言葉や数式が枠からはみ出さないようにする */
-  word-break: normal;
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
-
-/* なぜこう声をかけるのか（閉じておく） */
-.why {
-  font-size: 0.9rem;
-  color: #333333;
-}
-.panel .why {
-  align-self: center;
-}
-.why summary {
-  cursor: pointer;
-  color: #333333;
+.resourceHint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--teach-muted);
 }
 
-/* ページを離れる前の確認 */
-.confirm {
-  max-width: min(22rem, calc(100% - 2rem));
-  padding: 1.5rem 1.25rem 1.25rem;
-  border: none;
-  border-radius: 1.5rem;
-  background: var(--color-bg);
-  color: #333333;
-  box-shadow: 0 12px 40px rgba(74, 59, 42, 0.2);
-  text-align: center;
-}
-.confirm::backdrop {
-  background: rgba(74, 59, 42, 0.35);
-}
-.confirm h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-}
-.confirm p {
-  margin: 0 0 1.25rem;
-  font-size: 0.95rem;
-}
-.confirmButtons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* 反応のボタン。片手で押せるように、画面の下に固定する。
-   縦の長さを使わないよう、ボタンが2つのときは横に並べる */
-.actions {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding: 1.5rem 0 max(1rem, env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, var(--color-bg) 1.25rem);
-  z-index: 4;
-}
-.actions :is(button, a),
-.confirmButtons button {
-  flex: 1;
-  min-height: 3.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-bg);
-  font: inherit;
-  font-weight: bold;
-  color: #333333;
-  cursor: pointer;
-}
-/* 一覧へ戻るリンクも、ボタンと同じ見た目にする */
-.actions a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.actions a,
-.actions a:hover {
-  text-decoration: none;
-}
-.actions[data-stack='true'] {
-  flex-direction: column;
-}
-.actions .primary,
-.confirmButtons .primary {
-  border-color: #a36235;
-  background: #a36235;
-  color: #fff;
-}
-.actions :is(button, a) {
-  min-height: 56px;
-  border-radius: 1.25rem;
-  touch-action: manipulation;
-}
-.actions :is(button, a):focus-visible,
-.extraNote summary:focus-visible,
-.back:focus-visible {
-  outline: 2px solid #80522f;
-  outline-offset: 3px;
-}
-.actions :is(button, a):active {
-  transform: scale(0.98);
-}
-
-@keyframes appear {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem) scale(0.95);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dragTrack {
-    transition: none;
-  }
-  .panel {
-    animation: none;
-  }
-}
-
-/* Script card emphasis */
-.carousel {
-  padding: 1rem;
-  margin: -0.75rem;
-}
-.carousel:focus-visible {
-  outline: 2px solid #80522f;
-  outline-offset: 3px;
-}
-.panel {
-  border-color: var(--color-border);
-  background: var(--color-bg);
-  box-shadow:
-    0 4px 0 rgb(74 59 42 / 12%),
-    0 10px 18px rgb(74 59 42 / 18%),
-    inset 0 1px 0 #fff;
-}
-.speech {
-  gap: 0.75rem;
-  padding: 0;
-}
+/* 問題の数を変える欄（ArithmeticLesson） */
 .inlineQuestion {
-  padding: 0.75rem 0;
-}
-.readingBox .inlineQuestion {
+  width: 100%;
   padding: 0;
 }
-.editableSpeech {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  line-height: 2;
-}
-.editableSpeech .operand {
-  display: inline;
-}
-.editableSpeech input {
-  min-width: 1.5ch;
-  max-width: 100%;
-  min-height: 44px;
-  margin: 0 0.15em;
-  padding: 0 0.1em;
-  border: 1px solid #a36235;
-  border-radius: 0;
-  background: #fff;
-  color: #333333;
-  font: inherit;
+.inlineQuestion > p {
+  margin: 0 0 0.75rem;
+  font-size: 15px;
   text-align: center;
-}
-.editableSpeech input:focus-visible {
-  outline: 2px solid #80522f;
-  outline-offset: 2px;
-}
-.editableSpeech input[aria-invalid='true'] {
-  border-color: #a32e24;
-}
-.readingBox .editorHelp {
-  margin: 0.75rem 0 0;
-  font-weight: 400;
+  color: var(--color-muted);
 }
 .equation {
   display: flex;
@@ -908,9 +507,10 @@ fieldset.numberEditor {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-size: clamp(2rem, 8vw, 3.5rem);
-  font-weight: 700;
-  color: #333333;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--color-text);
 }
 .operand {
   display: inline-flex;
@@ -918,32 +518,39 @@ fieldset.numberEditor {
   gap: 0.5rem;
 }
 .equation input {
-  width: 2.1em;
-  min-height: 64px;
-  padding: 0.15em;
-  border: 1px solid #dfc6ad;
-  border-bottom: 3px solid #a36235;
-  border-radius: 0.75rem;
-  background: #fffaf2;
-  color: #333333;
+  width: 1.6em;
+  min-height: 72px;
+  padding: 0.1em;
+  border: none;
+  border-radius: 16px;
+  background: var(--input-bg, var(--color-soft));
+  color: var(--color-accent);
   font: inherit;
   text-align: center;
 }
 .equation input:focus-visible {
-  outline: 2px solid #80522f;
-  outline-offset: 3px;
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 .equation input[aria-invalid='true'] {
-  border-color: #a32e24;
+  outline: 3px solid #b42318;
 }
-.question > div {
-  max-height: none;
+.editorHelp {
+  margin: 0.75rem 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--color-muted);
 }
-.question > div > p {
-  font-size: clamp(1.25rem, 5vw, 1.75rem);
+.editorError {
+  margin: 0.5rem 0 0;
+  font-size: 13px;
   font-weight: 700;
+  text-align: center;
+  color: #b42318;
 }
 
+/* 数字キーボード（マウスで操作する画面だけに出す） */
 .numberPad {
   display: none;
 }
@@ -951,16 +558,14 @@ fieldset.numberEditor {
   .numberPad {
     display: block;
     max-width: 18rem;
-    margin: 1rem auto;
+    margin: 1rem auto 0;
     padding: 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 1rem;
-    background: #fffaf2;
-    box-shadow: 0 8px 20px rgba(74, 59, 42, 0.14);
+    border-radius: 20px;
+    background: var(--color-soft);
   }
   .numberPad p {
     margin: 0 0 0.75rem;
-    font-size: 0.9rem;
+    font-size: 13px;
     font-weight: 700;
   }
   .numberPadKeys {
@@ -970,122 +575,28 @@ fieldset.numberEditor {
   }
   .numberPad button {
     min-height: 44px;
-    border: 1px solid var(--color-border);
-    border-radius: 0.6rem;
+    border: none;
+    border-radius: 12px;
     background: var(--color-bg);
-    color: #333333;
+    color: var(--color-text);
     font: inherit;
     font-weight: 700;
     cursor: pointer;
   }
-  .numberPad button:hover {
-    background: #f1e2d1;
-  }
   .numberPad button:focus-visible {
-    outline: 2px solid #80522f;
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
   .numberPad .numberPadDone {
     width: 100%;
     margin-top: 0.5rem;
-    background: #a36235;
+    background: var(--color-accent);
     color: #fff;
   }
 }
 
-/* Leave a glimpse of the following card at the right edge. */
-.dragTrack {
-  position: relative;
-}
-.dragTrack {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  width: calc(100% - 32px);
-  margin-inline: 16px;
-}
-.dragTrack > .panel {
-  grid-area: 1 / 1;
-  min-width: 0;
-}
-.dragTrack > .panel[data-active='false'] {
-  pointer-events: none;
-}
-
-.parentNote {
-  margin: 0 0 0.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid #e7d9ca;
-  color: #333333;
-  font-size: 1rem;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-}
-.parentNoteHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-.parentNoteHeader h3 {
-  margin: 0;
-  font-size: 1.0625rem;
-  font-weight: 700;
-  line-height: 1.5;
-}
-.parentNoteHint {
-  margin: 0.15rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.5;
-  font-weight: 400;
-}
-.parentNoteHeader .pointIcon {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-}
-.parentNoteBody {
-  display: grid;
-  gap: 0.85rem;
-}
-.parentNoteBody p {
-  margin: 0;
-  font-weight: 400;
-}
-.parentNoteBody strong {
-  font-weight: 700;
-}
-
-.readAloudHeading {
-  display: flex;
-  align-items: center;
-  justify-self: start;
-  min-width: 0;
-  max-width: 100%;
-  gap: 0.25rem;
-  margin: 0;
-  padding: 0.5rem 0.4rem;
-  border: 1px solid #e5c49e;
-  border-radius: 1.5rem;
-  background: #fff8e9;
-  color: #333333;
-  font-size: clamp(0.875rem, 3.8vw, 0.9375rem);
-  font-weight: 700;
-  line-height: 1.6;
-}
-.readAloudHeading span {
-  min-width: 0;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
-.readAloudHeading svg {
-  flex-shrink: 0;
-  width: clamp(24px, 7vw, 28px);
-  height: auto;
-}
-
-.resourceHint {
-  margin: 0;
-  color: #333333;
-  font-size: 0.875rem;
-  line-height: 1.6;
+@media (prefers-reduced-motion: reduce) {
+  .dragTrack {
+    transition: none;
+  }
 }

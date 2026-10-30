@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useViewTransitionState } from 'react-router'
 
-// 色分けに使う色の数（index.css の [data-tone] と合わせる）
-export const TONE_COUNT = 6
-
 interface Props {
   to: string
   className: string

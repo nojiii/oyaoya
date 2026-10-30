@@ -4,7 +4,7 @@ import { arithmetic, type ArithmeticMode } from '../problems/arithmetic'
 import { TeachingScript } from './TeachingScript'
 import styles from './TeachingScript.module.css'
 import { LessonVisual } from './LessonVisual'
-import { AdditionFlow } from './AdditionFlow'
+import { AdditionFlow, CounterGroups } from './AdditionFlow'
 import { additionFlowStatus, additionStorageKey } from './additionFlowState'
 
 interface Props {
@@ -58,7 +58,8 @@ export function ArithmeticLesson({
     else applyNumbers()
     setActiveNumber(null)
   }
-  const renderEditor = (inSpeech = false) => (
+  // 問題の数字を変える欄。準備の画面だけに出す（台本の中では数字を変えない）
+  const renderEditor = () => (
     <form
       className={styles.inlineQuestion}
       onBlur={(event) => {
@@ -69,17 +70,11 @@ export function ArithmeticLesson({
       }}
       onSubmit={(event) => event.preventDefault()}
     >
-      {apples && !inSpeech && (
-        <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>
-      )}
-      <div className={inSpeech ? styles.editableSpeech : styles.equation}>
+      {apples && <p>あかいりんごと、あおいりんご。あわせて何こかな？</p>}
+      <div className={styles.equation}>
         {[0, 1].map((index) => (
           <span className={styles.operand} key={index}>
-            {inSpeech && apples
-              ? index === 0
-                ? 'あかいりんごが'
-                : 'こ、あおいりんごが'
-              : index === 1 && <span aria-hidden="true">{symbol}</span>}
+            {index === 1 && <span aria-hidden="true">{symbol}</span>}
             <input
               aria-label={
                 index === 0
@@ -95,11 +90,6 @@ export function ArithmeticLesson({
               autoComplete="off"
               enterKeyHint="done"
               value={draft[index]}
-              style={
-                inSpeech
-                  ? { width: `${Math.max(1, draft[index].length) + 0.5}ch` }
-                  : undefined
-              }
               onKeyDown={(event) => {
                 // 入力欄が2つで送信ボタンがないフォームは、Enter で送信されない
                 if (event.key !== 'Enter' || event.nativeEvent.isComposing)
@@ -128,7 +118,7 @@ export function ArithmeticLesson({
             />
           </span>
         ))}
-        <span>{inSpeech && apples ? 'こ。あわせて何こかな？' : '= ?'}</span>
+        <span>= ?</span>
       </div>
       <p className={styles.editorHelp} id={id + '-help'}>
         数字をタップして変更できます。
@@ -204,12 +194,7 @@ export function ArithmeticLesson({
     : model.question
   return (
     <TeachingScript
-      key={`${mode}-${a}-${b}`}
-      flow={
-        additionFlow ? (
-          <AdditionFlow a={a} b={b} editor={renderEditor()} />
-        ) : undefined
-      }
+      flow={additionFlow ? <AdditionFlow a={a} b={b} /> : undefined}
       flowStatus={
         additionFlow
           ? () =>
@@ -221,6 +206,7 @@ export function ArithmeticLesson({
           : undefined
       }
       editor={renderEditor()}
+      picture={additionFlow ? <CounterGroups a={a} b={b} /> : undefined}
       counters={{ mode, a, b }}
       renderVisual={(step) => (
         <LessonVisual problem={{ mode, a, b }} step={step} />
@@ -244,7 +230,6 @@ export function ArithmeticLesson({
       }}
       question={{
         say: question,
-        sayContent: renderEditor(true),
         parentNote: isSubtract
           ? '**最初の数と引く数**を指さし、何こから何こを取るか確かめましょう。\n\n答えを急がず、**思い浮かべる時間**を作ります。'
           : mode === 'times'
