@@ -354,7 +354,7 @@ URLの先頭に `/festival` を付けると、同じ3種類のページが大学
 
 ## キャラクター（おやじい）
 
-おやじいは [Rive](https://rive.app/) で作ったアニメーション。[public/oyajii.riv](public/oyajii.riv) を [src/components/Oyajii.tsx](src/components/Oyajii.tsx) が読んで描く。画面に置くときは `<Oyajii className="…" />` と書き、大きさは `className` で決める。
+おやじいは [Rive](https://rive.app/) で作ったアニメーション。[public/oyajii.riv](public/oyajii.riv) を [src/components/oyajiiFile.ts](src/components/oyajiiFile.ts) がアプリを開いたときに1回だけ読み込み、[src/components/Oyajii.tsx](src/components/Oyajii.tsx) がそれを使い回して描く。画面に置くときは `<Oyajii className="…" />` と書き、大きさは `className` で決める。
 
 ふだんは待機（`idle`）をくり返す。`motion` を渡すと、その値に変わるたびに次の動きを1回して、待機に戻る。
 
@@ -370,7 +370,7 @@ URLの先頭に `/festival` を付けると、同じ3種類のページが大学
 - ステートマシン：`State Machine 1`
 - ViewModel：`Oyajii`（トリガー `start`・`finish`・`correct`・`talk`）
 
-Rive の描画エンジン（wasm）は、外部の CDN からではなくアプリと一緒に配信する。JS と wasm の版は合わせる必要があるので、`package.json` には `@rive-app/react-canvas` だけを書き、wasm はそれが使っている `@rive-app/canvas` から読む。
+Rive の描画エンジン（wasm）は、外部の CDN からではなくアプリと一緒に配信する（本体の wasm が動かない古い端末のための予備も同じ）。JS と wasm の版は合わせる必要があるので、`package.json` には `@rive-app/react-canvas` だけを書き、wasm はそれが使っている `@rive-app/canvas` から読む。同じものを読んでいるかは [tests/oyajii.test.mjs](tests/oyajii.test.mjs) で確かめている。
 
 ## バックエンドについて
 

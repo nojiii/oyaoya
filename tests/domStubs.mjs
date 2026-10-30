@@ -1,4 +1,4 @@
-import { afterEach } from 'vitest'
+import { afterEach, beforeEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // happy-dom（ブラウザの代わり）は、要素の大きさを持たず、アニメーションやポインターの捕捉もしない。
@@ -6,7 +6,9 @@ import { cleanup } from '@testing-library/react'
 const restores = []
 
 // テストでは通信しない。おやじい（Rive）の絵と描画エンジンは読み込まず、枠だけを描く
-globalThis.fetch = () => new Promise(() => {})
+beforeEach(() => {
+  stub(globalThis, 'fetch', () => new Promise(() => {}))
+})
 
 afterEach(() => {
   cleanup()

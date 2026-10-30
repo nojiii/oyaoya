@@ -180,7 +180,8 @@ test('every published script has teaching points, reading labels and only suppor
         const readingText = html.indexOf('readAloudText', readingBox)
         const point = html.indexOf('教え方のポイント', readingText)
         assert.ok(
-          mascot < start &&
+          mascot >= 0 &&
+            mascot < start &&
             start < readingBox &&
             readingBox < readingText &&
             readingText < point,
