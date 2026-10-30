@@ -62,15 +62,14 @@ function PriceCard({ discounted = false }: { discounted?: boolean }) {
   )
 }
 
-function BandImage({ src = bandImage, alt = '20％引きのノートセットを表した図' }: { src?: string; alt?: string }) {
-  return (
-    <img
-      className={styles.figure}
-      src={src}
-      alt={alt}
-      draggable={false}
-    />
-  )
+function BandImage({
+  src = bandImage,
+  alt = '20％引きのノートセットを表した図',
+}: {
+  src?: string
+  alt?: string
+}) {
+  return <img className={styles.figure} src={src} alt={alt} draggable={false} />
 }
 
 function Equation({
@@ -110,9 +109,7 @@ function Equation({
           </button>
         )}
       </p>
-      <p className={styles.hiddenHint}>
-        お子さんが答えたら、「？」をタップ
-      </p>
+      <p className={styles.hiddenHint}>お子さんが答えたら、「？」をタップ</p>
     </div>
   )
 }
@@ -175,7 +172,9 @@ function MathEasyFlow() {
       id: 'explain',
       section: 'たしかめ',
       title: 'どうしてその答えになったかな？',
-      stage: <BandImage src={explanationImage} alt="20％引きの計算方法を表した図" />,
+      stage: (
+        <BandImage src={explanationImage} alt="20％引きの計算方法を表した図" />
+      ),
       content: (
         <>
           <SpokenWords>{words.explain}</SpokenWords>
