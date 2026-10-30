@@ -65,7 +65,7 @@
 .keyPoint mark {
   padding: 0 2px;
   border-radius: 4px;
-  background: #ffd2b5;
+  background: var(--color-accent-mark);
   color: inherit;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
