@@ -42,7 +42,7 @@ interface Prepare {
   approach?: string
 }
 
-// ページを分けた台本（flow）の進み具合。答えのページまで進んだら finished
+// ページを分けた台本（flow）の進み具合。最後のページ（たしかめ）まで進んだら finished
 export type FlowStatus = 'start' | 'middle' | 'finished'
 
 interface Props {

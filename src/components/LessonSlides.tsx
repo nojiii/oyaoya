@@ -6,6 +6,8 @@ import flowStyles from './AdditionFlow.module.css'
 export interface LessonSlide {
   id: string
   title: string
+  // 台本の区切り（たしかめ など）。書いたページだけ、見出しの上に小さく出す
+  section?: string
   // ページの上のステージに置く「見るもの」（図・問題・式など）。なければキャラクターを置く
   stage?: ReactNode
   content: ReactNode
@@ -280,6 +282,9 @@ export function LessonSlides({
                   )}
                 </div>
                 <h2 className={flowStyles.title} tabIndex={-1}>
+                  {slide.section && (
+                    <span className={flowStyles.section}>{slide.section}</span>
+                  )}
                   {slide.title}
                 </h2>
                 {slide.content}

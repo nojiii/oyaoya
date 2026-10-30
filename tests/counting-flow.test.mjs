@@ -42,6 +42,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       line: '1列に並べましょう',
       count: '1こずつ指さして数えましょう',
       answer: '全部で何こだったかな？',
+      recount: '反対のはしから数えてみましょう',
     }
     const key = `counting-flow:v2:${path}`
     const renderFlow = (n) => render(createElement(CountingFlow, { n }))
@@ -51,8 +52,8 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       for (const page of countingPages) {
         storage.set(key, JSON.stringify({ n, page }))
         const html = renderFlow(n)
-        // 最後のページまで終えたあとは、最初のページから始め直す
-        const expected = page === 'answer' ? 'read' : page
+        // 最後のページ（たしかめ）まで終えたあとは、最初のページから始め直す
+        const expected = page === 'give' ? 'read' : page
         assert.equal(activeSlide(html), expected, `${n}/${page}: restored page`)
         assert.ok(
           html.includes(
@@ -73,13 +74,28 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
           !html.includes('aria-pressed'),
           `${n}/${page}: no number choice`,
         )
+        const slide = (id) =>
+          html.slice(
+            html.indexOf(`data-slide="${id}"`),
+            html.indexOf('data-slide=', html.indexOf(`data-slide="${id}"`) + 1),
+          )
         // できなかったときの分かれ道は作らず、聞いて確かめる一本道にする
-        const answer = html.slice(html.indexOf('data-slide="answer"'))
+        const answer = slide('answer')
         assert.ok(answer.includes('全部で何こだった？'))
         assert.ok(answer.includes('最後に言った数が、全部の数だよ。'))
         assert.ok(!answer.includes('ちがう数'))
+        assert.ok(!answer.includes('終わる'))
+        // たしかめ：反対のはしから数え直す → 言われた数だけ取る。言う数は、全部ではなく半分（切り上げ）
+        const recount = slide('recount')
+        assert.ok(recount.includes('たしかめ'))
+        assert.ok(recount.includes('反対のはしから数えてみよう'))
+        const give = html.slice(html.indexOf('data-slide="give"'))
+        const m = Math.ceil(n / 2)
+        assert.ok(give.includes('たしかめ'))
+        assert.ok(give.includes(`${m}こ取ってもらいましょう`))
+        assert.ok(give.includes(`この中から、${m}こちょうだい。`))
         // 最後は「終わる」で準備の画面へ戻る
-        assert.ok(answer.includes('終わる'))
+        assert.ok(give.includes('終わる'))
       }
     }
     // 保存したときと違う数なら、最初のページから

@@ -4,6 +4,7 @@ import { TeachingScript } from './TeachingScript'
 import { CountingFlow, CountingLine } from './CountingFlow'
 import {
   countingFlowStatus,
+  countingGiveCount,
   countingStorageKey,
   countingWords,
 } from './countingFlowState'
@@ -67,6 +68,8 @@ export function CountingLesson({ initial }: Props) {
         { say: countingWords.count },
         { say: countingWords.answer },
         { say: `（答えたら）${countingWords.confirm}` },
+        { say: `（たしかめ）${countingWords.recount}` },
+        { say: `（たしかめ）${countingWords.give(countingGiveCount(n))}` },
       ]}
     />
   )

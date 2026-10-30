@@ -113,6 +113,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
         path: '/problems/addition-within-10',
         flowKey: '/problems/addition-within-10:3+4',
         prefix: 'addition-flow:v1:',
+        last: 'check',
         progress: (page) =>
           JSON.stringify({ route: page === 'read' ? null : 'physical', page }),
       },
@@ -120,10 +121,11 @@ test('flow lessons resume in the middle and start over from preparation after fi
         path: '/problems/counting',
         flowKey: '/problems/counting',
         prefix: 'counting-flow:v2:',
+        last: 'give',
         progress: (page) => JSON.stringify({ n: 5, page }),
       },
     ]
-    for (const { path, flowKey, prefix, progress } of lessons) {
+    for (const { path, flowKey, prefix, last, progress } of lessons) {
       storage.clear()
       const started = `teaching-started:${path}`
       const flow = prefix + flowKey
@@ -140,9 +142,13 @@ test('flow lessons resume in the middle and start over from preparation after fi
       assert.ok(!html.includes('data-script-running'), path)
       assert.ok(html.includes('途中から台本にもどる'), path)
 
-      // 答えのページまで終えた → 開き直すと準備の画面から、「台本をはじめる」
+      // 答えのページはまだ途中（このあとに、たしかめがある）
       storage.set(started, 'true')
       storage.set(flow, progress('answer'))
+      assert.ok((await render(path)).includes('data-script-running'), path)
+
+      // 最後のページ（たしかめ）まで終えた → 開き直すと準備の画面から、「台本をはじめる」
+      storage.set(flow, progress(last))
       html = await render(path)
       assert.ok(!html.includes('data-script-running'), path)
       assert.ok(html.includes('台本をはじめる'), path)
