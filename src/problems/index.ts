@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 import { lesson } from './unit-lessons'
 
 // 新しく作る大学祭用の画面ファイルをインポートする（ファイルの作成場所に合わせてパスを変えてください）
-import MathEasy1 from './MathEasy1'
+import MathEasy1 from './math-easy-1'
 import MathHard1 from './math-hard-1'
 import PuzzleEasy1 from './puzzle-easy-1'
 import PuzzleHard1 from './puzzle-hard-1'
