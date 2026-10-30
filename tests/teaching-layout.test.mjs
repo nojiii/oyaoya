@@ -102,6 +102,18 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           continue
         }
+        // 台本とデザインの見本（src/problems/sample）
+        if (id === 'sample') {
+          assert.match(html, /data-slide="read" data-active="true"/)
+          assert.ok(html.includes('まずは問題を読んでみましょう'))
+          assert.ok(html.includes('教え方のポイント'))
+          // 食べる数は準備の画面で選ぶ。台本の中では変えられない
+          assert.ok(!html.includes('<legend>食べる数</legend>'))
+          assert.ok(html.includes('台本の進み具合'))
+          // 「たしかめ」のページを見本に含める
+          assert.ok(html.includes('たしかめ'))
+          continue
+        }
         // ページを分けない台本でも、数字は準備の画面で変える。台本の中には数字の欄を出さない
         assert.ok(
           !html.includes('aria-label="最初の数"'),
