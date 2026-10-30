@@ -7,7 +7,11 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { counterGroups, type CounterProblem } from './counterModel'
+import {
+  counterGroups,
+  counterProgress,
+  type CounterProblem,
+} from './counterModel'
 import styles from './VisualPlayground.module.css'
 import { visualSlots, nearestEmptySlot } from './visualSlots'
 import { counterPrompt } from './counterPrompt'
@@ -77,11 +81,18 @@ export function VisualPlayground({
   const [questionKey, setQuestionKey] = useState('')
   const [hasPointed, setHasPointed] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
-  const addition = problem?.mode === 'add' || problem?.mode === 'carry'
-  const subtraction = problem?.mode === 'sub' || problem?.mode === 'borrow'
-  const split = addition || subtraction
-  const orangeCount = pieces.filter((piece) => piece.side === 'left').length
-  const greenCount = pieces.length - orangeCount
+  const {
+    addition,
+    subtraction,
+    split,
+    orangeCount,
+    greenCount,
+    moved,
+    targetCount,
+    progressKey,
+    wrongSide,
+    completed,
+  } = counterProgress(problem, pieces, countedIds, questionKey)
   const interactive = !!problem || apples
   const invitationPiece = addition
     ? pieces.find((piece) => piece.green)
@@ -91,20 +102,6 @@ export function VisualPlayground({
     : addition
       ? 'みぎの おはじきを ひだりへ うごかしてみよう'
       : 'おはじきを さわって かぞえてみよう'
-  const moved = subtraction
-    ? greenCount
-    : addition
-      ? pieces.filter((piece) => piece.green && piece.side === 'left').length
-      : countedIds.length
-  const targetCount = split ? problem.b : pieces.length
-  const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${pieces.map((piece) => piece.side).join(',')}-${countedIds.join(',')}`
-  const wrongSide =
-    addition && pieces.some((piece) => !piece.green && piece.side === 'right')
-  const completed =
-    (addition || subtraction) &&
-    !wrongSide &&
-    moved === targetCount &&
-    questionKey === progressKey
   const readyToCount = addition && completed
   // たし算では、合わせた後の左のわくの数が答えになる。お子さんが数える前に見えないよう、右から移し始めたら出さない
   const hideLeftCount = addition && moved > 0

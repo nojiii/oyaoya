@@ -1,6 +1,9 @@
-import { test } from 'node:test'
+import { test } from 'vitest'
 import assert from 'node:assert/strict'
-import { counterGroups } from '../src/components/counterModel.ts'
+import {
+  counterGroups,
+  counterProgress,
+} from '../src/components/counterModel.ts'
 
 test('carrying preserves every bead while splitting and making ten', () => {
   for (let a = 1; a <= 9; a++)
@@ -45,4 +48,65 @@ test('ordinary operations show the correct amounts, including zero', () => {
   assert.equal(groups.length, 3)
   assert.ok(groups.every((group) => group.count === 2))
   assert.equal(counterGroups({ mode: 'count', a: 5, b: 0 }, 0)[0].count, 5)
+})
+
+test('counter results appear only after completion and disappear on undo or reset', () => {
+  // questionKey は、動かし終えてから少し待って覚えた並び。最初は空
+  const check = (problem, pieces, questionKey = '') =>
+    counterProgress(problem, pieces, [], questionKey)
+  for (const mode of ['add', 'carry', 'sub', 'borrow']) {
+    const addition = mode === 'add' || mode === 'carry'
+    const problem = {
+      mode,
+      a: mode === 'carry' ? 8 : mode === 'borrow' ? 12 : addition ? 3 : 7,
+      b: 4,
+    }
+    const initial = Array.from(
+      { length: addition ? problem.a + problem.b : problem.a },
+      (_, index) => ({
+        id: index,
+        green: addition && index >= problem.a,
+        side: addition && index >= problem.a ? 'right' : 'left',
+      }),
+    )
+    assert.equal(check(problem, initial).completed, false, mode + ': initial')
+    const finished = initial.map((piece, index) => ({
+      ...piece,
+      side: addition ? 'left' : index < 4 ? 'right' : 'left',
+    }))
+    const key = check(problem, finished).progressKey
+    assert.equal(
+      check(problem, finished).completed,
+      false,
+      mode + ': wait for completion feedback',
+    )
+    assert.equal(
+      check(problem, finished, key).completed,
+      true,
+      mode + ': complete',
+    )
+    const undone = finished.map((piece, index) => ({
+      ...piece,
+      side:
+        index === (addition ? problem.a : 0)
+          ? addition
+            ? 'right'
+            : 'left'
+          : piece.side,
+    }))
+    assert.equal(check(problem, undone, key).completed, false, mode + ': undo')
+    assert.equal(check(problem, initial).completed, false, mode + ': reset')
+    if (addition) {
+      const incorrect = finished.map((piece, index) => ({
+        ...piece,
+        side: index === 0 ? 'right' : piece.side,
+      }))
+      const incorrectKey = check(problem, incorrect).progressKey
+      assert.equal(
+        check(problem, incorrect, incorrectKey).completed,
+        false,
+        mode + ': original group must stay on the left',
+      )
+    }
+  }
 })
