@@ -86,3 +86,13 @@
 p.equation {
   font-size: clamp(24px, 8vw, 36px);
 }
+
+/* 答えの行と一緒に置くページの図。ステージの高さをほかのページとそろえる */
+.figure.compact {
+  max-height: 120px;
+}
+
+/* 答えを見たあとの案内。場所だけ残して見えなくする */
+.hidden {
+  visibility: hidden;
+}

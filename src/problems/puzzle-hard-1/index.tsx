@@ -14,28 +14,32 @@ import styles from './puzzle-hard-1.module.css'
 
 // 問題文。台本の最初のページと、準備画面の「声かけを先に読んでおく」の両方で使う
 const QUESTION = [
-  '4人の囚人が、図のように立たされています。AさんとBさんの間には壁があり、4人とも壁のほうを向いています。壁の向こうは見えません。',
+  '4人の囚人が、図のように立たされています。AさんとBさんの間には壁があり、4人とも壁のほうを向いています。壁の向こうは見えません。4人とも、とてもよく考える人たちです。',
   '看守が言いました。「4人の頭に帽子をかぶせた。黒が2つ、白が2つだ。だれか1人でも自分の帽子の色を当てられたら、全員を自由にしてやろう。ただし、帽子を脱いで見たり、後ろを振り向いたりしてはいけない」',
-  'しばらくして1人が正しい色を答え、4人とも自由になりました。答えたのは、だれでしょう？',
+  'しばらくして1人が、自分の帽子の色がはっきりわかって答え、4人とも自由になりました。答えたのは、だれでしょう？',
 ]
 
 // 子どもに読み上げるセリフ。台本のページと準備画面の「声かけを先に読んでおく」の両方で使う
 const words = {
   see: 'それぞれの人から、だれの帽子が見えるかな？ 1人ずつ指でさして考えてみよう。',
   suppose:
-    'いちばん後ろのDさんには、BさんとCさんの帽子が見えるね。もし2人とも黒だったら、Dさんの帽子は何色かな？',
+    'いちばん後ろのDさんには、BさんとCさんの帽子が見えるね。もし2人とも白だったら、Dさんの帽子は何色かな？',
   silent:
     'でも本当は、Bさんが白で、Cさんが黒。これだと、Dさんは自分の色がわかるかな？',
+  // Cさんの考えは、「もしも」と「気づく」の2ページに分ける
+  suppose2:
+    'こんどはCさんになって考えよう。Cさんには、Bさんの白い帽子が見えるね。もし自分も白だったら、Dさんはどうしたかな？',
   notice:
-    'Dさんは、ずっとだまったままだね。それを聞いたCさんは、何に気づくかな？',
-  ask: '答えたのは、だれかな？',
+    'でも、Dさんはなにも言わないね。それに気づいたCさんは、自分の帽子が何色だとわかるかな？',
+  ask: '自分の色がはっきりわかって答えたのは、だれかな？',
   right: 'そう！ Cさんが「黒」と答えたんだね！',
   wrong:
     'おしい！ Dさんがだまっていたことから、Cさんが何に気づいたか、もう一度考えてみよう。',
   explain: 'どうしてCさんには、自分の色がわかったの？ おしえてくれる？',
   check:
-    'こんどは、BさんとCさんが2人とも白だったら、だれが答えるかな？ ひとりで考えてみよう。',
-  alone: 'そのとおり！ Dさんがすぐに「黒」と答えられるね！',
+    'こんどは、Bさんが黒で、Cさんが白。だれが、どうやって自分の色に気づくかな？ ひとりで考えてみよう。',
+  alone:
+    'そのとおり！ Dさんがだまっているから、Cさんは自分が「白」だとわかるね！',
 }
 
 // 図に出す4人。壁の左にAさん、右にBさん・Cさん・Dさんが壁に近い順に並ぶ
@@ -47,8 +51,8 @@ type Hats = Record<Person, Hat>
 
 // 問題の帽子。黒が2つ、白が2つ
 const HATS: Hats = { A: 'black', B: 'white', C: 'black', D: 'white' }
-// たしかめで使う帽子。BさんとCさんが白なら、残りの2人が黒
-const CHECK_HATS: Hats = { A: 'black', B: 'white', C: 'white', D: 'black' }
+// たしかめで使う帽子。Bさんが黒、Cさんが白。AさんとDさんの色は、出さずに考える
+const CHECK_HATS: Hats = { A: 'unknown', B: 'black', C: 'white', D: 'unknown' }
 
 // 台本のページ。左へスワイプで次、右へで前。explain・check が「たしかめ」
 const pages = [
@@ -56,6 +60,7 @@ const pages = [
   'see',
   'suppose',
   'silent',
+  'suppose2',
   'notice',
   'answer',
   'explain',
@@ -92,14 +97,23 @@ const hatNames: Record<Hat, string> = {
 // 4人の並び（x は人の中心）。壁より左を向くのが B・C・D、右を向くのが A
 const positions: Record<Person, number> = { A: 48, B: 156, C: 228, D: 300 }
 
-// ステージに置く図。dim の人は薄くして、いま考えている人から外す
-function Prisoners({ hats, dim = [] }: { hats: Hats; dim?: Person[] }) {
+// ステージに置く図。dim の人は薄くして、いま考えている人から外す。
+// compact は、答えの行と一緒に置くページで図を小さくし、ステージの高さをほかのページとそろえる
+function Prisoners({
+  hats,
+  dim = [],
+  compact = false,
+}: {
+  hats: Hats
+  dim?: Person[]
+  compact?: boolean
+}) {
   const label = `壁の左にAさん、右に壁に近い順にBさん・Cさん・Dさんが立ち、4人とも壁のほうを向いています。帽子は${people
     .map((person) => `${person}さんが${hatNames[hats[person]]}`)
     .join('、')}です`
   return (
     <svg
-      className={styles.figure}
+      className={`${styles.figure} ${compact ? styles.compact : ''}`}
       viewBox="0 0 352 196"
       role="img"
       aria-label={label}
@@ -196,11 +210,10 @@ function Answer({
           </button>
         )}
       </p>
-      {!visible && (
-        <p className={flowStyles.revealHint}>
-          お子さんが答えたら、「？」をタップ
-        </p>
-      )}
+      {/* 答えを見たあとも場所は残し、ステージの高さ（下の文字の位置）を変えない */}
+      <p className={`${flowStyles.revealHint} ${visible ? styles.hidden : ''}`}>
+        お子さんが答えたら、「？」をタップ
+      </p>
     </>
   )
 }
@@ -263,7 +276,7 @@ function PuzzleHardFlow() {
           <TeachingPoints
             folded
             note={
-              'AさんとBさんは壁しか見えず、**だれの帽子も見えません**。Cさんには Bさん、Dさんには BさんとCさんの帽子が見えます。\n\nここを最初に整理しておくと、あとで「その人の気持ち」になって考えやすくなります。'
+              'AさんとBさんは壁しか見えず、**だれの帽子も見えません**。Cさんには、Bさんの帽子。Dさんには、BさんとCさんの帽子が見えます。\n\nここを最初に整理しておくと、あとで「その人の気持ち」になって考えやすくなります。'
             }
           />
         </>
@@ -272,10 +285,10 @@ function PuzzleHardFlow() {
     // ここからは、いちばん多く見えるDさんから順に考える
     suppose: {
       id: 'suppose',
-      title: 'いちばん後ろのDさんになって考えましょう',
+      title: 'もしも、BさんとCさんが2人とも白だったら',
       stage: (
         <Prisoners
-          hats={{ A: 'unknown', B: 'black', C: 'black', D: 'unknown' }}
+          hats={{ A: 'unknown', B: 'white', C: 'white', D: 'unknown' }}
           dim={['A']}
         />
       ),
@@ -285,7 +298,7 @@ function PuzzleHardFlow() {
           <TeachingPoints
             folded
             note={
-              '黒は2つしかないので、BさんとCさんが2人とも黒なら、Dさんは**すぐに「白」と答えられます**。\n\nまずは「もし〜だったら」と、答えが出る場合を考えてもらいます。'
+              '白は2つしかないので、BさんとCさんが2人とも白なら、Dさんは**すぐに「黒」と答えられます**（2人とも黒なら「白」）。\n\n図の帽子は「もしも」の色です。本当の色ではないことを伝えてから、答えが出る場合を考えてもらいます。'
             }
           />
         </>
@@ -294,7 +307,9 @@ function PuzzleHardFlow() {
     silent: {
       id: 'silent',
       title: '本当の帽子で、Dさんを考えましょう',
-      stage: <Prisoners hats={{ ...HATS, D: 'unknown' }} dim={['A']} />,
+      stage: (
+        <Prisoners hats={{ ...HATS, A: 'unknown', D: 'unknown' }} dim={['A']} />
+      ),
       content: (
         <>
           <SpokenWords>{words.silent}</SpokenWords>
@@ -307,17 +322,44 @@ function PuzzleHardFlow() {
         </>
       ),
     },
+    // Cさんに見えるのはBさんだけなので、ほかの帽子は「？」にする
+    suppose2: {
+      id: 'suppose2',
+      title: 'Cさんの気持ちになって考えましょう',
+      stage: (
+        <Prisoners
+          hats={{ A: 'unknown', B: 'white', C: 'unknown', D: 'unknown' }}
+          dim={['A']}
+        />
+      ),
+      content: (
+        <>
+          <SpokenWords>{words.suppose2}</SpokenWords>
+          <TeachingPoints
+            folded
+            note={
+              'さっきの「もしも」と同じで、BさんとCさんが2人とも白なら、**Dさんはすぐに「黒」と答えたはず**です。\n\n前のページに戻って、もう一度確かめてもかまいません。'
+            }
+          />
+        </>
+      ),
+    },
     notice: {
       id: 'notice',
-      title: 'Cさんの気持ちになって考えましょう',
-      stage: <Prisoners hats={{ ...HATS, C: 'unknown' }} dim={['A']} />,
+      title: 'Dさんがだまっていることに気づきましょう',
+      stage: (
+        <Prisoners
+          hats={{ A: 'unknown', B: 'white', C: 'unknown', D: 'unknown' }}
+          dim={['A']}
+        />
+      ),
       content: (
         <>
           <SpokenWords>{words.notice}</SpokenWords>
           <TeachingPoints
             folded
             note={
-              'Dさんがだまっているのは、**BさんとCさんの色がちがうから**です。Cさんにはそれがわかります。\n\nCさんにはBさんの白い帽子が見えるので、自分は黒だとわかります。「だまっていること」も手がかりになるのが、この問題のポイントです。'
+              'Dさんがなにも言わないので、Cさんは**自分は白ではない**、つまり黒だとわかります。\n\n「だまっていること」も手がかりになるのが、この問題のポイントです。'
             }
           />
         </>
@@ -329,7 +371,7 @@ function PuzzleHardFlow() {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          <Prisoners hats={HATS} />
+          <Prisoners hats={HATS} compact />
           <Answer
             label="答えたのは"
             answer="Cさん"
@@ -379,7 +421,7 @@ function PuzzleHardFlow() {
           <TeachingPoints
             folded
             note={
-              '**「Dさんがだまっていた」→「BさんとCさんは色がちがう」→「Bさんが白だから、Cさんは黒」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
+              '**「Bさんは白」→「自分も白なら、Dさんが『黒』と答えたはず」→「でもDさんはだまっている」→「だから自分は黒」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
             }
           />
         </>
@@ -392,10 +434,10 @@ function PuzzleHardFlow() {
       title: 'ひとりで考えてみましょう',
       stage: (
         <>
-          <Prisoners hats={CHECK_HATS} />
+          <Prisoners hats={CHECK_HATS} compact />
           <Answer
             label="答えるのは"
-            answer="Dさん"
+            answer="Cさん"
             visible={revealed}
             onReveal={() => setRevealed(true)}
           />
@@ -405,7 +447,7 @@ function PuzzleHardFlow() {
         <>
           <div className={flowStyles.answer} aria-live="polite">
             {revealed ? (
-              <SpokenWords title="「Dさん」と答えたら">
+              <SpokenWords title="「Cさん」と答えたら">
                 {words.alone}
               </SpokenWords>
             ) : (
@@ -414,7 +456,7 @@ function PuzzleHardFlow() {
             <TeachingPoints
               folded
               note={
-                '親は手を出さず、**見守りましょう**。BさんとCさんが同じ色なら、Dさんはすぐに答えられます。\n\nいちばん多く見えるDさんから順に考えられていれば、解けています。'
+                '親は手を出さず、**見守りましょう**。Dさんには黒と白が見えるので、だまったまま。Cさんは「自分が黒なら、Dさんが『白』と答えたはず」と考えて、自分は白だとわかります。\n\n答えは問題と同じCさんなので、**理由まで言えるか**を見ましょう。'
               }
             />
           </div>
@@ -471,6 +513,7 @@ export default function PuzzleHard1() {
         { say: words.see },
         { say: words.suppose },
         { say: words.silent },
+        { say: words.suppose2 },
         { say: words.notice },
         { say: words.ask },
         { say: `（答えたら）${words.right}` },

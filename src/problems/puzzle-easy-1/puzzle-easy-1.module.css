@@ -42,10 +42,17 @@
   text-align: center;
 }
 
+/* 札の言葉のまとまり。Safari では文節で折り返す指定が効かないので、まとまりの中では折り返さない */
+.label > span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 /* 箱の下に書く、取り出したお菓子や中身。書かない箱も高さをそろえる */
 .note {
   min-height: 1.5em;
-  font-size: 13px;
+  /* 「まざったもの」が幅320pxの画面でも1行に収まる大きさ */
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.5;
   text-align: center;
