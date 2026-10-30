@@ -47,16 +47,20 @@ const pointer = (pointerId, clientX, clientY) => ({
   button: 0,
 })
 
-test('tapping a preview does not let the carousel capture its pointer', async () => {
+test('the carousel follows horizontal swipes, but not taps on a preview, vertical scrolls or touches while sliding', async () => {
   // 台本の枠は幅296px。隣のページとの間は12px
   stubSize(296, 400)
   stubAnimations()
   const captured = stubPointerCapture()
   const { carousel, track } = await renderScript()
 
-  // 見本の中（絵の部分など）を押しても、台本はポインターを捕まえない
+  // 見本の中（絵の部分など）を押しても、台本はポインターを捕まえず、そのまま指を動かしても台本は動かない
   fireEvent.pointerDown(screen.getByTestId('bead'), pointer(7, 120, 80))
   assert.deepEqual(captured, [])
+  fireEvent.pointerMove(carousel, pointer(7, 20, 80))
+  assert.equal(track.dataset.dragging, 'false')
+  assert.equal(track.style.transform, 'translateX(0px)')
+  fireEvent.pointerUp(carousel, pointer(7, 20, 80))
 
   // 見本の外を押すと捕まえるが、指を動かすまではドラッグにしない
   fireEvent.pointerDown(carousel, pointer(7, 120, 80))
