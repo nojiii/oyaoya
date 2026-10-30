@@ -71,6 +71,10 @@ a:hover {
   text-decoration: underline;
 }
 
+/* 本文はフォーカスを受けるだけで、枠は出さない（Layout の tabIndex） */
+main:focus {
+  outline: none;
+}
 main.is-loading {
   opacity: 0.5;
   transition: opacity 0.2s;

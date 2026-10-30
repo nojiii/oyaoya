@@ -57,7 +57,11 @@ export function Layout() {
   return (
     <>
       <Header />
-      <main className={navigation.state === 'loading' ? 'is-loading' : ''}>
+      {/* tabIndex：押したボタンが消えたとき（デバッグを終えるなど）に、本文へフォーカスを移せるようにする */}
+      <main
+        className={navigation.state === 'loading' ? 'is-loading' : ''}
+        tabIndex={-1}
+      >
         <Outlet />
       </main>
       {/* ページを移ったら一番上から表示し、ブラウザの「戻る」では元の位置に戻す */}
