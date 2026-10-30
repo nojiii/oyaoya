@@ -25,11 +25,10 @@ const words = {
   whole:
     '20％引きは、もとの値段から20％の分だけ安くするってことだよ。100％を1とすると、20％はいくつになるかな？',
   discount: `じゃあ、全体の1が${LIST_PRICE}円だとすると、20％（0.2）はいくらになるかな？`,
-  price: 'ノートセットの代金は、図のどこかな？ どんな式で求められるかな？',
+  price: `${DISCOUNT}円安くなるんだね。じゃあ、お店に払うお金は、どんな式で求められるかな？`,
   ask: 'じゃあ、計算してみよう。代金はいくらになったかな？',
   right: `正解！ ${LIST_PRICE}円のノートセットが、${SALE_PRICE}円で買えるね！`,
-  wrong:
-    'おしい！ 払うのは、図のどの部分だったかな？ もう一度、一緒に見てみよう。',
+  wrong: `おしい！ ${LIST_PRICE}円から${DISCOUNT}円安くなるんだったね。払うお金はいくらかな？ もう一度、一緒に計算してみよう。`,
   explain: `どうやって${SALE_PRICE}円になったのか、おしえてくれる？`,
 }
 
@@ -161,7 +160,9 @@ function MathEasyFlow() {
       stage: <PriceTag />,
       content: (
         <>
-          <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**。" />
+          <TeachingPoints
+            note={`まずは、下の問題を**ゆっくり読み上げましょう**。\n\n定価（${LIST_PRICE}円）と何％引き（${DISCOUNT_RATE}％）かを、お子さんに紙に書いてもらうと、あとで見返せます。`}
+          />
           <p className={flowStyles.problem}>{QUESTION_TEXT}</p>
         </>
       ),
@@ -181,7 +182,7 @@ function MathEasyFlow() {
           <TeachingPoints
             folded
             note={
-              '**0.2は、お子さんに言ってもらいましょう**。図には答えが書いてあるので、お子さんが答えてから見せて確かめます。\n\n分かりづらそうなときは、図を指さしながら「100％で1だから、10％は0.1だね」と一緒に考えましょう。'
+              '**0.2は、お子さんに言ってもらいましょう**。\n\n分かりづらそうなときは、「全部で100％が1。それを10こに分けた1こ分（10％）は0.1だね」と、言葉で順にたどります。上の図のような横長の帯を紙にかいて区切ると、さらに分かりやすくなります。'
             }
           />
         </>
@@ -201,7 +202,7 @@ function MathEasyFlow() {
           <SpokenWords>{words.discount}</SpokenWords>
           <TeachingPoints
             folded
-            note={`すぐに出てこないときは、**10％から考えましょう**。「${LIST_PRICE}円を10こに分けた1こ分（10％）はいくら？」→${LIST_PRICE / 10}円、「20％はその2つ分だから？」→${DISCOUNT}円の順に聞きます。\n\n${LIST_PRICE}×0.2の式で求められていれば、それで大丈夫です。`}
+            note={`${LIST_PRICE}×0.2の式で求められていれば、それで大丈夫です。\n\nすぐに出てこないときは、**10％から考えましょう**。「${LIST_PRICE}円を10こに分けた1こ分（10％）はいくら？」→${LIST_PRICE / 10}円、「20％はその2つ分だから？」→${DISCOUNT}円の順に聞きます。`}
           />
         </>
       ),
@@ -220,7 +221,7 @@ function MathEasyFlow() {
           <SpokenWords>{words.price}</SpokenWords>
           <TeachingPoints
             folded
-            note={`**${DISCOUNT}円と答えたら**、それは安くなった分です。図の青い部分を指して「払うのはこっちだね」と確かめましょう。\n\n「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
+            note={`**${DISCOUNT}円と答えたら**、それは安くなった分です。「${DISCOUNT}円は安くなった分だね。お店に払うのはいくら？」と聞き直しましょう。\n\n「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
           />
         </>
       ),
@@ -242,7 +243,7 @@ function MathEasyFlow() {
               </SpokenWords>
               <TeachingPoints
                 folded
-                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。前のページに戻って、図の青い部分を一緒に確かめましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
+                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。「${LIST_PRICE}円のノートが${DISCOUNT}円安くなったら、払うのはいくら？」と聞き直しましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
               />
             </>
           ) : (
@@ -273,7 +274,7 @@ function MathEasyFlow() {
           <SpokenWords>{words.explain}</SpokenWords>
           <TeachingPoints
             folded
-            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば大丈夫です。\n\n途中までしか言えなくても大丈夫です。図を指さしながら、言えたところをほめて、続きを一緒に考えましょう。`}
+            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば大丈夫です。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。`}
           />
           <button className={flowStyles.finish} type="button" onClick={finish}>
             終わる
