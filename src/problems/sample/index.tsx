@@ -135,7 +135,7 @@ function Equation({
 
 function SampleFlow({ eat }: { eat: number }) {
   // 最後のページの「終わる」で、準備の画面へ戻る
-  const { toPrepare } = useScriptControls()
+  const { finish } = useScriptControls()
   const key = storageKey(useLocation().pathname)
   const [progress, setProgress] = useState<Progress>(() => {
     try {
@@ -353,7 +353,7 @@ function SampleFlow({ eat }: { eat: number }) {
             <button
               className={flowStyles.finish}
               type="button"
-              onClick={toPrepare}
+              onClick={finish}
             >
               終わる
             </button>

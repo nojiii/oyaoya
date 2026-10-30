@@ -32,7 +32,7 @@ export function CountingLine({ n }: { n: number }) {
 
 // 数える数は準備の画面で選ぶ。台本の中では変えない
 export function CountingFlow({ n }: { n: number }) {
-  const { toPrepare } = useScriptControls()
+  const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = countingStorageKey(location.pathname)
   const [page, setPage] = useState<CountingPage>(() => {
@@ -156,7 +156,7 @@ export function CountingFlow({ n }: { n: number }) {
             note={`お子さんが**数えながら1個ずつ**取り、**${give}個で止められるか**を見ます。\n\n全部渡してしまったり、数えずにつかんだりしたときは、まだ「最後に言った数が、全部の数」がつかめていないかもしれません。今日はここまでにして、次は**1列に並べて数える**ところから、もう一度一緒にやりましょう。`}
           />
           {/* 終わると準備の画面へ戻る。次に台本を開くと、最初のページから */}
-          <button className={styles.finish} type="button" onClick={toPrepare}>
+          <button className={styles.finish} type="button" onClick={finish}>
             終わる
           </button>
         </div>
