@@ -456,6 +456,18 @@ export function TeachingScript({
       // プライベートブラウズなどで保存できないときは、続きから再開できないだけなので何もしない
     }
   }, [keys.started, keys.history, started, history])
+  // 戻るボタンなどでほかの画面へ移ったら、次に開いたときは準備の画面から（台本の進み具合は残す）。
+  // 再読み込みでは部品が外れないので、台本を開いたまま読み直せる
+  useEffect(() => {
+    const key = keys.started
+    return () => {
+      try {
+        sessionStorage.setItem(key, 'false')
+      } catch {
+        // 保存できないときは、もともと続きから再開できないので何もしない
+      }
+    }
+  }, [keys.started])
 
   const ask = (turn: number): Position => ({ turn, beat: 0 })
   const go = (next: Position) => {
