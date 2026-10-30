@@ -22,13 +22,24 @@ const QUESTION_TEXT = `定価${LIST_PRICE}円のノートセットが、${DISCOU
 
 // 子どもに読み上げるセリフ。台本のページと準備画面の「声かけを先に読んでおく」の両方で使う
 const words = {
-  whole: '20％引きってことは全体を1としたときそこから0.2引くってことは分かる？',
-  discount: 'じゃあ全体が1200円の時20％はいくらになるかな？',
-  price: 'じゃあ20％引きされたノートはいくらになるかな？',
+  whole:
+    '20％引きは、もとの値段から20％の分だけ安くするってことだよ。100％を1とすると、20％はいくつになるかな？',
+  discount: `じゃあ、全体の1が${LIST_PRICE}円だとすると、20％（0.2）はいくらになるかな？`,
+  price: 'ノートセットの代金は、図のどこかな？ どんな式で求められるかな？',
+  ask: 'じゃあ、計算してみよう。代金はいくらになったかな？',
+  right: `正解！ ${LIST_PRICE}円のノートセットが、${SALE_PRICE}円で買えるね！`,
+  explain: `どうやって${SALE_PRICE}円になったのか、おしえてくれる？`,
 }
 
-// 台本のページ。左へスワイプで次、右へで前
-const pages = ['read', 'whole', 'discount', 'price', 'answer'] as const
+// 台本のページ。左へスワイプで次、右へで前。explain が「たしかめ」
+const pages = [
+  'read',
+  'whole',
+  'discount',
+  'price',
+  'answer',
+  'explain',
+] as const
 type Page = (typeof pages)[number]
 
 const flow = pagedFlow('math-easy-1', pages)
@@ -138,6 +149,8 @@ function MathEasyFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
   const { finish } = useScriptControls()
   const { page, revealed, reveal, next, back } = flow.usePages()
+  // 答えのページは「？」で答えを見てから次へ進める
+  const canNext = page === 'answer' ? revealed : page !== 'explain'
 
   const slides: Record<Page, LessonSlide> = {
     read: {
@@ -146,7 +159,7 @@ function MathEasyFlow() {
       stage: <PriceTag />,
       content: (
         <>
-          <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**" />
+          <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**。" />
           <p className={flowStyles.problem}>{QUESTION_TEXT}</p>
         </>
       ),
@@ -165,7 +178,9 @@ function MathEasyFlow() {
           <SpokenWords>{words.whole}</SpokenWords>
           <TeachingPoints
             folded
-            note="20％引きは、全体（1）から0.2の分を引くことだと確かめましょう。分かりづらそうなときは、図を見せて説明してあげましょう。"
+            note={
+              '**0.2は、お子さんに言ってもらいましょう**。図には答えが書いてあるので、お子さんが答えてから見せて確かめます。\n\n分かりづらそうなときは、図を指さしながら「100％で1だから、10％は0.1だね」と一緒に考えましょう。'
+            }
           />
         </>
       ),
@@ -184,14 +199,14 @@ function MathEasyFlow() {
           <SpokenWords>{words.discount}</SpokenWords>
           <TeachingPoints
             folded
-            note="ここで1200×0.2がすんなり出てこない場合は、慌てず1つ前に戻りましょう"
+            note={`すぐに出てこないときは、**10％から考えましょう**。「${LIST_PRICE}円を10こに分けた1こ分（10％）はいくら？」→${LIST_PRICE / 10}円、「20％はその2つ分だから？」→${DISCOUNT}円の順に聞きます。\n\n${LIST_PRICE}×0.2の式で求められていれば、それで大丈夫です。`}
           />
         </>
       ),
     },
     price: {
       id: 'price',
-      title: '代金を求めましょう',
+      title: '代金を求める式を考えましょう',
       stage: (
         <Figure
           src={figurePrice}
@@ -203,20 +218,54 @@ function MathEasyFlow() {
           <SpokenWords>{words.price}</SpokenWords>
           <TeachingPoints
             folded
-            note="全体から割引分を引く計算の仕方を確認しましょう"
+            note={`**${DISCOUNT}円と答えたら**、それは安くなった分です。図の青い部分を指して「払うのはこっちだね」と確かめましょう。\n\n「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
           />
         </>
       ),
     },
-    // 最後のページ：答えは先に言わず、お子さんが答えてから「？」で見る。見たら「終わる」で準備の画面へ戻る
+    // 答えのページ：答えは先に言わず、お子さんが答えてから「？」で見る
     answer: {
       id: 'answer',
       title: '答えを確認しましょう！',
       stage: <Equation visible={revealed} onReveal={reveal} />,
-      content: revealed && (
-        <button className={flowStyles.finish} type="button" onClick={finish}>
-          終わる
-        </button>
+      content: (
+        <div className={flowStyles.answer} aria-live="polite">
+          {revealed ? (
+            <SpokenWords title={`${SALE_PRICE}円と答えたら`}>
+              {words.right}
+            </SpokenWords>
+          ) : (
+            <SpokenWords>{words.ask}</SpokenWords>
+          )}
+          <TeachingPoints
+            folded
+            note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
+          />
+        </div>
+      ),
+    },
+    // 最後のページ：「たしかめ」。答えが合ったかだけでなく、考え方が身についたかを確かめる。「終わる」で準備の画面へ戻る
+    explain: {
+      id: 'explain',
+      section: 'たしかめ',
+      title: 'どうやって求めたか、聞いてみましょう',
+      stage: (
+        <Figure
+          src={figurePrice}
+          alt="1200円（100％）の帯のうち、20％の部分が240円、80％の部分が？円になっている図"
+        />
+      ),
+      content: (
+        <>
+          <SpokenWords>{words.explain}</SpokenWords>
+          <TeachingPoints
+            folded
+            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば大丈夫です。\n\n途中までしか言えなくても大丈夫です。図を指さしながら、言えたところをほめて、続きを一緒に考えましょう。`}
+          />
+          <button className={flowStyles.finish} type="button" onClick={finish}>
+            終わる
+          </button>
+        </>
       ),
     },
   }
@@ -227,7 +276,7 @@ function MathEasyFlow() {
       slides={pages.map((page) => slides[page])}
       currentId={page}
       totalKnown
-      canNext={page !== 'answer'}
+      canNext={canNext}
       onNext={next}
       onBack={back}
     />
@@ -245,7 +294,8 @@ export default function MathEasy1() {
       prepare={{
         goal: '20％引きの意味を考えて、ノートセットの代金を求めます。',
         materials: ['紙と鉛筆'],
-        point: '値引き額を求めて、定価から引きます。',
+        point:
+          `値引き額を求めて、定価から引きます。80％分を直接求める考え方（${LIST_PRICE}×0.8）でも正解です。`,
         avoid: ['最初に答えを言うこと', '値引き額と支払う代金を混同すること'],
       }}
       // 「声かけを先に読んでおく」に出す。台本のページと同じ words を使う
@@ -254,6 +304,9 @@ export default function MathEasy1() {
         { say: words.whole },
         { say: words.discount },
         { say: words.price },
+        { say: words.ask },
+        { say: `（答えたら）${words.right}` },
+        { say: `（たしかめ）${words.explain}` },
       ]}
     />
   )

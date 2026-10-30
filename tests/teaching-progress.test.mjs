@@ -128,7 +128,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
         last: 'give',
         progress: (page) => JSON.stringify({ n: 5, page }),
       },
-      pagedLesson('math-easy-1', 'discount', 'answer'),
+      pagedLesson('math-easy-1', 'discount', 'explain'),
       pagedLesson('math-hard-1', 'center', 'answer'),
       pagedLesson('puzzle-easy-1', 'answer', 'check'),
       pagedLesson('puzzle-hard-1', 'answer', 'check'),

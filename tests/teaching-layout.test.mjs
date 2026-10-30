@@ -19,7 +19,12 @@ test('every published script has teaching points, reading labels and only suppor
       // 大学祭用の問題（math- や puzzle- で始まるID）はテストを除外する。台本を作った問題だけ確かめる
       if (
         (id.startsWith('math-') || id.startsWith('puzzle-')) &&
-        !['math-hard-1', 'puzzle-easy-1', 'puzzle-hard-1'].includes(id)
+        ![
+          'math-easy-1',
+          'math-hard-1',
+          'puzzle-easy-1',
+          'puzzle-hard-1',
+        ].includes(id)
       ) {
         continue
       }
@@ -112,6 +117,14 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           // 「たしかめ」のページを見本に含める
           assert.ok(html.includes('たしかめ'))
+          continue
+        }
+        // 大学祭の数学（易しい）第1問も、答えのあとに「たしかめ」を置く
+        if (id === 'math-easy-1') {
+          assert.match(html, /data-slide="read" data-active="true"/)
+          assert.ok(html.includes('問題を読んでみましょう'))
+          assert.ok(html.includes('たしかめ'))
+          assert.ok(html.includes('台本の進み具合'))
           continue
         }
         // 大学祭の数学（難しい）第1問も、見本と同じページを分けた台本にする
