@@ -65,6 +65,22 @@
   color: var(--teach-muted);
 }
 
+/* 台本の区切り（たしかめ など）。見出しの大きさによらず、小さな札にする */
+.section {
+  display: block;
+  justify-self: start;
+  width: fit-content;
+  margin-bottom: 0.5rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--teach-text);
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+}
+
 .title:focus {
   outline: none;
 }

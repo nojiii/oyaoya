@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
@@ -6,6 +12,7 @@ import { LessonSlides, type LessonSlide } from './LessonSlides'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
 import {
+  additionCheck,
   additionPages,
   additionStorageKey,
   advanceAddition,
@@ -108,12 +115,10 @@ export function AdditionAnswer({
   a,
   b,
   visible,
-  onFinish,
 }: {
   a: number
   b: number
   visible: boolean
-  onFinish: () => void
 }) {
   // 親が答えを言う前に、お子さんに答えてもらう。答えを見たら、お子さんの答えに合わせて声をかける。
   // 式と「？」はステージ（AdditionEquation）に出す
@@ -141,6 +146,58 @@ export function AdditionAnswer({
             <TeachingPoints
               folded
               note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
+            />
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// たしかめの、ちがう数の問題をひとりで解くページ。式と「？」はステージ（AdditionEquation）に出す。
+// アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く
+export function AdditionCheck({
+  a,
+  b,
+  visible,
+  onFinish,
+  children,
+}: {
+  a: number
+  b: number
+  visible: boolean
+  onFinish: () => void
+  children?: ReactNode
+}) {
+  return (
+    <>
+      <div aria-live="polite" className={styles.answer}>
+        {visible ? (
+          <>
+            <SpokenWords title={`「${a + b}」と答えたら`}>
+              ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
+            </SpokenWords>
+            <SpokenWords title="ちがう数を答えたら" minor>
+              おしい！
+              さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
+            </SpokenWords>
+            <TeachingPoints
+              folded
+              note={
+                'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
+              }
+            />
+          </>
+        ) : (
+          <>
+            <SpokenWords>
+              こんどは、{a}たす{b}
+              だよ。さっきと同じように、ひとりでやってみよう。
+            </SpokenWords>
+            {children}
+            <TeachingPoints
+              folded
+              note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\nお子さんが答えてから、「？」を押して確かめましょう。`}
             />
           </>
         )}
@@ -194,6 +251,11 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
     },
   ]
   const count = Array.from({ length: a + b }, (_, i) => i + 1)
+  // たしかめで、お子さんがひとりで解く問題
+  const [c, d] = additionCheck(a, b)
+  // 「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
+  const answerShown = progress.page === 'answer' && progress.answerVisible
+  const checkShown = progress.page === 'check' && progress.answerVisible
   // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → セリフ → 教え方のポイント
   const slides: Record<AdditionPage, LessonSlide> = {
     read: {
@@ -340,18 +402,58 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
           <AdditionEquation
             a={a}
             b={b}
-            visible={progress.answerVisible}
+            visible={answerShown}
             onReveal={() => dispatch({ type: 'reveal' })}
           />
         </>
       ),
+      content: <AdditionAnswer a={a} b={b} visible={answerShown} />,
+    },
+    // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
+    explain: {
+      id: 'explain',
+      section: 'たしかめ',
+      title: 'どうやって数えたか、聞いてみましょう',
+      stage: <CounterTogether a={a} b={b} />,
       content: (
-        <AdditionAnswer
-          a={a}
-          b={b}
-          visible={progress.answerVisible}
-          onFinish={toPrepare}
+        <>
+          <SpokenWords>
+            どうやって答えを見つけたの？ おしえてくれる？
+          </SpokenWords>
+          <TeachingPoints
+            folded
+            note={
+              '**2つに分けて → 合わせて → 1個ずつ数えた**ことを、お子さんが自分の言葉で話せるかを見ます。\n\n言葉にしにくければ、**おはじきを指さして**教えてもらっても大丈夫です。合っていても違っていても、最後まで聞いてから「そうやって数えたんだね」と受け止めましょう。'
+            }
+          />
+        </>
+      ),
+    },
+    check: {
+      id: 'check',
+      section: 'たしかめ',
+      title: 'ひとりで解いてみましょう',
+      stage: (
+        <AdditionEquation
+          a={c}
+          b={d}
+          visible={checkShown}
+          onReveal={() => dispatch({ type: 'reveal' })}
         />
+      ),
+      content: (
+        <AdditionCheck a={c} b={d} visible={checkShown} onFinish={toPrepare}>
+          {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
+          {progress.route === 'app' && (
+            <VisualPlayground
+              problem={{ mode: 'add', a: c, b: d }}
+              step={1}
+              showOpenHint={false}
+            >
+              <span className={styles.openCounters}>おはじき画面を開く</span>
+            </VisualPlayground>
+          )}
+        </AdditionCheck>
       ),
     },
   }
