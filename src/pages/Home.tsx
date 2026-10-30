@@ -1,10 +1,12 @@
-import { useLoaderData } from 'react-router'
+import { Link, useLoaderData } from 'react-router'
 import { ItemLink } from './ItemLink'
 import { RowArrow } from './RowArrow'
 import type { loadHome } from './loaders'
+import { FESTIVAL_URL, useFestival } from './festival'
 
 export default function Home() {
   const { groups } = useLoaderData<ReturnType<typeof loadHome>>()
+  const festival = useFestival()
 
   return (
     <>
@@ -39,6 +41,17 @@ export default function Home() {
               </ItemLink>
             </li>
           ))}
+          {!festival && (
+            <li style={{ animationDelay: `${groups.length * 60}ms` }}>
+              <Link className="row" to={FESTIVAL_URL} viewTransition>
+                <span className="row-text">
+                  <span className="item-name">大学祭</span>
+                  <span className="row-sub">大学祭の問題に挑戦</span>
+                </span>
+                <RowArrow />
+              </Link>
+            </li>
+          )}
         </ul>
       </section>
     </>

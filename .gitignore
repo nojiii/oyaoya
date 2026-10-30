@@ -35,3 +35,6 @@ firebase-debug.log
 
 # Documents (local docs folder)
 docs/
+
+# PowerShell が作業フォルダに作ることがあるキャッシュ
+/Microsoft/
