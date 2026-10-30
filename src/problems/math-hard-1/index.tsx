@@ -1,4 +1,4 @@
-// 文化祭の数学（難しい）第1問。台本の書き方は src/problems/sample にそろえる
+// 大学祭の数学（難しい）第1問。台本の書き方は src/problems/sample にそろえる
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import {

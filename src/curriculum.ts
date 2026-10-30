@@ -120,7 +120,7 @@ export const festivalCurriculum: Group[] = [
     slug: 'math-hard',
     name: '数学（難しい）',
     children: [
-      unit('数の理解', 'math-hard-1', '数学 難しい 第1問', ['math-hard-1']),
+      unit('形・図形', 'math-hard-1', '数学 難しい 第1問', ['math-hard-1']),
     ],
   },
   {

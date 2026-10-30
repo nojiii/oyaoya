@@ -19,7 +19,7 @@ test('every published script has teaching points, reading labels and only suppor
       '/src/pages/ProblemDetail.tsx',
     )
     for (const id of Object.keys(problems)) {
-      // 文化祭用の問題（math- や puzzle- で始まるID）はテストを除外する。台本を作った問題だけ確かめる
+      // 大学祭用の問題（math- や puzzle- で始まるID）はテストを除外する。台本を作った問題だけ確かめる
       if (
         (id.startsWith('math-') || id.startsWith('puzzle-')) &&
         id !== 'math-hard-1'
@@ -117,7 +117,7 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('たしかめ'))
           continue
         }
-        // 文化祭の数学（難しい）第1問も、見本と同じページを分けた台本にする
+        // 大学祭の数学（難しい）第1問も、見本と同じページを分けた台本にする
         if (id === 'math-hard-1') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んで、図をよく見てみましょう'))

@@ -45,8 +45,8 @@ export default function Home() {
             <li style={{ animationDelay: `${groups.length * 60}ms` }}>
               <Link className="row" to={FESTIVAL_URL} viewTransition>
                 <span className="row-text">
-                  <span className="item-name">文化祭</span>
-                  <span className="row-sub">文化祭の問題に挑戦</span>
+                  <span className="item-name">大学祭</span>
+                  <span className="row-sub">大学祭の問題に挑戦</span>
                 </span>
                 <RowArrow />
               </Link>

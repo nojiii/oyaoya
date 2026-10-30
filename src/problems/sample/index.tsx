@@ -1,7 +1,7 @@
 // 台本とデザインの見本。新しい問題を作るときは、このフォルダを丸ごとコピーして書き換える。
 // 一覧（curriculum.ts）には置かないので、/problems/sample を直接開いたときだけ見られる。
 // 題材（あめのひき算）は書き方を見せるための例で、本番の単元の教え方ではない
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import {
   TeachingScript,
@@ -107,9 +107,22 @@ function Equation({
   visible: boolean
   onReveal: () => void
 }) {
+  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
+  const equation = useRef<HTMLParagraphElement>(null)
+  const wasVisible = useRef(visible)
+  useEffect(() => {
+    if (visible && !wasVisible.current)
+      equation.current?.focus({ preventScroll: true })
+    wasVisible.current = visible
+  }, [visible])
   return (
     <>
-      <p className={flowStyles.equation} aria-live="polite">
+      <p
+        className={flowStyles.equation}
+        aria-live="polite"
+        ref={equation}
+        tabIndex={-1}
+      >
         {a} − {b} ＝{' '}
         {visible ? (
           <em>{a - b}</em>
