@@ -531,13 +531,20 @@ export function TeachingScript({
         toPrepare()
       },
     })
-  // 台本の左上の「×」
+  // 台本の左上の「×」。台本が薄れて、準備の画面に入れ替わる（index.css の ::view-transition）。
+  // 対応していないブラウザでは、すぐに切り替える
+  const leave = () => {
+    if (curtain) return
+    if ('startViewTransition' in document)
+      document.startViewTransition(() => flushSync(toPrepare))
+    else toPrepare()
+  }
   const close = (
     <button
       className={styles.close}
       type="button"
       aria-label="準備にもどる"
-      onClick={toPrepare}
+      onClick={leave}
     >
       <svg
         width="24"

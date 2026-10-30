@@ -50,6 +50,19 @@ export function LessonSlides({
   const swipedAt = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  // 横に送っている間の、台本の枠の高さ。隣のページは今のページに重ねて置いている（AdditionFlow.module.css）ので、
+  // 枠が今のページの高さのままだと、長い隣のページは下が切れて見え、送り終えた瞬間に伸びる。
+  // 送っている間だけ、前後のページの高い方まで枠を広げておく
+  const [reach, setReach] = useState<number | null>(null)
+  const measureReach = () => {
+    const pages = [...(track.current?.children ?? [])].slice(
+      Math.max(0, index - 1),
+      index + 2,
+    )
+    setReach(
+      Math.max(...pages.map((page) => page.getBoundingClientRect().height)),
+    )
+  }
   const swipeArea = useRef<HTMLDivElement>(null)
   const gesture = useRef<{
     id: number
@@ -76,8 +89,8 @@ export function LessonSlides({
   const pageLabel = totalKnown
     ? `${index + 1} / ${slides.length}ページ`
     : `${index + 1}ページ`
-  // 次のページの名前。送れるときだけ、ページの下に送る向きと行き先として出す
-  const following = canNext ? slides[index + 1] : undefined
+  // 今のページで、まだ送れない（方法を選ぶ前など）ときは、ページの下の「次」の行を隠しておく
+  const waiting = (i: number) => i === index && !canNext
 
   const navigate = async (direction: -1 | 1) => {
     if (sliding.current || !(direction === 1 ? canNext : canBack)) {
@@ -87,6 +100,8 @@ export function LessonSlides({
     const element = track.current
     if (!element) return
     sliding.current = true
+    // ← → で送るときは、ドラッグを通らないので、ここで枠を広げる
+    flushSync(measureReach)
     const width = element.getBoundingClientRect().width + 12
     const animation = element.animate(
       [
@@ -105,6 +120,7 @@ export function LessonSlides({
       await animation.finished
       flushSync(() => {
         setDragX(0)
+        setReach(null)
         if (direction === 1) onNext()
         else onBack()
       })
@@ -179,6 +195,7 @@ export function LessonSlides({
           if (start.axis === 'x') {
             event.currentTarget.setPointerCapture(event.pointerId)
             setDragging(true)
+            measureReach()
           }
         }
         if (start.axis !== 'x') return
@@ -253,7 +270,15 @@ export function LessonSlides({
             className={styles.dragTrack}
             ref={track}
             data-dragging={dragging}
-            style={{ transform: `translateX(${dragX}px)` }}
+            style={{
+              transform: `translateX(${dragX}px)`,
+              minHeight: reach ?? undefined,
+            }}
+            // 送らずに元の位置へ戻り終えたら、枠を今のページの高さに戻す
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget && !sliding.current)
+                setReach(null)
+            }}
           >
             {slides.map((slide, i) => (
               <section
@@ -288,31 +313,39 @@ export function LessonSlides({
                   {slide.title}
                 </h2>
                 {slide.content}
+                <NextPage slide={slides[i + 1]} hidden={waiting(i)} />
               </section>
             ))}
           </div>
         </div>
       </div>
-      {following && (
-        <p className={flowStyles.next}>
-          <span>
-            次<b>{following.title}</b>
-          </span>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        </p>
-      )}
     </div>
+  )
+}
+
+// ページの下の「次」の行。ボタンではなく、左へスワイプした先を示す案内。
+// ページの中に置いて、スワイプしている間もページといっしょに動かす。
+// 送れないときも場所は空けておき、送れるようになったら浮かび上がらせる（ページの高さを変えない）
+function NextPage({ slide, hidden }: { slide?: LessonSlide; hidden: boolean }) {
+  if (!slide) return null
+  return (
+    <p className={flowStyles.next} data-hidden={hidden}>
+      <span>
+        次<b>{slide.title}</b>
+      </span>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M5 12h14M13 6l6 6-6 6" />
+      </svg>
+    </p>
   )
 }
