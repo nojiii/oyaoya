@@ -53,6 +53,33 @@ function flowStatus(raw: string | null): FlowStatus {
   return page === 'answer' ? 'finished' : 'middle'
 }
 
+// ノートセットの絵に描く3冊。左上の位置・傾き・表紙の色（クラス名）。最後の1冊がいちばん手前
+const NOTEBOOKS = [
+  { x: 30, y: 24, angle: -12, cover: 'coverBlue' },
+  { x: 106, y: 24, angle: 12, cover: 'coverPink' },
+  { x: 68, y: 16, angle: 0, cover: 'coverAccent' },
+] as const
+
+// 3冊のノートを重ねた絵。枠線は使わず、表紙・背・名前の札を色の面だけで描く
+function Notebooks() {
+  return (
+    <svg className={styles.notebooks} viewBox="0 0 220 150" aria-hidden="true">
+      {NOTEBOOKS.map(({ x, y, angle, cover }) => (
+        <g
+          key={cover}
+          transform={`rotate(${angle} ${x + 42} ${y + 56}) translate(${x} ${y})`}
+        >
+          <rect className={styles[cover]} width="84" height="112" rx="8" />
+          <rect className={styles.spine} width="14" height="112" rx="4" />
+          <rect x="26" y="22" width="46" height="28" rx="4" fill="#fff" />
+          <rect className={styles.line} x="32" y="30" width="34" height="4" />
+          <rect className={styles.line} x="32" y="38" width="22" height="4" />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 // 問題の値札。準備の画面と、台本の最初のページのステージに置く
 function PriceTag() {
   return (
@@ -61,7 +88,7 @@ function PriceTag() {
       role="img"
       aria-label={`ノートセット。定価${LIST_PRICE}円、${DISCOUNT_RATE}％引き`}
     >
-      <span className={styles.item}>ノートセット</span>
+      <Notebooks />
       <strong className={styles.price}>
         定価 <b>{LIST_PRICE}</b>円
       </strong>
@@ -98,19 +125,25 @@ function Equation({
         ref={equation}
         tabIndex={-1}
       >
-        {LIST_PRICE}円 − {DISCOUNT}円 ＝{' '}
-        {visible ? (
-          <em>{SALE_PRICE}円</em>
-        ) : (
-          <button
-            className={flowStyles.reveal}
-            type="button"
-            aria-label="答えを見る"
-            onClick={onReveal}
-          >
-            ？
-          </button>
-        )}
+        {/* 1行では幅に収まらないので、「＝」の前で2行に分ける */}
+        <span>
+          {LIST_PRICE}円 − {DISCOUNT}円
+        </span>
+        <span>
+          ＝{' '}
+          {visible ? (
+            <em>{SALE_PRICE}円</em>
+          ) : (
+            <button
+              className={flowStyles.reveal}
+              type="button"
+              aria-label="答えを見る"
+              onClick={onReveal}
+            >
+              ？
+            </button>
+          )}
+        </span>
       </p>
       {!visible && (
         <p className={flowStyles.revealHint}>

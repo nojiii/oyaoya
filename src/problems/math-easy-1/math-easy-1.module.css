@@ -17,10 +17,33 @@
   color: var(--color-text);
 }
 
-.item {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-muted);
+/* ノートセットの絵。表紙は帯の図と同じ水色・ピンクと、台本の色（橙） */
+.notebooks {
+  display: block;
+  width: min(100%, 180px);
+  height: auto;
+}
+
+.coverBlue {
+  fill: #9fd0ef;
+}
+
+.coverPink {
+  fill: #f7b6c0;
+}
+
+.coverAccent {
+  fill: var(--color-accent);
+}
+
+/* 表紙の左の背。表紙の色に黒を少し重ねる */
+.spine {
+  fill: rgb(0 0 0 / 15%);
+}
+
+/* 名前の札に書いた字の代わりの線 */
+.line {
+  fill: var(--color-border);
 }
 
 .price {
@@ -44,7 +67,15 @@
   font-weight: 900;
 }
 
-/* 単位（円）が付いて式が長いので、スマホの幅に収まるよう小さくする */
+/* 単位（円）が付いて式が長いので、「＝」の前で2行に分け、スマホの幅に収まる大きさにする */
 p.equation {
-  font-size: clamp(22px, 8vw, 40px);
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: clamp(28px, 10vw, 48px);
+}
+
+.equation > span {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
 }
