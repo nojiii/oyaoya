@@ -10,6 +10,9 @@
   --color-faint: #a9a299;
   --color-accent: #c2410c;
   --color-accent-soft: #fdeadf;
+  /* 淡い橙の面の上の印（教え方のポイントの大事な語）と、使い方の説明で今のページを示す印 */
+  --color-accent-mark: #ffd2b5;
+  --color-accent-bright: #ffb48a;
   --color-border: #e9e4dd;
   /* 台本の画面だけ、全面を橙にする（文字は白） */
   --teach-bg: #c2410c;

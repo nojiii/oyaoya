@@ -9,6 +9,7 @@ import {
 } from 'react-router'
 import { useHomeUrl } from './festival'
 import type { PageLink } from './loaders'
+import { DebugThemePanel } from '../components/DebugThemePanel'
 import { SideNavigation } from '../components/SideNavigation'
 
 // 上の帯。ホームではロゴ、それ以外の画面では1つ上の一覧へ戻るボタンを左に置き、メニューは右に置く
@@ -61,6 +62,7 @@ export function Layout() {
       </main>
       {/* ページを移ったら一番上から表示し、ブラウザの「戻る」では元の位置に戻す */}
       <ScrollRestoration />
+      <DebugThemePanel />
     </>
   )
 }
