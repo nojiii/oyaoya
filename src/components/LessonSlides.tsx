@@ -290,6 +290,9 @@ export function LessonSlides({
       </div>
       {following && (
         <p className={flowStyles.next}>
+          <span>
+            次<b>{following.title}</b>
+          </span>
           <svg
             width="20"
             height="20"
@@ -301,11 +304,8 @@ export function LessonSlides({
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <path d="M19 12H5M11 6l-6 6 6 6" />
+            <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
-          <span>
-            次<b>{following.title}</b>
-          </span>
         </p>
       )}
     </div>

@@ -27,6 +27,8 @@
 
 html {
   background: var(--color-bg);
+  /* スマホで押したときに、ボタンの形と関係なく四角い色の枠が出るのを消す（押した手応えは各ボタンの :active で出す） */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
