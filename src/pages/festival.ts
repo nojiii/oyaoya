@@ -12,5 +12,5 @@ export function useFestival() {
 
 // 今のモードのホームのURL
 export function useHomeUrl() {
-  return useFestival() ? FESTIVAL_URL : '/'
+  return '/'
 }

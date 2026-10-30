@@ -39,6 +39,11 @@ interface Prepare {
 
 interface Props {
   flow?: ReactNode
+  // 問題ごとに、マスコットと「こう声かけしよう」の見出しを非表示にできる。
+  showSpeaker?: boolean
+  // 問題ごとに、解説カードの見出しと終了カードを非表示にできる。
+  showRevealHeading?: boolean
+  showFinish?: boolean
   // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
   // 台本の下に出す、おはじきの画面
@@ -294,12 +299,12 @@ function announcement(beat: Beat) {
 }
 
 // 1画面の中身。行動は1つだけにして、それ以外の情報は出さない
-function BeatView({ beat }: { beat: Beat }) {
+function BeatView({ beat, showSpeaker }: { beat: Beat; showSpeaker: boolean }) {
   switch (beat.kind) {
     case 'do':
       return <p className={styles.main}>{beat.text}</p>
     case 'say':
-      return <TeachingStep step={beat} />
+      return <TeachingStep step={beat} showSpeaker={showSpeaker} />
     case 'show':
       return <div className={styles.reference}>{beat.content}</div>
     case 'finish':
@@ -366,6 +371,9 @@ export function TeachingScript({
   counters,
   renderVisual,
   flow,
+  showSpeaker = true,
+  showRevealHeading = true,
+  showFinish = true,
 }: Props) {
   const location = useLocation()
   // 台本を開いているかはページごと、進み具合は問題ごとに保存する。
@@ -396,9 +404,9 @@ export function TeachingScript({
   const script: Turn[] = [question, ...turns]
   const FINISH = script.length
   const sectionOf = (turn: number): Section =>
-    turn === FINISH ? 'finish' : turn === 0 ? 'question' : 'guide'
+    showFinish && turn === FINISH ? 'finish' : turn === 0 ? 'question' : 'guide'
   const beatsAt = ({ turn }: Position): Beat[] =>
-    turn === FINISH ? [{ kind: 'finish' }] : beatsOf(script[turn])
+    showFinish && turn === FINISH ? [{ kind: 'finish' }] : beatsOf(script[turn])
   const position = history[history.length - 1]
   const index = position.turn
   const section = sectionOf(index)
@@ -437,7 +445,11 @@ export function TeachingScript({
     if (history.length > 1) setHistory(history.slice(0, -1))
     else setStarted(false)
   }
-  const canAdvance = beat.kind !== 'finish'
+  const canAdvance =
+    beat.kind !== 'finish' &&
+    (showFinish ||
+      index < script.length - 1 ||
+      position.beat < beats.length - 1)
   const canBack = history.length > 1
   const activeCardIndex =
     script
@@ -653,7 +665,7 @@ export function TeachingScript({
           >
             {[
               ...script.map((turn) => beatsOf(turn)),
-              [{ kind: 'finish' } as Beat],
+              ...(showFinish ? [[{ kind: 'finish' } as Beat]] : []),
             ].flatMap((turnBeats, turnIndex) =>
               turnBeats.map((cardBeat, beatIndex) => {
                 const active =
@@ -688,16 +700,17 @@ export function TeachingScript({
                         </div>
                       )}
                     <div className={styles.readingContent}>
-                      {cardBeat.kind !== 'say' && (
-                        <h2 className={styles.heading}>
-                          <span aria-hidden="true">
-                            {HEADINGS[cardBeat.kind][0]}{' '}
-                          </span>
+                      {cardBeat.kind !== 'say' &&
+                        (cardBeat.kind !== 'show' || showRevealHeading) && (
+                          <h2 className={styles.heading}>
+                            <span aria-hidden="true">
+                              {HEADINGS[cardBeat.kind][0]}{' '}
+                            </span>
 
-                          {HEADINGS[cardBeat.kind][1]}
-                        </h2>
-                      )}
-                      <BeatView beat={cardBeat} />
+                            {HEADINGS[cardBeat.kind][1]}
+                          </h2>
+                        )}
+                      <BeatView beat={cardBeat} showSpeaker={showSpeaker} />
                     </div>
                     {turnIndex < script.length &&
                       !counters &&

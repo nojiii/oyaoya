@@ -11,47 +11,55 @@ export interface TeachingStepContent {
   resourceHint?: string
 }
 
-export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
+export function TeachingStep({
+  step: beat,
+  showSpeaker = true,
+}: {
+  step: TeachingStepContent
+  showSpeaker?: boolean
+}) {
   return (
     <>
       {beat.parentNote && <TeachingPoints note={beat.parentNote} />}
       {beat.say && (
         <div className={styles.speech}>
-          <div className={styles.speechIntro}>
-            <img className={styles.mascot} src="/mascot.png" alt="" />
-            <h2 className={styles.readAloudHeading}>
-              <svg
-                width="36"
-                height="36"
-                viewBox="0 0 36 36"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M9 5h18a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H17l-7 5v-5H9a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z"
-                  fill="#fff0bd"
-                  stroke="#b66b30"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                <circle cx="13" cy="15" r="1.6" fill="#80522f" />
-                <circle cx="23" cy="15" r="1.6" fill="#80522f" />
-                <path
-                  d="M14 20q4 4 8 0"
-                  stroke="#80522f"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <circle cx="10" cy="19" r="2" fill="#efa38b" />
-                <circle cx="26" cy="19" r="2" fill="#efa38b" />
-              </svg>
-              <span>
-                こう
-                <wbr />
-                声がけしよう
-              </span>
-            </h2>
-          </div>
+          {showSpeaker && (
+            <div className={styles.speechIntro}>
+              <img className={styles.mascot} src="/mascot.png" alt="" />
+              <h2 className={styles.readAloudHeading}>
+                <svg
+                  width="36"
+                  height="36"
+                  viewBox="0 0 36 36"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 5h18a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H17l-7 5v-5H9a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z"
+                    fill="#fff0bd"
+                    stroke="#b66b30"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="13" cy="15" r="1.6" fill="#80522f" />
+                  <circle cx="23" cy="15" r="1.6" fill="#80522f" />
+                  <path
+                    d="M14 20q4 4 8 0"
+                    stroke="#80522f"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="10" cy="19" r="2" fill="#efa38b" />
+                  <circle cx="26" cy="19" r="2" fill="#efa38b" />
+                </svg>
+                <span>
+                  こう
+                  <wbr />
+                  声がけしよう
+                </span>
+              </h2>
+            </div>
+          )}
           <div className={styles.readingBox}>
             <svg
               className={styles.readAloudIcon}
