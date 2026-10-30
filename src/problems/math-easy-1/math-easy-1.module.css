@@ -1,3 +1,6 @@
+/* 数学（易しい）第1問だけで使う見た目 */
+
+/* ステージに置く帯の図。白地の画像なので、角だけ丸める */
 .figure {
   display: block;
   width: 100%;
@@ -6,49 +9,42 @@
   object-fit: contain;
 }
 
-.priceCard {
-  display: grid;
-  gap: 0.45rem;
-  justify-items: center;
-  padding: 1.25rem 2rem;
-  border: 3px solid #7c5cff;
-  border-radius: 18px;
-  background: #f7f5ff;
-  color: #29233f;
-}
-
-.notebook {
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.priceCard strong {
-  font-size: clamp(2rem, 8vw, 3.5rem);
-}
-
-.priceCard small {
-  color: #c33f70;
-  font-weight: 700;
-}
-
-.equationGroup {
+/* 問題の値札。枠線は使わず、文字の大きさと太さで見せる */
+.priceTag {
   display: grid;
   gap: 0.35rem;
   justify-items: center;
+  color: var(--color-text);
 }
 
-.hiddenHint {
-  margin: 0;
+.item {
+  font-size: 16px;
   font-weight: 700;
-  font-size: 12px;
-  color: var(--teach-stage);
+  color: var(--color-muted);
 }
 
-.eaten {
-  opacity: 0.25;
-  transform: scale(0.85);
+.price {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
+.price b {
+  font-size: clamp(44px, 14vw, 64px);
+  font-weight: 900;
+}
+
+/* 値引きの札。台本の色（橙）にする */
+.discount {
+  padding: 2px 14px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* 単位（円）が付いて式が長いので、スマホの幅に収まるよう小さくする */
 p.equation {
   font-size: clamp(22px, 8vw, 40px);
 }
