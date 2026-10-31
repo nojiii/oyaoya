@@ -9,6 +9,7 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
 import {
@@ -127,26 +128,26 @@ export function AdditionAnswer({
       <div aria-live="polite" className={styles.answer}>
         {visible ? (
           <>
+            <TeachingPoints
+              collapsible
+              note="ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。"
+            />
             <SpokenWords title={`「${a + b}」と答えたら`}>
               そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
             </SpokenWords>
             <SpokenWords title="ちがう数を答えたら" minor>
               おしい！ 指でさしながら、もう一回数えてみよう。
             </SpokenWords>
-            <TeachingPoints
-              folded
-              note="ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。"
-            />
           </>
         ) : (
           <>
+            <TeachingPoints
+              collapsible
+              note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
+            />
             <SpokenWords>
               {a}こと{b}こ、合わせて何こだった？
             </SpokenWords>
-            <TeachingPoints
-              folded
-              note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
-            />
           </>
         )}
       </div>
@@ -155,7 +156,7 @@ export function AdditionAnswer({
 }
 
 // たしかめの、ちがう数の問題をひとりで解くページ。式と「？」はステージ（AdditionEquation）に出す。
-// アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く
+// 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く
 export function AdditionCheck({
   a,
   b,
@@ -174,6 +175,12 @@ export function AdditionCheck({
       <div aria-live="polite" className={styles.answer}>
         {visible ? (
           <>
+            <TeachingPoints
+              collapsible
+              note={
+                'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
+              }
+            />
             <SpokenWords title={`「${a + b}」と答えたら`}>
               ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
             </SpokenWords>
@@ -181,24 +188,18 @@ export function AdditionCheck({
               おしい！
               さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
             </SpokenWords>
-            <TeachingPoints
-              folded
-              note={
-                'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
-              }
-            />
           </>
         ) : (
           <>
+            <TeachingPoints
+              collapsible
+              note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\nお子さんが答えてから、「？」を押して確かめましょう。`}
+            />
             <SpokenWords>
               こんどは、{a}たす{b}
               だよ。さっきと同じように、ひとりでやってみよう。
             </SpokenWords>
             {children}
-            <TeachingPoints
-              folded
-              note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\nお子さんが答えてから、「？」を押して確かめましょう。`}
-            />
           </>
         )}
       </div>
@@ -256,7 +257,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
   // 「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
   const answerShown = progress.page === 'answer' && progress.answerVisible
   const checkShown = progress.page === 'check' && progress.answerVisible
-  // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → セリフ → 教え方のポイント
+  // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → 教え方のポイント → セリフ
   const slides: Record<AdditionPage, LessonSlide> = {
     read: {
       id: 'read',
@@ -334,13 +335,13 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       stage: <CounterGroups a={a} b={b} />,
       content: (
         <>
+          <TeachingPoints
+            collapsible
+            note={`「合わせて」の問題なので、片方にもう片方を足すのではなく、**${a}個と${b}個を両手で同時にまん中へ寄せて**、1つにまとめましょう。\n\nお子さんの手で寄せてもらいましょう。`}
+          />
           <SpokenWords>
             {a}こと{b}こを、両手で一緒にまん中へ寄せてみようか。
           </SpokenWords>
-          <TeachingPoints
-            folded
-            note={`「合わせて」の問題なので、片方にもう片方を足すのではなく、**${a}個と${b}個を両手で同時にまん中へ寄せて**、1つにまとめましょう。\n\nお子さんの手で寄せてもらいましょう。`}
-          />
         </>
       ),
     },
@@ -350,16 +351,16 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       stage: <CounterTogether a={a} b={b} />,
       content: (
         <>
+          <TeachingPoints
+            collapsible
+            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。`}
+          />
           <SpokenWords>
             1こずつ一緒に数えてみよう！{' '}
             {/* 合計が5以下だと、親が答えまで（5なら答えの直前まで）数えてしまうので、数を言わない */}
             {count.length > 5 && `${count.slice(0, 4).join('、')}……`}
             全部で何こかな？
           </SpokenWords>
-          <TeachingPoints
-            folded
-            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。`}
-          />
         </>
       ),
     },
@@ -393,11 +394,10 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          <img
+          {/* 「？」で答えを見たら、おやじいが喜ぶ（ページを移ると、答えはまた隠れる） */}
+          <Oyajii
             className={styles.answerMascot}
-            src="/mascot.png"
-            alt=""
-            draggable={false}
+            motion={answerShown ? 'correct' : null}
           />
           <AdditionEquation
             a={a}
@@ -417,15 +417,15 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       stage: <CounterTogether a={a} b={b} />,
       content: (
         <>
-          <SpokenWords>
-            どうやって答えを見つけたの？ おしえてくれる？
-          </SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '**2つに分けて → 合わせて → 1個ずつ数えた**ことを、お子さんが自分の言葉で話せるかを見ます。\n\n言葉にしにくければ、**おはじきを指さして**教えてもらっても大丈夫です。合っていても違っていても、最後まで聞いてから「そうやって数えたんだね」と受け止めましょう。'
             }
           />
+          <SpokenWords>
+            どうやって答えを見つけたの？ おしえてくれる？
+          </SpokenWords>
         </>
       ),
     },

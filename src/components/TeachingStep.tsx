@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Oyajii } from './Oyajii'
 import { TeachingPoints } from './TeachingPoints'
 import styles from './TeachingScript.module.css'
 
@@ -11,18 +12,24 @@ export interface TeachingStepContent {
   resourceHint?: string
 }
 
-export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
+// active は、今出しているページか。出たときに、おやじいが話しかける
+export function TeachingStep({
+  step: beat,
+  active = false,
+}: {
+  step: TeachingStepContent
+  active?: boolean
+}) {
+  // 教え方のポイントは、読み上げる前に確かめられるよう、セリフの上に置く
   return (
     <>
+      {beat.parentNote && (
+        <TeachingPoints note={beat.parentNote} collapsible={!!beat.say} />
+      )}
       {beat.say && (
         <div className={styles.speech}>
           <div className={styles.speechIntro}>
-            <img
-              className={styles.mascot}
-              src="/mascot.png"
-              alt=""
-              draggable={false}
-            />
+            <Oyajii className={styles.mascot} motion={active ? 'talk' : null} />
             <h2 className={styles.readAloudHeading}>
               こう
               <wbr />
@@ -36,9 +43,6 @@ export function TeachingStep({ step: beat }: { step: TeachingStepContent }) {
             </div>
           </div>
         </div>
-      )}
-      {beat.parentNote && (
-        <TeachingPoints note={beat.parentNote} folded={!!beat.say} />
       )}
       {beat.resourceHint && (
         <p className={styles.resourceHint}>{beat.resourceHint}</p>

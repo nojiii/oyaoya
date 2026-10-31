@@ -20,13 +20,11 @@
   opacity: 0;
 }
 
-/* キャラクターは将来 Rive の <canvas> に替える */
 .mascot {
   display: block;
   width: 160px;
   height: auto;
   aspect-ratio: 1;
-  object-fit: contain;
 }
 
 .words {

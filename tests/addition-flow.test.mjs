@@ -242,11 +242,12 @@ test('both addition routes render all steps with matching progress, counter reus
             assert.ok(
               active.includes(`おはじきが${a}こと${b}こ、別々に並んでいます`),
             )
-          // 読み上げるセリフを主役にして、教え方のポイントはその下にたたんでおく
+          // 教え方のポイントは、読み上げる前に確かめられるよう、セリフの上に開いて置く
           if (page === 'combine' || page === 'count') {
             assert.ok(
-              active.indexOf('こう声をかけよう') <
-                active.indexOf('教え方のポイント'),
+              active.indexOf('教え方のポイント') >= 0 &&
+                active.indexOf('教え方のポイント') <
+                  active.indexOf('こう声をかけよう'),
             )
           }
           if (page === 'count')

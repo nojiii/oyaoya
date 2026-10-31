@@ -4,6 +4,38 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
+// ページを分けない台本の声かけのカードでも、教え方のポイントはセリフの上に、開いた状態で置く。
+// セリフのないカードでは、たたまずに本文として出す
+test('a speech card shows its teaching points open, above the speech', async () => {
+  const { TeachingStep } = await import('../src/components/TeachingStep.tsx')
+  const html = renderToString(
+    createElement(TeachingStep, {
+      step: {
+        say: 'いくつあるかな？',
+        parentNote:
+          '**指でさしながら**数えます。\n\n答えを先に言わないようにします。',
+      },
+    }),
+  )
+  const point = html.indexOf('教え方のポイント')
+  assert.ok(point >= 0, 'teaching points are shown')
+  assert.ok(point < html.indexOf('data-oyajii'), 'before Oyajii')
+  assert.ok(point < html.indexOf('いくつあるかな？'), 'before the speech')
+  assert.match(
+    html,
+    /<details[^>]*class="[^"]*parentNote[^"]*"[^>]*data-collapsible[^>]*\bopen=""/,
+    'open, and can be collapsed',
+  )
+
+  const noteOnly = renderToString(
+    createElement(TeachingStep, {
+      step: { say: '', parentNote: '**一緒に読みましょう**。' },
+    }),
+  )
+  assert.ok(!noteOnly.includes('<details'), 'not collapsible without a speech')
+  assert.match(noteOnly, /<section[^>]*class="[^"]*parentNote/)
+})
+
 test('every published script has teaching points, reading labels and only supported resource invitations', async () => {
   const previousStorage = globalThis.sessionStorage
   globalThis.sessionStorage = {
@@ -60,7 +92,8 @@ test('every published script has teaching points, reading labels and only suppor
           /aria-roledescription="カルーセル"[^>]*tabindex="0"/,
           id + ': the script can be moved with the keyboard',
         )
-        // ページを分けた台本の各ページ：セリフがあれば、その後に教え方のポイントをたたんで置く。
+        // ページを分けた台本の各ページ：セリフがあれば、その上に教え方のポイントを置く。
+        // 最初は開いておき、見出しを押すとたためる。
         // 教え方のポイントは、** や \n の文字のまま出ない
         const slides = html
           .split(/(?=<section[^>]*data-slide=")/)
@@ -71,13 +104,13 @@ test('every published script has teaching points, reading labels and only suppor
           const point = slide.search(/class="[^"]*parentNote/)
           if (say >= 0) {
             assert.ok(
-              point > say,
-              `${id}/${name}: teaching points after the line`,
+              point >= 0 && point < say,
+              `${id}/${name}: teaching points before the line`,
             )
             assert.match(
               slide,
-              /<details[^>]*class="[^"]*parentNote[^"]*"[^>]*data-folded/,
-              `${id}/${name}: teaching points are folded`,
+              /<details[^>]*class="[^"]*parentNote[^"]*"[^>]*data-collapsible[^>]*\bopen=""/,
+              `${id}/${name}: teaching points are open and collapsible`,
             )
           }
           if (point >= 0) {
@@ -169,6 +202,11 @@ test('every published script has teaching points, reading labels and only suppor
           id + ': teaching point sections',
         )
         for (const [note] of notes) {
+          assert.match(
+            note,
+            /^<details[^>]*data-collapsible[^>]*\bopen=""/,
+            id + ': teaching points are open and collapsible',
+          )
           const paragraphs = [...note.matchAll(/<p>([\s\S]*?)<\/p>/g)]
           assert.ok(
             paragraphs.length >= 2 && paragraphs.length <= 3,
@@ -187,18 +225,20 @@ test('every published script has teaching points, reading labels and only suppor
             id + ': emphasis markers are not shown',
           )
         }
-        const mascot = html.indexOf('/mascot.png')
-        const start = html.indexOf(headings[0][0], mascot)
+        // 教え方のポイントは、セリフ（おやじい・見出し・読み上げる文）の上に置く
+        const start = html.indexOf(headings[0][0])
+        const mascot = html.lastIndexOf('data-oyajii', start)
+        const point = html.lastIndexOf('教え方のポイント', mascot)
         const readingBox = html.indexOf('readingBox', start)
         const readingText = html.indexOf('readAloudText', readingBox)
-        const point = html.indexOf('教え方のポイント', readingText)
         assert.ok(
-          mascot < start &&
+          point >= 0 &&
+            point < mascot &&
+            mascot < start &&
             start < readingBox &&
-            readingBox < readingText &&
-            readingText < point,
+            readingBox < readingText,
           id +
-            ': mascot, speech cue, reading text and teaching points appear in order',
+            ': teaching points, mascot, speech cue and reading text appear in order',
         )
         assert.equal(
           html.includes('aria-label="おはじきの案内"'),

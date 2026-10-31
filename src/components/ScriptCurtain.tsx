@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import styles from './ScriptCurtain.module.css'
+import { Oyajii } from './Oyajii'
 
 // 準備の画面と台本を行き来するときの幕。
 // start：押したボタンから橙が広がって画面を覆い、おやじいが「はじめましょう」と出てから台本が現れる。
@@ -146,12 +147,7 @@ export function ScriptCurtain({
     // 読み上げでは、切り替わった後の画面（台本の読み上げ・準備の画面）を伝えるので、幕は読まない
     <div className={styles.curtain} ref={sheet} aria-hidden="true">
       <div className={styles.message} ref={message}>
-        <img
-          className={styles.mascot}
-          src="/mascot.png"
-          alt=""
-          draggable={false}
-        />
+        <Oyajii className={styles.mascot} motion={curtain.kind} />
         <p className={styles.words}>{MESSAGES[curtain.kind]}</p>
       </div>
     </div>,

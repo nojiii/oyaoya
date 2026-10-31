@@ -178,13 +178,13 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.whole}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '**0.2は、お子さんに言ってもらいましょう**。\n\n分かりづらそうなときは、「全部で100％が1。それを10こに分けた1こ分（10％）は0.1だね」と、言葉で順にたどります。上の図のような横長の帯を紙にかいて区切ると、さらに分かりやすくなります。'
             }
           />
+          <SpokenWords>{words.whole}</SpokenWords>
         </>
       ),
     },
@@ -199,11 +199,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.discount}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={`${LIST_PRICE}×0.2の式で求められていれば、それで大丈夫です。\n\nすぐに出てこないときは、**10％から考えましょう**。「${LIST_PRICE}円を10こに分けた1こ分（10％）はいくら？」→${LIST_PRICE / 10}円、「20％はその2つ分だから？」→${DISCOUNT}円の順に聞きます。`}
           />
+          <SpokenWords>{words.discount}</SpokenWords>
         </>
       ),
     },
@@ -218,11 +218,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.price}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={`**${DISCOUNT}円と答えたら**、それは安くなった分です。「${DISCOUNT}円は安くなった分だね。お店に払うのはいくら？」と聞き直しましょう。\n\n「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
           />
+          <SpokenWords>{words.price}</SpokenWords>
         </>
       ),
     },
@@ -235,24 +235,24 @@ function MathEasyFlow() {
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
             <>
+              <TeachingPoints
+                collapsible
+                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。「${LIST_PRICE}円のノートが${DISCOUNT}円安くなったら、払うのはいくら？」と聞き直しましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
+              />
               <SpokenWords title={`${SALE_PRICE}円と答えたら`}>
                 {words.right}
               </SpokenWords>
               <SpokenWords title="ちがう答えだったら" minor>
                 {words.wrong}
               </SpokenWords>
-              <TeachingPoints
-                folded
-                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。「${LIST_PRICE}円のノートが${DISCOUNT}円安くなったら、払うのはいくら？」と聞き直しましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
-              />
             </>
           ) : (
             <>
-              <SpokenWords>{words.ask}</SpokenWords>
               <TeachingPoints
-                folded
+                collapsible
                 note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
               />
+              <SpokenWords>{words.ask}</SpokenWords>
             </>
           )}
         </div>
@@ -271,11 +271,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.explain}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば大丈夫です。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。`}
           />
+          <SpokenWords>{words.explain}</SpokenWords>
           <button className={flowStyles.finish} type="button" onClick={finish}>
             終わる
           </button>
