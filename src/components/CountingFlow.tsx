@@ -52,7 +52,7 @@ export function CountingFlow({ n }: { n: number }) {
   const index = countingPages.indexOf(page)
   const line = <CountingLine n={n} />
   const give = countingGiveCount(n)
-  // 各ページ：上のステージに見るもの、下に見出し → セリフ → 教え方のポイント
+  // 各ページ：上のステージに見るもの、下に見出し → 教え方のポイント → セリフ
   const slides: Record<CountingPage, LessonSlide> = {
     read: {
       id: 'read',
@@ -60,11 +60,11 @@ export function CountingFlow({ n }: { n: number }) {
       stage: line,
       content: (
         <>
-          <SpokenWords>{countingWords.read}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={`おはじき・ブロック・お菓子など、身近なものを**${n}個**用意して、お子さんの前に置きましょう。\n\n数える数は、準備の画面で変えられます。はじめは**5個まで**がおすすめです。`}
           />
+          <SpokenWords>{countingWords.read}</SpokenWords>
         </>
       ),
     },
@@ -74,13 +74,13 @@ export function CountingFlow({ n }: { n: number }) {
       stage: line,
       content: (
         <>
-          <SpokenWords>{countingWords.line}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'ばらばらのままだと、どれを数えたか分からなくなります。**横1列に、少し間をあけて**並べましょう。\n\nお子さんに並べてもらうと、1個ずつ触るきっかけになります。'
             }
           />
+          <SpokenWords>{countingWords.line}</SpokenWords>
         </>
       ),
     },
@@ -90,13 +90,13 @@ export function CountingFlow({ n }: { n: number }) {
       stage: line,
       content: (
         <>
-          <SpokenWords>{countingWords.count}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'お子さんが**1個ずつ指でさしながら**、声に出して数えます。親は一緒に数えず、見守りましょう。\n\n数えたものは、**1個ずつ手前（お子さんの側）へずらして**もらいます。数えたものとまだのものが分かれるので、2回数えたり飛ばしたりせずに、最後まで数えられます。'
             }
           />
+          <SpokenWords>{countingWords.count}</SpokenWords>
         </>
       ),
     },
@@ -105,14 +105,14 @@ export function CountingFlow({ n }: { n: number }) {
       title: '全部で何こだったかな？',
       content: (
         <div className={styles.answer}>
-          <SpokenWords>{countingWords.answer}</SpokenWords>
-          <SpokenWords title="答えたら">{countingWords.confirm}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '数え終わったら、何個だったかを聞きます。\n\nお子さんが答えたら、**最後に言った数が、全部の数**になることを一緒に確かめましょう。'
             }
           />
+          <SpokenWords>{countingWords.answer}</SpokenWords>
+          <SpokenWords title="答えたら">{countingWords.confirm}</SpokenWords>
         </div>
       ),
     },
@@ -124,6 +124,12 @@ export function CountingFlow({ n }: { n: number }) {
       stage: line,
       content: (
         <div className={styles.answer}>
+          <TeachingPoints
+            collapsible
+            note={
+              '手前にずらしたものを、**もう一度1列に戻して**から数えます。\n\n数える向きを変えても、**全部の数は変わらない**ことが分かっているかを見ます。同じ数を答えられたら、数え方が身についています。'
+            }
+          />
           <SpokenWords>{countingWords.recount}</SpokenWords>
           <SpokenWords title="同じ数になったら">
             {countingWords.recountSame}
@@ -131,12 +137,6 @@ export function CountingFlow({ n }: { n: number }) {
           <SpokenWords title="ちがう数になったら" minor>
             {countingWords.recountDifferent}
           </SpokenWords>
-          <TeachingPoints
-            folded
-            note={
-              '手前にずらしたものを、**もう一度1列に戻して**から数えます。\n\n数える向きを変えても、**全部の数は変わらない**ことが分かっているかを見ます。同じ数を答えられたら、数え方が身についています。'
-            }
-          />
         </div>
       ),
     },
@@ -147,14 +147,14 @@ export function CountingFlow({ n }: { n: number }) {
       stage: line,
       content: (
         <div className={styles.answer}>
+          <TeachingPoints
+            collapsible
+            note={`お子さんが**数えながら1個ずつ**取り、**${give}個で止められるか**を見ます。\n\n全部渡してしまったり、数えずにつかんだりしたときは、まだ「最後に言った数が、全部の数」がつかめていないかもしれません。今日はここまでにして、次は**1列に並べて数える**ところから、もう一度一緒にやりましょう。`}
+          />
           <SpokenWords>{countingWords.give(give)}</SpokenWords>
           <SpokenWords title="渡してくれたら">
             {countingWords.given}
           </SpokenWords>
-          <TeachingPoints
-            folded
-            note={`お子さんが**数えながら1個ずつ**取り、**${give}個で止められるか**を見ます。\n\n全部渡してしまったり、数えずにつかんだりしたときは、まだ「最後に言った数が、全部の数」がつかめていないかもしれません。今日はここまでにして、次は**1列に並べて数える**ところから、もう一度一緒にやりましょう。`}
-          />
           {/* 終わると準備の画面へ戻る。次に台本を開くと、最初のページから */}
           <button className={styles.finish} type="button" onClick={finish}>
             終わる

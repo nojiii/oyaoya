@@ -227,13 +227,13 @@ function PuzzleHardFlow() {
       stage: <Prisoners hats={HATS} />,
       content: (
         <>
-          <SpokenWords>{words.see}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'AさんとBさんは壁しか見えず、**だれの帽子も見えません**。Cさんには、Bさんの帽子。Dさんには、BさんとCさんの帽子が見えます。\n\nここを最初に整理しておくと、あとで「その人の気持ち」になって考えやすくなります。'
             }
           />
+          <SpokenWords>{words.see}</SpokenWords>
         </>
       ),
     },
@@ -249,13 +249,13 @@ function PuzzleHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.suppose}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '白は2つしかないので、BさんとCさんが2人とも白なら、Dさんは**すぐに「黒」と答えられます**（2人とも黒なら「白」）。\n\n図の帽子は「もしも」の色です。本当の色ではないことを伝えてから、答えが出る場合を考えてもらいます。'
             }
           />
+          <SpokenWords>{words.suppose}</SpokenWords>
         </>
       ),
     },
@@ -267,13 +267,13 @@ function PuzzleHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.silent}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'BさんとCさんの色がちがうと、Dさんの帽子は黒でも白でもありえるので、**Dさんには答えられません**。\n\nだから、Dさんはだまったままになります。'
             }
           />
+          <SpokenWords>{words.silent}</SpokenWords>
         </>
       ),
     },
@@ -289,13 +289,13 @@ function PuzzleHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.suppose2}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'さっきの「もしも」と同じで、BさんとCさんが2人とも白なら、**Dさんはすぐに「黒」と答えたはず**です。\n\n前のページに戻って、もう一度確かめてもかまいません。'
             }
           />
+          <SpokenWords>{words.suppose2}</SpokenWords>
         </>
       ),
     },
@@ -310,13 +310,13 @@ function PuzzleHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.notice}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'Dさんがなにも言わないので、Cさんは**自分は白ではない**、つまり黒だとわかります。\n\n「だまっていること」も手がかりになるのが、この問題のポイントです。'
             }
           />
+          <SpokenWords>{words.notice}</SpokenWords>
         </>
       ),
     },
@@ -339,26 +339,26 @@ function PuzzleHardFlow() {
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
             <>
+              <TeachingPoints
+                collapsible
+                note={
+                  'ちがう人を答えたときは、前のページに戻って、Dさんがだまっている理由をもう一度考えます。\n\n**Dさんがだまっていること**を、Cさんが手がかりにしたと気づけているかを見ましょう。'
+                }
+              />
               <SpokenWords title="「Cさん」と答えたら">
                 {words.right}
               </SpokenWords>
               <SpokenWords title="ちがう人を答えたら" minor>
                 {words.wrong}
               </SpokenWords>
-              <TeachingPoints
-                folded
-                note={
-                  'ちがう人を答えたときは、前のページに戻って、Dさんがだまっている理由をもう一度考えます。\n\n**Dさんがだまっていること**を、Cさんが手がかりにしたと気づけているかを見ましょう。'
-                }
-              />
             </>
           ) : (
             <>
-              <SpokenWords>{words.ask}</SpokenWords>
               <TeachingPoints
-                folded
+                collapsible
                 note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
               />
+              <SpokenWords>{words.ask}</SpokenWords>
             </>
           )}
         </div>
@@ -372,13 +372,13 @@ function PuzzleHardFlow() {
       stage: <Prisoners hats={HATS} />,
       content: (
         <>
-          <SpokenWords>{words.explain}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '**「Bさんは白」→「自分も白なら、Dさんが『黒』と答えたはず」→「でもDさんはだまっている」→「だから自分は黒」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
             }
           />
+          <SpokenWords>{words.explain}</SpokenWords>
         </>
       ),
     },
@@ -401,6 +401,12 @@ function PuzzleHardFlow() {
       content: (
         <>
           <div className={flowStyles.answer} aria-live="polite">
+            <TeachingPoints
+              collapsible
+              note={
+                '親は手を出さず、**見守りましょう**。Dさんには黒と白が見えるので、だまったまま。Cさんは「自分が黒なら、Dさんが『白』と答えたはず」と考えて、自分は白だとわかります。\n\n答えは問題と同じCさんなので、**理由まで言えるか**を見ましょう。'
+              }
+            />
             {revealed ? (
               <SpokenWords title="「Cさん」と答えたら">
                 {words.alone}
@@ -408,12 +414,6 @@ function PuzzleHardFlow() {
             ) : (
               <SpokenWords>{words.check}</SpokenWords>
             )}
-            <TeachingPoints
-              folded
-              note={
-                '親は手を出さず、**見守りましょう**。Dさんには黒と白が見えるので、だまったまま。Cさんは「自分が黒なら、Dさんが『白』と答えたはず」と考えて、自分は白だとわかります。\n\n答えは問題と同じCさんなので、**理由まで言えるか**を見ましょう。'
-              }
-            />
           </div>
           {revealed && (
             <button
