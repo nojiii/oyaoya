@@ -162,11 +162,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.whole}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="20％引きは、全体（1）から0.2の分を引くことだと確かめましょう。分かりづらそうなときは、図を見せて説明してあげましょう。"
           />
+          <SpokenWords>{words.whole}</SpokenWords>
         </>
       ),
     },
@@ -181,11 +181,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.discount}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="ここで1200×0.2がすんなり出てこない場合は、慌てず1つ前に戻りましょう"
           />
+          <SpokenWords>{words.discount}</SpokenWords>
         </>
       ),
     },
@@ -200,11 +200,11 @@ function MathEasyFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.price}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="全体から割引分を引く計算の仕方を確認しましょう"
           />
+          <SpokenWords>{words.price}</SpokenWords>
         </>
       ),
     },

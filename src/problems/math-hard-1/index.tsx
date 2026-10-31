@@ -85,11 +85,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.diagonal}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="まずは4つある三角形のうち1つに注目して補助線を引いてみましょう"
           />
+          <SpokenWords>{words.diagonal}</SpokenWords>
         </>
       ),
     },
@@ -104,11 +104,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.rectangle}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="長方形の性質を利用して、白とピンクの三角形の面積が同じことを確認しましょう"
           />
+          <SpokenWords>{words.rectangle}</SpokenWords>
         </>
       ),
     },
@@ -123,11 +123,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.center}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="すべての白とピンクの三角形の面積が同じであり、合計面積も同じことを確認しましょう"
           />
+          <SpokenWords>{words.center}</SpokenWords>
         </>
       ),
     },
@@ -142,8 +142,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
+          <TeachingPoints
+            collapsible
+            note="残った真ん中の長方形に注目しましょう"
+          />
           <SpokenWords>{words.pink}</SpokenWords>
-          <TeachingPoints folded note="残った真ん中の長方形に注目しましょう" />
         </>
       ),
     },
@@ -158,11 +161,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.dimensions}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="図より、長方形の辺の長さを確認しましょう"
           />
+          <SpokenWords>{words.dimensions}</SpokenWords>
         </>
       ),
     },
@@ -172,8 +175,8 @@ function MathHardFlow() {
       stage: <Figure src={figureArea} alt="真ん中の長方形に8㎠と書いた図" />,
       content: (
         <>
+          <TeachingPoints collapsible note="長方形の面積を求めましょう" />
           <SpokenWords>{words.area}</SpokenWords>
-          <TeachingPoints folded note="長方形の面積を求めましょう" />
         </>
       ),
     },
@@ -188,11 +191,11 @@ function MathHardFlow() {
       ),
       content: (
         <>
-          <SpokenWords>{words.whiteArea}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="長方形を除いた白い部分の面積を求めましょう"
           />
+          <SpokenWords>{words.whiteArea}</SpokenWords>
         </>
       ),
     },
@@ -203,11 +206,11 @@ function MathHardFlow() {
       stage: <Figure src={figureQuestion} alt="数学の問題に使う図形" />,
       content: (
         <>
-          <SpokenWords>{words.answer}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note="白い三角形とピンクの三角形は同じ面積なので、白い三角形の面積がそのままピンクの部分の面積になることを確認しましょう"
           />
+          <SpokenWords>{words.answer}</SpokenWords>
           <button className={flowStyles.finish} type="button" onClick={finish}>
             終わる
           </button>

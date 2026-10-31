@@ -199,7 +199,7 @@ function SampleFlow({ eat }: { eat: number }) {
     },
   ]
 
-  // 1ページは、上から「ステージ（見るもの）→ 見出し → セリフ → 教え方のポイント（たたむ）」。
+  // 1ページは、上から「ステージ（見るもの）→ 見出し → 教え方のポイント（開いておき、押すとたためる）→ セリフ」。
   // stage を書かないページは、キャラクターが出る。section を書くと、見出しの上に札が出る
   const slides: Record<Page, LessonSlide> = {
     // セリフのないページ：教え方のポイントを、たたまずに本文として出す
@@ -257,7 +257,7 @@ function SampleFlow({ eat }: { eat: number }) {
         </>
       ),
     },
-    // セリフのあるページ：セリフを主役にして、教え方のポイントはその下にたたむ。
+    // セリフのあるページ：教え方のポイントは、読み上げる前に確かめられるようセリフの上に置く（collapsible で、たためるようにする）。
     // 選んだ方法でセリフを変えるときは、ページを分けずに文だけを変える
     take: {
       id: 'take',
@@ -265,13 +265,13 @@ function SampleFlow({ eat }: { eat: number }) {
       stage: <Candies total={TOTAL} eaten={eat} />,
       content: (
         <>
+          <TeachingPoints
+            collapsible
+            note={`食べた${eat}個は、**残りと混ざらないように**離れた場所によけましょう。\n\nよけるのは、お子さんの手でやってもらいます。`}
+          />
           <SpokenWords>
             {route === 'picture' ? words.picture(eat) : words.physical(eat)}
           </SpokenWords>
-          <TeachingPoints
-            folded
-            note={`食べた${eat}個は、**残りと混ざらないように**離れた場所によけましょう。\n\nよけるのは、お子さんの手でやってもらいます。`}
-          />
         </>
       ),
     },
@@ -292,26 +292,26 @@ function SampleFlow({ eat }: { eat: number }) {
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
             <>
+              <TeachingPoints
+                collapsible
+                note={
+                  'ちがう数を答えたときは、前のページに戻って、よけたあめと残りを分け直します。\n\n親は数えずに、**残りだけを数えているか**を見守りましょう。'
+                }
+              />
               <SpokenWords title={`「${TOTAL - eat}」と答えたら`}>
                 {words.right(eat)}
               </SpokenWords>
               <SpokenWords title="ちがう数を答えたら" minor>
                 {words.wrong}
               </SpokenWords>
-              <TeachingPoints
-                folded
-                note={
-                  'ちがう数を答えたときは、前のページに戻って、よけたあめと残りを分け直します。\n\n親は数えずに、**残りだけを数えているか**を見守りましょう。'
-                }
-              />
             </>
           ) : (
             <>
-              <SpokenWords>{words.ask}</SpokenWords>
               <TeachingPoints
-                folded
+                collapsible
                 note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
               />
+              <SpokenWords>{words.ask}</SpokenWords>
             </>
           )}
         </div>
@@ -326,13 +326,13 @@ function SampleFlow({ eat }: { eat: number }) {
       stage: <Candies total={TOTAL} eaten={eat} />,
       content: (
         <>
-          <SpokenWords>{words.explain}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '**食べた分をよけて → 残りだけを数えた**ことを、お子さんが自分の言葉で話せるかを見ます。\n\n言葉にしにくければ、指さしで教えてもらっても大丈夫です。'
             }
           />
+          <SpokenWords>{words.explain}</SpokenWords>
         </>
       ),
     },
@@ -352,6 +352,10 @@ function SampleFlow({ eat }: { eat: number }) {
       content: (
         <>
           <div className={flowStyles.answer} aria-live="polite">
+            <TeachingPoints
+              collapsible
+              note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。`}
+            />
             {revealed ? (
               <SpokenWords title={`「${TOTAL + 1 - eat}」と答えたら`}>
                 {words.alone}
@@ -359,10 +363,6 @@ function SampleFlow({ eat }: { eat: number }) {
             ) : (
               <SpokenWords>{words.check(eat)}</SpokenWords>
             )}
-            <TeachingPoints
-              folded
-              note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。`}
-            />
           </div>
           {revealed && (
             <button
