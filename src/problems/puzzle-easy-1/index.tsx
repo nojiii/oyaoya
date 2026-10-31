@@ -212,13 +212,13 @@ function PuzzleEasyFlow() {
       stage: <Boxes picked={0} />,
       content: (
         <>
-          <SpokenWords>{words.labels}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '札がまちがっているので、「あめ」の札の箱は**あめだけではありません**。チョコだけか、まざったもののどちらかです。\n\n「中身は、札とはちがう」ことを、お子さんの言葉で言ってもらいましょう。'
             }
           />
+          <SpokenWords>{words.labels}</SpokenWords>
         </>
       ),
     },
@@ -228,13 +228,13 @@ function PuzzleEasyFlow() {
       stage: <Boxes picked={0} notes={['チョコが出た', null, null]} />,
       content: (
         <>
-          <SpokenWords>{words.tryCandy}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               'チョコが出ると、チョコだけの箱か、まざったものの箱か、**まだ2通り残ります**。あめが出れば決まりますが、**いつも決まるとはかぎりません**。「チョコ」の札の箱も同じです。\n\nお子さんが「あめが出ればわかる」と気づいたら、ほめましょう。そのうえで「どっちが出ても、かならずわかる箱はどれかな？」と聞きます。'
             }
           />
+          <SpokenWords>{words.tryCandy}</SpokenWords>
         </>
       ),
     },
@@ -244,13 +244,13 @@ function PuzzleEasyFlow() {
       stage: <Boxes picked={2} />,
       content: (
         <>
-          <SpokenWords>{words.mixed}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '札がまちがっているので、この箱は**まざっていません**。あめだけか、チョコだけのどちらかです。\n\nだから、1こ取り出せば、出てきたお菓子だけが入った箱だとわかります。残りの2つの箱もそこから決まりますが、それはたしかめで、ひとりでやってもらいます。'
             }
           />
+          <SpokenWords>{words.mixed}</SpokenWords>
         </>
       ),
     },
@@ -263,26 +263,26 @@ function PuzzleEasyFlow() {
         <div className={flowStyles.answer} aria-live="polite">
           {revealed ? (
             <>
+              <TeachingPoints
+                collapsible
+                note={
+                  'ちがう箱を答えたときは、前のページに戻って、その箱から取り出したらどうなるかを一緒に確かめます。\n\n**1こで中身が決まる箱はどれか**、という見方ができているかを見ましょう。'
+                }
+              />
               <SpokenWords title="「あめとチョコ」の札の箱と答えたら">
                 {words.right}
               </SpokenWords>
               <SpokenWords title="ちがう箱を答えたら" minor>
                 {words.wrong}
               </SpokenWords>
-              <TeachingPoints
-                folded
-                note={
-                  'ちがう箱を答えたときは、前のページに戻って、その箱から取り出したらどうなるかを一緒に確かめます。\n\n**1こで中身が決まる箱はどれか**、という見方ができているかを見ましょう。'
-                }
-              />
             </>
           ) : (
             <>
-              <SpokenWords>{words.ask}</SpokenWords>
               <TeachingPoints
-                folded
+                collapsible
                 note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
               />
+              <SpokenWords>{words.ask}</SpokenWords>
             </>
           )}
         </div>
@@ -296,13 +296,13 @@ function PuzzleEasyFlow() {
       stage: <Boxes picked={2} />,
       content: (
         <>
-          <SpokenWords>{words.explain}</SpokenWords>
           <TeachingPoints
-            folded
+            collapsible
             note={
               '**「札がまちがい」→「この箱はまざっていない」→「1こで中身がわかる」→「残りの2つも、札がまちがいなことから決まる」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
             }
           />
+          <SpokenWords>{words.explain}</SpokenWords>
         </>
       ),
     },
@@ -315,6 +315,12 @@ function PuzzleEasyFlow() {
       content: (
         <>
           <div className={flowStyles.answer} aria-live="polite">
+            <TeachingPoints
+              collapsible
+              note={
+                '親は手を出さず、**見守りましょう**。「チョコ」の札の箱はチョコだけではないので、まざったもの。残りの「あめ」の札の箱が、チョコだけです。\n\n札がまちがっていることを使って、順に決められていれば、解けています。'
+              }
+            />
             {revealed ? (
               <SpokenWords title="3つとも当てられたら">
                 {words.alone}
@@ -322,12 +328,6 @@ function PuzzleEasyFlow() {
             ) : (
               <SpokenWords>{words.check}</SpokenWords>
             )}
-            <TeachingPoints
-              folded
-              note={
-                '親は手を出さず、**見守りましょう**。「チョコ」の札の箱はチョコだけではないので、まざったもの。残りの「あめ」の札の箱が、チョコだけです。\n\n札がまちがっていることを使って、順に決められていれば、解けています。'
-              }
-            />
           </div>
           {revealed && (
             <button

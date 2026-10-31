@@ -304,7 +304,7 @@
 .dragTrack > .panel[data-active='false'] {
   pointer-events: none;
 }
-/* 台本の1ページ。上から、ステージ → 見出し → 教え方のポイント → セリフ の順に並べる */
+/* 台本の1ページ。上から、ステージ → 教え方のポイント → セリフ（こう声がけしよう）の順に並べる */
 .panel {
   display: flex;
   flex-direction: column;
@@ -353,7 +353,7 @@
   white-space: nowrap;
 }
 
-/* 教え方のポイント。セリフのあるページでは、見出しだけを出してたたんでおく */
+/* 教え方のポイント。セリフのあるページでは、セリフの上に開いて出し、見出しを押すとたためる */
 .parentNote {
   overflow-wrap: anywhere;
 }
@@ -388,11 +388,11 @@
 .parentNoteBody strong {
   font-weight: 700;
 }
-.parentNote[data-folded] {
+.parentNote[data-collapsible] {
   border-radius: 18px;
   background: var(--teach-soft);
 }
-.parentNote[data-folded] .parentNoteHeader {
+.parentNote[data-collapsible] .parentNoteHeader {
   min-height: 50px;
   margin: 0;
   padding: 0.6rem 1rem;
@@ -400,19 +400,19 @@
   cursor: pointer;
   list-style: none;
 }
-.parentNote[data-folded] .parentNoteHeader::-webkit-details-marker {
+.parentNote[data-collapsible] .parentNoteHeader::-webkit-details-marker {
   display: none;
 }
-.parentNote[data-folded] .parentNoteHeader::after {
+.parentNote[data-collapsible] .parentNoteHeader::after {
   content: '＋';
   margin-left: auto;
   color: var(--teach-muted);
 }
-.parentNote[data-folded][open] .parentNoteHeader::after {
+.parentNote[data-collapsible][open] .parentNoteHeader::after {
   content: '－';
 }
-/* たたんでいる間は、見出しと「＋」だけを見せる（補足は読み上げだけで伝える） */
-.parentNote[data-folded] .parentNoteHint {
+/* 見出しの行には、見出しと「－」（たたんだら「＋」）だけを見せる（補足は読み上げだけで伝える） */
+.parentNote[data-collapsible] .parentNoteHint {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -420,19 +420,19 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.parentNote[data-folded] .parentNoteHeader h3 {
+.parentNote[data-collapsible] .parentNoteHeader h3 {
   font-size: 14px;
   letter-spacing: 0;
 }
-.parentNote[data-folded] .parentNoteBody {
+.parentNote[data-collapsible] .parentNoteBody {
   padding: 0 1rem 1rem;
   color: var(--teach-muted);
   font-size: 14px;
 }
-.parentNote[data-folded] .parentNoteBody strong {
+.parentNote[data-collapsible] .parentNoteBody strong {
   color: var(--teach-text);
 }
-.parentNote[data-folded] .parentNoteHeader:focus-visible {
+.parentNote[data-collapsible] .parentNoteHeader:focus-visible {
   outline: 2px solid var(--teach-text);
   outline-offset: 2px;
 }
