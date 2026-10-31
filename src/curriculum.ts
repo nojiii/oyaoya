@@ -127,9 +127,9 @@ export const festivalCurriculum: Group[] = [
     slug: 'puzzle-easy',
     name: '謎解き（易しい）',
     children: [
-      unit('形・図形', 'puzzle-easy-1', '謎解き 易しい 第1問', [
-        'puzzle-easy-1',
-      ]),
+      // 準備中のため problems を外して「じゅんび中」にしている。問題の画面は src/problems/puzzle-easy-1 に残してあり、
+      // 一覧に出ないだけでURLを直接開けば表示される。戻すときは4つ目の引数に ['puzzle-easy-1'] を足す
+      unit('形・図形', 'puzzle-easy-1', '謎解き 易しい 第1問'),
     ],
   },
   {
