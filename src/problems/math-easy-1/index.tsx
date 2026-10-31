@@ -180,9 +180,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note={
-              '**0.2は、お子さんに言ってもらいましょう**。\n\n分かりづらそうなときは、「全部で100％が1。それを10こに分けた1こ分（10％）は0.1だね」→「20％はその2つ分だから？」と、言葉で順にたどります。上の図のような横長の帯を紙にかいて区切ると、さらに分かりやすくなります。'
-            }
+            note="分かりづらそうなときは、「100％＝1」「10％＝0.1」と順を追って確認しましょう。図を見せてもよいかもしれません。"
           />
           <SpokenWords>{words.whole}</SpokenWords>
         </>
@@ -201,7 +199,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note={`${LIST_PRICE}×0.2の式で求められていれば、それで大丈夫です。\n\nすぐに出てこないときは、**10％から考えましょう**。「${LIST_PRICE}円を10こに分けた1こ分（10％）はいくら？」→${LIST_PRICE / 10}円、「20％はその2つ分だから？」→${DISCOUNT}円の順に聞きます。`}
+            note={`迷っている場合は、「${LIST_PRICE}円の10％はいくら？」と10％から始め、「じゃあ20％はその2つ分だから？」と順に聞きましょう。`}
           />
           <SpokenWords>{words.discount}</SpokenWords>
         </>
@@ -220,7 +218,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note={`**${DISCOUNT}円と答えたら**、それは安くなった分です。「${DISCOUNT}円は安くなった分だね。お店に払うのはいくら？」と聞き直しましょう。\n\n「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
+            note={`「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
           />
           <SpokenWords>{words.price}</SpokenWords>
         </>
