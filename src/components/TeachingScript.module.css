@@ -483,6 +483,15 @@
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
+/* セリフの1文字目の位置に置くアイコン。文字の大きさに合わせ、セリフより目立たない色にする */
+.speakingIcon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  vertical-align: -0.125em;
+  color: var(--teach-muted);
+}
 .resourceHint {
   margin: 0;
   font-size: 14px;

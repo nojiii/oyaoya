@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import styles from './AdditionFlow.module.css'
 import scriptStyles from './TeachingScript.module.css'
+import { SpeakingIcon } from './SpeakingIcon'
 
 // 親が子どもに向けて読み上げる文。子どもに見せる文と同じく、数え方は「こ」にそろえる。
 // minor は、主のセリフの代わりに言う控えのセリフ（ちがう数を答えたら など）。小さく出す
@@ -21,7 +22,10 @@ export function SpokenWords({
       data-minor={minor || undefined}
     >
       <h3 id={heading}>{title}</h3>
-      <p className={scriptStyles.readAloudText}>{children}</p>
+      <p className={scriptStyles.readAloudText}>
+        <SpeakingIcon />
+        {children}
+      </p>
     </section>
   )
 }

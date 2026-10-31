@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Oyajii } from './Oyajii'
+import { SpeakingIcon } from './SpeakingIcon'
 import { TeachingPoints } from './TeachingPoints'
 import styles from './TeachingScript.module.css'
 
@@ -39,6 +40,7 @@ export function TeachingStep({
           <div className={styles.readingBox}>
             {beat.label && <p className={styles.label}>{beat.label}</p>}
             <div className={styles.readAloudText}>
+              <SpeakingIcon />
               {beat.sayContent ?? beat.say}
             </div>
           </div>
