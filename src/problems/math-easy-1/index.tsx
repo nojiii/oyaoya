@@ -180,7 +180,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note="わかりずらそうな時は、「100％＝1」「10％＝0.1」と順を追って確認しましょう。 図を見せてもよいかもしれません"
+            note="分かりづらそうなときは、「100％＝1」「10％＝0.1」と順を追って確認しましょう。図を見せてもよいかもしれません。"
           />
           <SpokenWords>{words.whole}</SpokenWords>
         </>
@@ -199,7 +199,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note="迷っている場合は、「1200円の10%はいくら？」と10％から始め、「じゃあ20%はその2つ分だから？」と順に聞きましょう"
+            note={`迷っている場合は、「${LIST_PRICE}円の10％はいくら？」と10％から始め、「じゃあ20％はその2つ分だから？」と順に聞きましょう。`}
           />
           <SpokenWords>{words.discount}</SpokenWords>
         </>
@@ -218,7 +218,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note="「1200−240」の式が出れば大丈夫です。1200×0.8のように、**80％分を直接求める式でも正解**です。"
+            note={`「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
           />
           <SpokenWords>{words.price}</SpokenWords>
         </>
