@@ -181,7 +181,7 @@ function MathEasyFlow() {
           <TeachingPoints
             collapsible
             note={
-              '**0.2は、お子さんに言ってもらいましょう**。\n\n分かりづらそうなときは、「全部で100％が1。それを10こに分けた1こ分（10％）は0.1だね」と、言葉で順にたどります。上の図のような横長の帯を紙にかいて区切ると、さらに分かりやすくなります。'
+              '**0.2は、お子さんに言ってもらいましょう**。\n\n分かりづらそうなときは、「全部で100％が1。それを10こに分けた1こ分（10％）は0.1だね」→「20％はその2つ分だから？」と、言葉で順にたどります。上の図のような横長の帯を紙にかいて区切ると、さらに分かりやすくなります。'
             }
           />
           <SpokenWords>{words.whole}</SpokenWords>
@@ -237,7 +237,7 @@ function MathEasyFlow() {
             <>
               <TeachingPoints
                 collapsible
-                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。「${LIST_PRICE}円のノートが${DISCOUNT}円安くなったら、払うのはいくら？」と聞き直しましょう。\n\nほかの数のときは、${LIST_PRICE}−${DISCOUNT}の計算を、紙に書いて一緒にやり直します。`}
+                note={`**${DISCOUNT}円と答えていたら**、安くなった分と払う代金が入れかわっています。「${LIST_PRICE}円のノートが${DISCOUNT}円安くなったら、払うのはいくら？」と聞き直しましょう。\n\nほかの数のときは、お子さんが立てた式（${LIST_PRICE}−${DISCOUNT}か${LIST_PRICE}×0.8）を紙に書いて、一緒に計算し直します。`}
               />
               <SpokenWords title={`${SALE_PRICE}円と答えたら`}>
                 {words.right}
@@ -273,7 +273,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば大丈夫です。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。`}
+            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば十分です。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。`}
           />
           <SpokenWords>{words.explain}</SpokenWords>
           <button className={flowStyles.finish} type="button" onClick={finish}>
