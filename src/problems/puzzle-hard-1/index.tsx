@@ -1,4 +1,4 @@
-// 大学祭の謎解き（難しい）第1問。台本の書き方は src/problems/sample にそろえる
+// 大学祭の謎解き 第1問。台本の書き方は src/problems/sample にそろえる
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
@@ -431,7 +431,7 @@ function PuzzleHardFlow() {
 
   return (
     <LessonSlides
-      label="謎解き 難しい 第1問の台本"
+      label="謎解き 第1問の台本"
       slides={pages.map((page) => slides[page])}
       currentId={page}
       totalKnown
