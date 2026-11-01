@@ -106,29 +106,12 @@ export const curriculum: Group[] = [
 ]
 
 // 大学祭モード（/festival 以下）の階層。大学祭用の問題はこちらにだけ置く。書き方は curriculum と同じ。
-// 一番上の段は教科と難易度
+// 一番上の段は教科と難易度。どれも問題が1つなので、単元の段を挟まずに問題を直接置き、
+// ホームから準備画面へ直接進めるようにする。
+// 第一引数のタグはホームの行の絵を決める。既存の TAGS（'数の理解', '形・図形' など）から選ぶ
 export const festivalCurriculum: Group[] = [
-  {
-    slug: 'math-easy',
-    name: '算数（易しい）',
-    children: [
-      // 第一引数のタグは既存の TAGS（'数の理解', '形・図形' など）から選ぶ必要があります
-      unit('数の理解', 'math-easy-1', '算数 易しい 第1問', ['math-easy-1']),
-    ],
-  },
-  {
-    slug: 'math-hard',
-    name: '算数（難しい）',
-    children: [
-      unit('形・図形', 'math-hard-1', '算数 難しい 第1問', ['math-hard-1']),
-    ],
-  },
+  unit('数の理解', 'math-easy', '算数（易しい）', ['math-easy-1']),
+  unit('形・図形', 'math-hard', '算数（難しい）', ['math-hard-1']),
   // 謎解きは1つだけにした。slug と問題IDは、難しい・易しいの2つがあったころの puzzle-hard のまま
-  {
-    slug: 'puzzle-hard',
-    name: '謎解き',
-    children: [
-      unit('形・図形', 'puzzle-hard-1', '謎解き 第1問', ['puzzle-hard-1']),
-    ],
-  },
+  unit('形・図形', 'puzzle-hard', '謎解き', ['puzzle-hard-1']),
 ]
