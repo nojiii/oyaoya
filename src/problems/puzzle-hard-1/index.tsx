@@ -9,12 +9,11 @@ import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
 import styles from './puzzle-hard-1.module.css'
-import { PrisonersFigure } from './PrisonersFigure'
-import { PrisonersFigure as PrisonersFigure2 } from './PrisonersFigure2'
+import { PrisonersFigure, type Hats } from './PrisonersFigure'
 
 // 問題文。台本の最初のページと、準備画面の「声かけを先に読んでおく」の両方で使う
 const QUESTION = [
-  '4人の囚人が、図のように帽子をかぶり立っています。AさんとBさんの間には壁があり、全員が壁のほうを向いています。壁の向こうは見えません。',
+  '4人の囚人が、図のように帽子をかぶり立っています。CさんとDさんの間には壁があり、全員が壁のほうを向いています。壁の向こうは見えません。',
   '看守が言いました。「4人の頭に帽子をかぶせた。黒が2つ、白が2つだ。だれか1人でも自分の帽子の色を当てられたら、全員を自由にしてやろう。ただし、回答するチャンスは全員で1回で、帽子を脱いで見たり、後ろを振り向いたりしてはいけない」',
   'しばらくして1人が、自分の帽子の色を答え、4人とも自由になりました。答えたのは、だれでしょう？',
 ]
@@ -26,21 +25,26 @@ const words = {
     'いちばん後ろのAさんには、BさんとCさんの帽子が見えるね。もし2人とも白だったら、Aさんの帽子は何色かな？',
   silent:
     'でも本当は、Bさんが白で、Cさんが黒。これだと、Aさんは自分の色がわかるかな？',
-  // Cさんの考えは、「もしも」と「気づく」の2ページに分ける
+  // Bさんの考えは、「もしも」と「気づく」の2ページに分ける
   suppose2:
     'こんどはBさんになって考えよう。Bさんには、Cさんの黒い帽子が見えるね。もし自分も黒だったら、Aさんはどうしたかな？',
   notice:
     'でも、Aさんはなにも言わないね。それに気づいたBさんは、自分の帽子が何色だとわかるかな？',
   ask: '自分の色がはっきりわかって答えたのは、だれかな？',
-  right: 'そう！ Cさんが「黒」と答えたんだね！',
+  right: 'そう！ Bさんが「白」と答えたんだね！',
   wrong:
-    'おしい！ Aさんがだまっていたことから、Cさんが何に気づいたか、もう一度考えてみよう。',
-  explain: 'どうしてCさんには、自分の色がわかったの？ おしえてくれる？',
+    'おしい！ Aさんがだまっていたことから、Bさんが何に気づいたか、もう一度考えてみよう。',
+  explain: 'どうしてBさんには、自分の色がわかったの？ おしえてくれる？',
   check:
     'こんどは、Bさんが黒で、Cさんが白。だれが、どうやって自分の色に気づくかな？ ひとりで考えてみよう。',
   alone:
-    'そのとおり！ Dさんがだまっているから、Cさんは自分が「白」だとわかるね！',
+    'そのとおり！ Aさんがだまっているから、Bさんは自分が「黒」だとわかるね！',
 }
+
+// 問題の帽子。黒が2つ、白が2つ
+const HATS: Hats = { A: 'black', B: 'white', C: 'black', D: 'white' }
+// たしかめで使う帽子。Bさんが黒、Cさんが白。AさんとDさんの色は、出さずに考える
+const CHECK_HATS: Hats = { A: 'unknown', B: 'black', C: 'white', D: 'unknown' }
 
 // 台本のページ。左へスワイプで次、右へで前。explain・check が「たしかめ」
 const pages = [
@@ -119,7 +123,7 @@ function PuzzleHardFlow() {
     read: {
       id: 'read',
       title: 'まずは問題を読んで、図をよく見てみましょう',
-      stage: <PrisonersFigure />,
+      stage: <PrisonersFigure hats={HATS} />,
       content: (
         <>
           <TeachingPoints note="下の問題を、お子さんと**一緒に読みましょう**。" />
@@ -134,24 +138,29 @@ function PuzzleHardFlow() {
     see: {
       id: 'see',
       title: 'だれに、だれの帽子が見えるか確かめましょう',
-      stage: <PrisonersFigure />,
+      stage: <PrisonersFigure hats={HATS} />,
       content: (
         <>
           <TeachingPoints
             collapsible
             note={
-              '最初に誰がどの帽子を見えているか情報を整理しましょう。\n見えている帽子の色はAがB、 BがBとC、 CとDは誰も見えなくなっているはずです。'
+              '最初に、だれにだれの帽子が見えているかを整理しましょう。\n\nAさんにはBさんとCさんの帽子、BさんにはCさんの帽子が見えます。CさんとDさんは壁しか見えず、**だれの帽子も見えません**。'
             }
           />
           <SpokenWords>{words.see}</SpokenWords>
         </>
       ),
     },
-    // ここからは、いちばん多く見えるDさんから順に考える
+    // ここからは、いちばん多く見えるAさんから順に考える。Dさんは考えに入らないので薄くする
     suppose: {
       id: 'suppose',
       title: 'もしも、BさんとCさんが2人とも白だったら',
-      stage: <PrisonersFigure2 />,
+      stage: (
+        <PrisonersFigure
+          hats={{ A: 'unknown', B: 'white', C: 'white', D: 'unknown' }}
+          dim={['D']}
+        />
+      ),
       content: (
         <>
           <TeachingPoints
@@ -166,25 +175,35 @@ function PuzzleHardFlow() {
     },
     silent: {
       id: 'silent',
-      title: '本当の帽子で、Dさんを考えましょう',
-      stage: <PrisonersFigure />,
+      title: '本当の帽子で、Aさんを考えましょう',
+      stage: (
+        <PrisonersFigure
+          hats={{ ...HATS, A: 'unknown', D: 'unknown' }}
+          dim={['D']}
+        />
+      ),
       content: (
         <>
           <TeachingPoints
             collapsible
             note={
-              'BさんとCさんの色がちがうと、Dさんの帽子は黒でも白でもありえるので、**Dさんには答えられません**。\n\nだから、Dさんはだまったままになります。'
+              'BさんとCさんの色がちがうと、Aさんの帽子は黒でも白でもありえるので、**Aさんには答えられません**。\n\nだから、Aさんはだまったままになります。'
             }
           />
           <SpokenWords>{words.silent}</SpokenWords>
         </>
       ),
     },
-    // Cさんに見えるのはBさんだけなので、ほかの帽子は「？」にする
+    // Bさんに見えるのはCさんだけなので、ほかの帽子は「？」にする
     suppose2: {
       id: 'suppose2',
-      title: 'Cさんの気持ちになって考えましょう',
-      stage: <PrisonersFigure />,
+      title: 'Bさんの気持ちになって考えましょう',
+      stage: (
+        <PrisonersFigure
+          hats={{ A: 'unknown', B: 'unknown', C: 'black', D: 'unknown' }}
+          dim={['D']}
+        />
+      ),
       content: (
         <>
           <TeachingPoints
@@ -199,14 +218,19 @@ function PuzzleHardFlow() {
     },
     notice: {
       id: 'notice',
-      title: 'Dさんがだまっていることに気づきましょう',
-      stage: <PrisonersFigure />,
+      title: 'Aさんがだまっていることに気づきましょう',
+      stage: (
+        <PrisonersFigure
+          hats={{ A: 'unknown', B: 'unknown', C: 'black', D: 'unknown' }}
+          dim={['D']}
+        />
+      ),
       content: (
         <>
           <TeachingPoints
             collapsible
             note={
-              '問題文には"しばらくして"と書いてあります。Aさんが答えられなくて困っているとわかるので、Bさんは**自分は黒ではない**、つまり白だとわかります。\n\n「だまっていること」も手がかりになるのが、この問題のポイントです。'
+              '問題文には「しばらくして」と書いてあります。Aさんが答えられなくて困っているとわかるので、Bさんは**自分は黒ではない**、つまり白だとわかります。\n\n「だまっていること」も手がかりになるのが、この問題のポイントです。'
             }
           />
           <SpokenWords>{words.notice}</SpokenWords>
@@ -219,7 +243,7 @@ function PuzzleHardFlow() {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          <PrisonersFigure />
+          <PrisonersFigure hats={HATS} compact />
           <Answer
             label="答えたのは"
             answer="Bさん"
@@ -262,13 +286,13 @@ function PuzzleHardFlow() {
       id: 'explain',
       section: 'たしかめ',
       title: 'どうしてわかったのか、聞いてみましょう',
-      stage: <PrisonersFigure />,
+      stage: <PrisonersFigure hats={HATS} />,
       content: (
         <>
           <TeachingPoints
             collapsible
             note={
-              '**「Bさんは白」→「自分も白なら、Dさんが『黒』と答えたはず」→「でもDさんはだまっている」→「だから自分は黒」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
+              '**「Cさんは黒」→「自分も黒なら、Aさんが『白』と答えたはず」→「でもAさんはだまっている」→「だから自分は白」**の順に、お子さんが自分の言葉で話せるかを見ます。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。'
             }
           />
           <SpokenWords>{words.explain}</SpokenWords>
@@ -282,10 +306,10 @@ function PuzzleHardFlow() {
       title: 'ひとりで考えてみましょう',
       stage: (
         <>
-          <PrisonersFigure />
+          <PrisonersFigure hats={CHECK_HATS} compact />
           <Answer
             label="答えるのは"
-            answer="Cさん"
+            answer="Bさん"
             visible={revealed}
             onReveal={reveal}
           />
@@ -297,11 +321,11 @@ function PuzzleHardFlow() {
             <TeachingPoints
               collapsible
               note={
-                '親は手を出さず、**見守りましょう**。Dさんには黒と白が見えるので、だまったまま。Cさんは「自分が黒なら、Dさんが『白』と答えたはず」と考えて、自分は白だとわかります。\n\n答えは問題と同じCさんなので、**理由まで言えるか**を見ましょう。'
+                '親は手を出さず、**見守りましょう**。Aさんには黒と白が見えるので、だまったまま。Bさんは「自分が白なら、Aさんが『黒』と答えたはず」と考えて、自分は黒だとわかります。\n\n答えは問題と同じBさんなので、**理由まで言えるか**を見ましょう。'
               }
             />
             {revealed ? (
-              <SpokenWords title="「Cさん」と答えたら">
+              <SpokenWords title="「Bさん」と答えたら">
                 {words.alone}
               </SpokenWords>
             ) : (
@@ -342,15 +366,15 @@ export default function PuzzleHard1() {
       flow={<PuzzleHardFlow />}
       flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
-      picture={<PrisonersFigure />}
+      picture={<PrisonersFigure hats={HATS} />}
       prepare={{
         goal: '見えている帽子と「だまっている人」から、答えた人を考えます。',
         materials: ['問題の図（この画面）'],
         point:
           'だれに何が見えているかを1人ずつ確かめ、その人の気持ちになって考えます。答えを言いたくなっても、お子さんが考えるのを待ちましょう。',
         avoid: [
-          '先に「Cさんだよ」と答えを言う',
-          '4人をいっぺんに考えさせる（いちばん後ろのDさんから順に考える）',
+          '先に「Bさんだよ」と答えを言う',
+          '4人をいっぺんに考えさせる（いちばん後ろのAさんから順に考える）',
         ],
       }}
       // 「声かけを先に読んでおく」に出す。台本のページと同じ words を使う
