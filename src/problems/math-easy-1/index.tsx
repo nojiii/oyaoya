@@ -241,7 +241,11 @@ function MathEasyFlow() {
               <SpokenWords title="ちがう答えだったら" minor>
                 {words.wrong}
               </SpokenWords>
-              <button className={flowStyles.finish} type="button" onClick={finish}>
+              <button
+                className={flowStyles.finish}
+                type="button"
+                onClick={finish}
+              >
                 終わる
               </button>
             </>

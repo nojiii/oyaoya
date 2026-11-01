@@ -152,11 +152,11 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('たしかめ'))
           continue
         }
-        // 大学祭の算数（易しい）第1問も、答えのあとに「たしかめ」を置く
+        // 大学祭の算数（易しい）第1問は、答えのページで終わる（たしかめのページは置かない）
         if (id === 'math-easy-1') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('問題を読んでみましょう'))
-          assert.ok(html.includes('たしかめ'))
+          assert.ok(!html.includes('data-slide="explain"'))
           assert.ok(html.includes('台本の進み具合'))
           continue
         }
