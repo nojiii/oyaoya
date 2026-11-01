@@ -1,171 +1,111 @@
-type PrisonerProps = {
-  id: string
-  x: number
-  y: number
-  hatColor: 'black' | 'white'
-  facing: 'right' | 'left'
+import { useId } from 'react'
+import styles from './puzzle-hard-1.module.css'
+
+// 図に出す4人。壁の左にAさん・Bさん・Cさんが壁から遠い順に並び、壁の右にDさんが立つ
+const people = ['A', 'B', 'C', 'D'] as const
+type Person = (typeof people)[number]
+// unknown は、その人にはまだわからない色（「？」の帽子）
+type Hat = 'black' | 'white' | 'unknown'
+export type Hats = Record<Person, Hat>
+
+const hatNames: Record<Hat, string> = {
+  black: '黒',
+  white: '白',
+  unknown: 'わからない色',
 }
 
-// 1人分の囚人を描画する部品
-function Prisoner({ id, x, y, hatColor, facing }: PrisonerProps) {
-  // 右向きなら1、左向きなら-1を掛けて反転させる
-  const dir = facing === 'right' ? 1 : -1
+// 4人の立つ位置（x は人の中心、y は足もと）。壁の左は、うしろの人ほど高い段に立ち、前の人の帽子を見下ろす
+const positions: Record<Person, { x: number; y: number }> = {
+  A: { x: 48, y: 128 },
+  B: { x: 120, y: 150 },
+  C: { x: 192, y: 172 },
+  D: { x: 304, y: 172 },
+}
 
+// 1人分の絵。足もとを (0, 0) にして描く。枠線は使わず、色の面だけで描く
+function Prisoner({ hat, facing }: { hat: Hat; facing: 1 | -1 }) {
   return (
-    <g transform={`translate(${x}, ${y})`}>
-      {/* 鎖と鉄球 */}
-      <path
-        d={`M ${-15 * dir} -10 Q ${-30 * dir} 0 ${-45 * dir} -10`}
-        stroke="#666"
-        strokeWidth="2"
-        fill="none"
-      />
-      <circle cx={-50 * dir} cy={-12} r="14" fill="#333" />
-
-      {/* 脚と靴 */}
-      <line x1={-7} y1={-40} x2={-7} y2={-5} stroke="black" strokeWidth="3" />
-      <line x1={7} y1={-40} x2={7} y2={-5} stroke="black" strokeWidth="3" />
-      <ellipse
-        cx={-7 + 5 * dir}
-        cy={-4}
-        rx="8"
-        ry="4"
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-      <ellipse
-        cx={7 + 5 * dir}
-        cy={-4}
-        rx="8"
-        ry="4"
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-
-      {/* 囚人服 (体) */}
+    <>
+      {/* しま模様の囚人服 */}
       <rect
-        x={-16}
-        y={-80}
-        width={32}
-        height={40}
-        rx={6}
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
+        className={styles.body}
+        x="-20"
+        y="-52"
+        width="40"
+        height="52"
+        rx="12"
       />
-      {/* ボーダー柄 */}
-      <rect x={-16} y={-70} width={32} height={5} fill="black" />
-      <rect x={-16} y={-58} width={32} height={5} fill="black" />
-      <rect x={-16} y={-46} width={32} height={5} fill="black" />
-
-      {/* 腕 */}
-      <path
-        d={`M 0 -75 Q ${10 * dir} -60 ${5 * dir} -45`}
-        stroke="black"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* 顔 */}
-      <circle
-        cx={0}
-        cy={-100}
-        r={20}
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-      {/* 鼻 */}
-      <path
-        d={`M ${17 * dir} -100 Q ${23 * dir} -96 ${17 * dir} -92`}
-        stroke="black"
-        strokeWidth="2"
-        fill="none"
-      />
-      {/* 目 */}
-      <circle cx={8 * dir} cy={-103} r={2.5} fill="black" />
-
-      {/* 帽子 (半円) */}
-      <path
-        d="M -20 -100 A 20 20 0 0 1 20 -100 Z"
-        fill={hatColor}
-        stroke="black"
-        strokeWidth="2"
-      />
-      <path d="M -22 -100 L 22 -100" stroke="black" strokeWidth="2" />
-
-      {/* A, B, C, D のラベル */}
-      <text
-        x={0}
-        y={-135}
-        fontSize="22"
-        fontWeight="bold"
-        fontFamily="sans-serif"
-        textAnchor="middle"
-      >
-        {id}
-      </text>
-    </g>
+      <rect className={styles.stripe} x="-20" y="-40" width="40" height="6" />
+      <rect className={styles.stripe} x="-20" y="-29" width="40" height="6" />
+      <rect className={styles.stripe} x="-20" y="-18" width="40" height="6" />
+      <circle className={styles.head} cy="-72" r="19" />
+      {/* 向いているほうに目を置く */}
+      <circle className={styles.eye} cx={8 * facing} cy="-72" r="2.6" />
+      <g className={styles.hat} data-hat={hat}>
+        <rect x="-15" y="-108" width="30" height="24" rx="5" />
+        <rect x="-24" y="-88" width="48" height="7" rx="3.5" />
+      </g>
+      {hat === 'unknown' && (
+        <text className={styles.unknown} y="-90">
+          ？
+        </text>
+      )}
+    </>
   )
 }
 
-// 舞台全体を描画するコンポーネント
-export function PrisonersFigure() {
+// ステージに置く図。dim の人は薄くして、いま考えている人から外す。
+// compact は、答えの行と一緒に置くページで図を小さくし、ステージの高さをほかのページとそろえる
+export function PrisonersFigure({
+  hats,
+  dim = [],
+  compact = false,
+}: {
+  hats: Hats
+  dim?: Person[]
+  compact?: boolean
+}) {
+  // 部屋の角を丸めるための切り抜き。準備の画面と台本で同時に出ても重ならないようにする
+  const clipId = useId()
+  const label = `壁の左にAさん・Bさん・Cさんが並び、壁から遠い人ほど高い段にいます。壁の右にはDさんが立っています。4人とも壁のほうを向いています。帽子は${people
+    .map((person) => `${person}さんが${hatNames[hats[person]]}`)
+    .join('、')}です`
   return (
     <svg
-      viewBox="0 0 800 450"
-      width="100%"
-      height="100%"
-      aria-label="囚人の帽子パズルの図解"
-      style={{ display: 'block', maxWidth: '100%' }}
+      className={`${styles.figure} ${compact ? styles.compact : ''}`}
+      viewBox="0 0 352 204"
+      role="img"
+      aria-label={label}
     >
-      {/* 背景（必要に応じて色を変えられます） */}
-      <rect width="800" height="450" fill="#f8f9fa" />
-
-      {/* 地面 */}
-      <line x1={0} y1={360} x2={800} y2={360} stroke="black" strokeWidth="3" />
-
-      {/* 階段 */}
-      {/* 1段目（Aが乗る高い段） */}
-      <rect
-        x={50}
-        y={160}
-        width={130}
-        height={200}
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-      {/* 2段目（Bが乗る中くらいの段） */}
-      <rect
-        x={180}
-        y={260}
-        width={130}
-        height={100}
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-
-      {/* 壁（CとDの間） */}
-      <rect
-        x={520}
-        y={60}
-        width={40}
-        height={300}
-        fill="white"
-        stroke="black"
-        strokeWidth="2"
-      />
-
-      {/* 囚人たち（元の画像の配色に合わせています） */}
-      <Prisoner id="A" x={115} y={160} hatColor="black" facing="right" />
-      <Prisoner id="B" x={245} y={260} hatColor="white" facing="right" />
-      <Prisoner id="C" x={420} y={360} hatColor="black" facing="right" />
-      <Prisoner id="D" x={670} y={360} hatColor="white" facing="left" />
+      <clipPath id={clipId}>
+        <rect width="352" height="204" rx="16" />
+      </clipPath>
+      <g clipPath={`url(#${clipId})`}>
+        <rect className={styles.room} width="352" height="204" />
+        {/* 床と、Aさん・Bさんが乗る2つの段 */}
+        <rect className={styles.floor} y="172" width="352" height="32" />
+        <path className={styles.floor} d="M0 172 V128 H84 V150 H156 V172 Z" />
+        <text className={styles.wallName} x="248" y="24">
+          壁
+        </text>
+        <rect className={styles.wall} x="242" y="34" width="12" height="138" />
+        {people.map((person) => {
+          const { x, y } = positions[person]
+          return (
+            <g
+              key={person}
+              className={dim.includes(person) ? styles.dim : undefined}
+            >
+              <g transform={`translate(${x} ${y})`}>
+                <Prisoner hat={hats[person]} facing={person === 'D' ? -1 : 1} />
+              </g>
+              <text className={styles.name} x={x} y="194">
+                {person}
+              </text>
+            </g>
+          )
+        })}
+      </g>
     </svg>
   )
 }

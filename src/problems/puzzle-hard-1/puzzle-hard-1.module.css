@@ -1,6 +1,6 @@
 /* 謎解き 第1問だけで使う見た目 */
 
-/* ステージに置く、4人と壁の図 */
+/* ステージに置く、4人と壁の図。枠線は使わず、色の面だけで描く */
 .figure {
   display: block;
   width: 100%;
@@ -13,6 +13,16 @@
   text-anchor: middle;
 }
 
+/* 部屋の壁紙。白い帽子が白地のステージに溶けないよう、うすい水色にする */
+.room {
+  fill: #d6eaf7;
+}
+
+/* 床と段。算数（易しい）の帯の図と同じ水色 */
+.floor {
+  fill: #9fd0ef;
+}
+
 .wall {
   fill: var(--color-muted);
 }
@@ -23,7 +33,12 @@
 }
 
 .body {
-  fill: var(--color-faint);
+  fill: #fff;
+}
+
+/* 囚人服のしま模様。服の白に黒を少し重ねる */
+.stripe {
+  fill: rgb(0 0 0 / 18%);
 }
 
 .head {
@@ -43,19 +58,16 @@
   fill: var(--color-text);
 }
 
-/* 白い帽子は白地のステージに溶けるので、ここだけ細い線で形を見せる */
 .hat[data-hat='white'] {
   fill: #fff;
-  stroke: var(--color-faint);
-  stroke-width: 2;
 }
 
 .hat[data-hat='unknown'] {
-  fill: var(--color-border);
+  fill: var(--color-faint);
 }
 
 .unknown {
-  fill: var(--color-muted);
+  fill: #fff;
   font-size: 18px;
 }
 
