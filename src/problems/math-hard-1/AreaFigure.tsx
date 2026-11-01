@@ -134,23 +134,33 @@ function Bracket({
 }
 
 // 同じ面積の三角形に付ける印（○△□×）
-function Mark({ shape, at }: { shape: MarkShape; at: Point }) {
+function Mark({
+  shape,
+  at,
+  onGray = false,
+}: {
+  shape: MarkShape
+  at: Point
+  // 灰色の上に置くときは、見えるように白で描く
+  onGray?: boolean
+}) {
+  const className = onGray ? styles.markOnGray : styles.mark
   const [x, y] = [px(at[0]), px(at[1])]
   const r = 11
   switch (shape) {
     case 'circle':
-      return <circle className={styles.mark} cx={x} cy={y} r={r} />
+      return <circle className={className} cx={x} cy={y} r={r} />
     case 'triangle':
       return (
         <path
-          className={styles.mark}
+          className={className}
           d={`M${x},${y - r} L${x + r * 1.1},${y + r * 0.8} H${x - r * 1.1} Z`}
         />
       )
     case 'square':
       return (
         <rect
-          className={styles.mark}
+          className={className}
           x={x - r * 0.9}
           y={y - r * 0.9}
           width={r * 1.8}
@@ -160,7 +170,7 @@ function Mark({ shape, at }: { shape: MarkShape; at: Point }) {
     case 'cross':
       return (
         <path
-          className={styles.mark}
+          className={className}
           d={`M${x - r},${y - r} L${x + r},${y + r} M${x + r},${y - r} L${x - r},${y + r}`}
         />
       )
@@ -234,13 +244,14 @@ export function AreaFigure({
             <path key={d} className={styles.guide} d={d} />
           ))}
 
+        {/* 白い直角の印が外の線にかぶらないよう、線より先に描く */}
+        <RightAngles />
         <rect className={styles.edge} width={px(WIDTH)} height={px(HEIGHT)} />
         <polygon className={styles.edge} points={quad} />
-        <RightAngles />
 
         {shownPairs.map(({ mark, gray, white }) => (
           <g key={mark}>
-            <Mark shape={mark} at={centroid(gray)} />
+            <Mark shape={mark} at={centroid(gray)} onGray />
             <Mark shape={mark} at={centroid(white)} />
           </g>
         ))}
