@@ -1,5 +1,5 @@
 /* ページを分けた台本（LessonSlides）の1ページ。画面全体の橙（index.css）の上に、白い文字で組む。
-   上から、ステージ（見るもの）→ 見出し → 教え方のポイント → セリフ → 次のページの案内 */
+   上から、ステージ（見るもの）→ 見出し → 教え方のポイント → セリフ → 「次」のボタン（ScriptPaging.module.css） */
 
 .slide {
   gap: 1rem;
@@ -448,37 +448,6 @@
   color: var(--teach-muted);
 }
 
-/* 次のページの名前。ボタンではなく、左へスワイプした先を示す案内。右に寄せ、右端に右向きの矢印を置く。
-   ページの最後に置くので、ページの中の間（gap: 1rem）と合わせて、上を 1.5rem 空ける */
-.slide > .next {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  text-align: right;
-  margin: 0.5rem 0 0;
-  font-size: 12px;
-  line-height: inherit;
-  color: var(--teach-muted);
-  transition: opacity 0.25s;
-}
-
-.slide > .next[data-hidden='true'] {
-  visibility: hidden;
-  opacity: 0;
-}
-
-.next b {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--teach-text);
-}
-
-.next svg {
-  flex: none;
-}
-
 .choices button:focus-visible,
 .finish:focus-visible {
   outline: 3px solid var(--teach-text);
@@ -486,7 +455,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slide > .next,
   .revealBubble {
     transition: none;
   }

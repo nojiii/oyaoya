@@ -3,6 +3,9 @@ import { flushSync } from 'react-dom'
 import styles from './TeachingScript.module.css'
 import flowStyles from './AdditionFlow.module.css'
 import { Oyajii } from './Oyajii'
+import { ScriptGuideSlide } from './ScriptGuide'
+import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
+import { NextPageButton, PageEdges } from './ScriptPaging'
 
 export interface LessonSlide {
   id: string
@@ -48,8 +51,15 @@ export function RevealHint({ className = '' }: { className?: string }) {
   )
 }
 
+// 使い方のページ（ScriptGuide）を、台本の最初のページの前に置くときの id
+const GUIDE_ID = 'scriptGuide'
+
+const reducedMotion = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
-// 前へ・次へのボタンは置かず、左右のスワイプ（キーボードでは ← →）だけで送る。
+// 左右のスワイプ（キーボードでは ← →）で送る。左右の端の矢印と、ページの下の「次」のボタンを押しても送れる。
+// 初めて台本を開いたときは、最初のページの前に使い方のページを置く。
 // 答えを見る前のページ（onReveal）だけは、押して答えを出してから送る
 export function LessonSlides({
   label,
@@ -70,17 +80,27 @@ export function LessonSlides({
   onBack: () => void
 }) {
   const index = slides.findIndex((slide) => slide.id === currentId)
-  const canBack = index > 0
+  // 使い方のページ。台本を最初のページから始めるときだけ、最初のページの前に置く
+  const guide = useScriptGuide(true, index === 0)
+  // 並べるページ（使い方のページを置くときは、その分だけ後ろへずれる）と、今のページの位置
+  const pages: LessonSlide[] = guide.present
+    ? [{ id: GUIDE_ID, title: GUIDE_TITLE, content: null }, ...slides]
+    : slides
+  const position = guide.showing ? 0 : index + (guide.present ? 1 : 0)
+  // 最後のページの先へは送らない（送ろうとすると、ページが動いてから戻ってしまう）
+  const canForward = guide.showing || (canNext && position < pages.length - 1)
+  const canBack = position > 0
   const track = useRef<HTMLDivElement>(null)
-  const previousId = useRef(currentId)
+  const activeId = pages[position]?.id ?? currentId
+  const previousId = useRef(activeId)
   useEffect(() => {
-    if (previousId.current === currentId) return
-    previousId.current = currentId
+    if (previousId.current === activeId) return
+    previousId.current = activeId
     // ページの見出しへフォーカスを移す。ステージの中（閉じたダイアログなど）の見出しは選ばない
     track.current
       ?.querySelector<HTMLElement>('[data-active="true"] > h2')
       ?.focus({ preventScroll: true })
-  }, [currentId])
+  }, [activeId])
   // 吹き出しを出しているページ。3.5秒で消す
   const [pointed, setPointed] = useState<string | null>(null)
   const pointTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -88,7 +108,7 @@ export function LessonSlides({
     setPointed(id)
     clearTimeout(pointTimer.current)
     pointTimer.current = setTimeout(() => setPointed(null), 3500)
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (reducedMotion()) return
     track.current
       ?.querySelectorAll<HTMLElement>(
         `:scope > [data-active="true"] :is(.${flowStyles.reveal}, .${flowStyles.revealAction})`,
@@ -97,33 +117,41 @@ export function LessonSlides({
   }, [])
   useEffect(() => () => clearTimeout(pointTimer.current), [])
   // 答えを見る前のページに来たら、ここは押して答えを見ることを知らせる
-  const revealing = slides[index]?.onReveal !== undefined
+  const revealing = pages[position]?.onReveal !== undefined
   useEffect(() => {
     if (!revealing) return
-    const timer = setTimeout(() => point(currentId), 350)
+    const timer = setTimeout(() => point(activeId), 350)
     return () => clearTimeout(timer)
-  }, [currentId, revealing, point])
+  }, [activeId, revealing, point])
   // 送れない向きにめくったとき。答えを見る前のページなら、もう一度知らせる
   const blocked = () => {
-    if (revealing) point(currentId)
+    if (revealing) point(activeId)
   }
   const sliding = useRef(false)
   // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない（送ると同時に方法を選ばないように）
   const swipedAt = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  // ページを送る動きの間（指を離してから、送り終えるまで）
+  const [navigating, setNavigating] = useState(false)
   // 横に送っている間の、台本の枠の高さ。隣のページは今のページに重ねて置いている（AdditionFlow.module.css）ので、
   // 枠が今のページの高さのままだと、長い隣のページは下が切れて見え、送り終えた瞬間に伸びる。
   // 送っている間だけ、前後のページの高い方まで枠を広げておく
   const [reach, setReach] = useState<number | null>(null)
   const measureReach = () => {
-    const pages = [...(track.current?.children ?? [])].slice(
-      Math.max(0, index - 1),
-      index + 2,
+    const near = [...(track.current?.children ?? [])].slice(
+      Math.max(0, position - 1),
+      position + 2,
     )
     setReach(
-      Math.max(...pages.map((page) => page.getBoundingClientRect().height)),
+      Math.max(...near.map((page) => page.getBoundingClientRect().height)),
     )
+  }
+  // 送らずに元の位置へ戻す。戻る動きがないとき（動きを減らす設定、または動かしていない）は、
+  // 動き終わりの合図（transitionend）が来ないので、枠の高さもここで戻す
+  const settle = () => {
+    setDragX(0)
+    if (dragX === 0 || reducedMotion()) setReach(null)
   }
   const swipeArea = useRef<HTMLDivElement>(null)
   const gesture = useRef<{
@@ -148,23 +176,33 @@ export function LessonSlides({
     element.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => element.removeEventListener('touchmove', onTouchMove)
   }, [])
-  const pageLabel = totalKnown
-    ? `${index + 1} / ${slides.length}ページ`
-    : `${index + 1}ページ`
-  // 今のページで、まだ送れない（方法を選ぶ前など）ときは、ページの下の「次」の行を隠しておく
-  const waiting = (i: number) => i === index && !canNext
+  // 使い方のページは、台本のページの数に入れない
+  const pageLabel = guide.showing
+    ? GUIDE_TITLE
+    : totalKnown
+      ? `${index + 1} / ${slides.length}ページ`
+      : `${index + 1}ページ`
+  // 今のページで、まだ送れない（方法を選ぶ前など）ときは、ページの下の「次」のボタンを隠しておく
+  const waiting = (i: number) => i === position && !canForward
 
   const navigate = async (direction: -1 | 1) => {
-    if (sliding.current || !(direction === 1 ? canNext : canBack)) {
+    if (sliding.current) {
       setDragX(0)
-      if (direction === 1 && !canNext) blocked()
+      return
+    }
+    if (!(direction === 1 ? canForward : canBack)) {
+      settle()
+      if (direction === 1) blocked()
       return
     }
     const element = track.current
     if (!element) return
     sliding.current = true
     // ← → で送るときは、ドラッグを通らないので、ここで枠を広げる
-    flushSync(measureReach)
+    flushSync(() => {
+      measureReach()
+      setNavigating(true)
+    })
     const width = element.getBoundingClientRect().width + 12
     const animation = element.animate(
       [
@@ -172,9 +210,7 @@ export function LessonSlides({
         { transform: `translateX(${-direction * width}px)` },
       ],
       {
-        duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 0
-          : 300,
+        duration: reducedMotion() ? 0 : 300,
         easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
         fill: 'forwards',
       },
@@ -184,12 +220,17 @@ export function LessonSlides({
       flushSync(() => {
         setDragX(0)
         setReach(null)
-        if (direction === 1) onNext()
+        // 使い方のページと台本の最初のページの間は、台本の進み具合を変えずに行き来する
+        if (direction === 1) {
+          if (guide.showing) guide.pass()
+          else onNext()
+        } else if (guide.present && index === 0) guide.revisit()
         else onBack()
       })
     } finally {
       animation.cancel()
       sliding.current = false
+      setNavigating(false)
     }
   }
 
@@ -215,13 +256,13 @@ export function LessonSlides({
     const flick = Math.abs(dx) >= 20 && Math.abs(speed) >= 0.3 && speed * dx > 0
     if (far || flick) void navigate(dx < 0 ? 1 : -1)
     else {
-      if (!sliding.current) setDragX(0)
-      if (dx < 0 && !canNext) blocked()
+      if (!sliding.current) settle()
+      if (dx < 0 && !canForward) blocked()
     }
   }
 
   return (
-    // スワイプは、台本の枠の中だけでなく、画面の左右の余白・進み具合・「次」の行・その下の空きからも受ける。
+    // スワイプは、台本の枠の中だけでなく、画面の左右の余白・進み具合・「次」のボタン・その下の空きからも受ける。
     // 親指は画面の端や下のほうから動かし始めることが多いため
     <div
       className={styles.swipeArea}
@@ -248,7 +289,7 @@ export function LessonSlides({
         if (event.pointerType === 'mouse' && event.buttons === 0) {
           gesture.current = null
           setDragging(false)
-          setDragX(0)
+          if (!sliding.current) settle()
           return
         }
         const dx = event.clientX - start.x
@@ -273,7 +314,7 @@ export function LessonSlides({
           { x: event.clientX, t: event.timeStamp },
         ]
         const distance = Math.max(-start.width, Math.min(start.width, dx))
-        setDragX((dx < 0 ? canNext : canBack) ? distance : distance * 0.12)
+        setDragX((dx < 0 ? canForward : canBack) ? distance : distance * 0.12)
       }}
       onPointerUp={(event) => {
         if (gesture.current?.id !== event.pointerId) return
@@ -296,7 +337,7 @@ export function LessonSlides({
         if (event.target !== event.currentTarget) return
         gesture.current = null
         setDragging(false)
-        if (!sliding.current) setDragX(0)
+        if (!sliding.current) settle()
       }}
     >
       <div
@@ -304,8 +345,13 @@ export function LessonSlides({
         role="img"
         aria-label={`台本の進み具合 ${pageLabel}`}
       >
+        {guide.present && <span aria-hidden="true" data-guide data-done />}
         {slides.map((slide, i) => (
-          <span key={slide.id} aria-hidden="true" data-done={i <= index} />
+          <span
+            key={slide.id}
+            aria-hidden="true"
+            data-done={!guide.showing && i <= index}
+          />
         ))}
       </div>
       <p className={styles.srOnly} aria-live="polite">
@@ -336,6 +382,8 @@ export function LessonSlides({
             className={styles.dragTrack}
             ref={track}
             data-dragging={dragging}
+            // 指で動かしている間と、送っている間は、となりのページを薄くしない
+            data-moving={dragging || navigating}
             style={{
               transform: `translateX(${dragX}px)`,
               minHeight: reach ?? undefined,
@@ -346,58 +394,81 @@ export function LessonSlides({
                 setReach(null)
             }}
           >
-            {slides.map((slide, i) => (
+            {pages.map((slide, i) => (
               <section
                 className={`${styles.panel} ${flowStyles.slide}`}
                 key={slide.id}
                 data-slide={slide.id}
-                data-active={i === index}
+                data-active={i === position}
                 role="group"
                 aria-roledescription="スライド"
                 aria-label={slide.title}
-                aria-hidden={i !== index}
-                inert={i !== index}
+                aria-hidden={i !== position}
+                inert={i !== position}
                 style={{
-                  transform: `translateX(calc(${(i - index) * 100}% + ${(i - index) * 12}px))`,
+                  transform: `translateX(calc(${(i - position) * 100}% + ${(i - position) * 12}px))`,
                 }}
               >
-                {/* ステージ：お子さんと一緒に見るもの */}
-                <div className={flowStyles.stage}>
-                  {slide.onReveal && (
-                    // 見て分かるための吹き出し。同じことは「答えを見る」ボタンが伝えるので、読み上げない
-                    <p
-                      className={flowStyles.revealBubble}
-                      data-show={i === index && pointed === slide.id}
-                      aria-hidden="true"
-                    >
-                      <b>ここは、押して答えを見ます</b>
-                      お子さんが答えたら「？」を押します
-                    </p>
-                  )}
-                  {slide.stage ?? <Oyajii className={flowStyles.stageMascot} />}
-                </div>
-                <h2 className={flowStyles.title} tabIndex={-1}>
-                  {slide.section && (
-                    <span className={flowStyles.section}>{slide.section}</span>
-                  )}
-                  {slide.title}
-                </h2>
-                {slide.content}
-                {slide.onReveal ? (
-                  <RevealAction onReveal={slide.onReveal} />
+                {slide.id === GUIDE_ID ? (
+                  <ScriptGuideSlide onStart={() => void navigate(1)} />
                 ) : (
-                  <NextPage slide={slides[i + 1]} hidden={waiting(i)} />
+                  <>
+                    {/* ステージ：お子さんと一緒に見るもの */}
+                    <div className={flowStyles.stage}>
+                      {slide.onReveal && (
+                        // 見て分かるための吹き出し。同じことは「答えを見る」ボタンが伝えるので、読み上げない
+                        <p
+                          className={flowStyles.revealBubble}
+                          data-show={i === position && pointed === slide.id}
+                          aria-hidden="true"
+                        >
+                          <b>ここは、押して答えを見ます</b>
+                          お子さんが答えたら「？」を押します
+                        </p>
+                      )}
+                      {slide.stage ?? (
+                        <Oyajii className={flowStyles.stageMascot} />
+                      )}
+                    </div>
+                    <h2 className={flowStyles.title} tabIndex={-1}>
+                      {slide.section && (
+                        <span className={flowStyles.section}>
+                          {slide.section}
+                        </span>
+                      )}
+                      {slide.title}
+                    </h2>
+                    {slide.content}
+                    {/* 答えを見る前は、「次」のボタンの代わりに「答えを見る」ボタンを置く */}
+                    {slide.onReveal ? (
+                      <RevealAction onReveal={slide.onReveal} />
+                    ) : (
+                      pages[i + 1] && (
+                        <NextPageButton
+                          label={pages[i + 1].title}
+                          hidden={waiting(i)}
+                          onClick={() => void navigate(1)}
+                        />
+                      )
+                    )}
+                  </>
                 )}
               </section>
             ))}
           </div>
         </div>
+        <PageEdges
+          canBack={canBack}
+          canNext={canForward}
+          onBack={() => void navigate(-1)}
+          onNext={() => void navigate(1)}
+        />
       </div>
     </div>
   )
 }
 
-// 答えを見る前のページで、「次」の行の代わりに置くボタン。いつも「次」の行を見ている場所で、押して答えを見る。
+// 答えを見る前のページで、「次」のボタンの代わりに置くボタン。いつも「次」のボタンがある場所で、押して答えを見る。
 // 教え方のポイントを開いたまま下まで読んでいても、ここで押せる。押したら、答えの出たステージを見えるところへ出す
 function RevealAction({ onReveal }: { onReveal: () => void }) {
   const button = useRef<HTMLButtonElement>(null)
@@ -435,32 +506,5 @@ function RevealAction({ onReveal }: { onReveal: () => void }) {
         お子さんが答えたら押してください
       </p>
     </>
-  )
-}
-
-// ページの下の「次」の行。ボタンではなく、左へスワイプした先を示す案内。
-// ページの中に置いて、スワイプしている間もページといっしょに動かす。
-// 送れないときも場所は空けておき、送れるようになったら浮かび上がらせる（ページの高さを変えない）
-function NextPage({ slide, hidden }: { slide?: LessonSlide; hidden: boolean }) {
-  if (!slide) return null
-  return (
-    <p className={flowStyles.next} data-hidden={hidden}>
-      <span>
-        次<b>{slide.title}</b>
-      </span>
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14M13 6l6 6-6 6" />
-      </svg>
-    </p>
   )
 }

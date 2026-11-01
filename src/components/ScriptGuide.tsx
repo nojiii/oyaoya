@@ -1,124 +1,77 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import styles from './ScriptGuide.module.css'
+import { NextPageButton } from './ScriptPaging'
+import { SpeakingIcon } from './SpeakingIcon'
 
-// 一度見たら、同じブラウザでは出さない
-const STORAGE_KEY = 'oyaoya:script-guide:v1'
-
-// 台本の使い方。見る場所 → 読む場所 → スワイプ の順に、小さな画面の絵で示す
-const FRAMES = [
-  {
-    focus: 'stage',
-    title: ['上のステージを、', 'お子さんと一緒に見ます'],
-    lead: 'おはじきや問題の絵が出ます。',
-  },
-  {
-    focus: 'read',
-    title: ['下のセリフを、', 'そのまま読み上げます'],
-    lead: 'セリフの上の「教え方のポイント」は、押すとたためます。',
-  },
-  {
-    focus: 'swipe',
-    title: ['台本は、スワイプで', 'めくって進みます'],
-    lead: '左へ：次のページ　右へ：前のページ',
-  },
-] as const
-
-// 初めて台本を開いたときに出す、使い方の説明（3段）。画面のどこをさわっても次へ進む。
-// 出している間は、後ろの台本を操作できないようにする（inert）
-export function ScriptGuide() {
-  const [frame, setFrame] = useState<number | null>(() => {
-    // サーバーでの描画（テスト）では出さない
-    if (typeof window === 'undefined') return null
-    try {
-      return localStorage.getItem(STORAGE_KEY) === 'done' ? null : 0
-    } catch {
-      // 保存を読めないブラウザでは、毎回出す
-      return 0
-    }
-  })
-  const titleId = useId()
-  const overlay = useRef<HTMLDivElement>(null)
-  const button = useRef<HTMLButtonElement>(null)
-  const open = frame !== null
-
-  const finish = useCallback(() => {
-    setFrame(null)
-    try {
-      localStorage.setItem(STORAGE_KEY, 'done')
-    } catch {
-      // 保存できなくても、この画面では閉じられる
-    }
-  }, [])
-
-  // 出している間は、同じ台本の中のほかの部品を inert にして、フォーカスが後ろへ行かないようにする。
-  // Escape は、どこにフォーカスがあっても閉じる。閉じたら、台本の領域へフォーカスを戻す
-  useEffect(() => {
-    if (!open) return
-    const element = overlay.current
-    const parent = element?.parentElement
-    const siblings = [...(parent?.children ?? [])].filter(
-      (child) => child !== element && !child.hasAttribute('inert'),
-    )
-    for (const sibling of siblings) sibling.setAttribute('inert', '')
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') finish()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      for (const sibling of siblings) sibling.removeAttribute('inert')
-      document.removeEventListener('keydown', onKeyDown)
-      // 台本の領域（なければ、準備へ戻る「×」）へフォーカスを戻す
-      if (parent?.isConnected)
-        (
-          parent.querySelector<HTMLElement>(
-            '[aria-roledescription="カルーセル"]',
-          ) ?? parent.querySelector<HTMLElement>('button')
-        )?.focus({ preventScroll: true })
-    }
-  }, [open, finish])
-  useEffect(() => {
-    if (frame !== null) button.current?.focus({ preventScroll: true })
-  }, [frame])
-
-  if (frame === null) return null
-  const last = frame === FRAMES.length - 1
-  const next = () => (last ? finish() : setFrame(frame + 1))
-  const { focus, title, lead } = FRAMES[frame]
-
+// 使い方のページの中身。台本のほかのページと同じく、ステージ → 見出し → 本文 → ボタン の順に置く。
+// 「はじめる」（onStart）は、左へめくるのと同じく、台本の最初のページへ進む。
+// 見出しは、ページを送ったときにフォーカスを移せるよう、ページの直下に置く。
+// ステージやセリフの位置は台本によって違う（図がセリフの下にある台本もある）ので、上・下とは書かない
+export function ScriptGuideSlide({ onStart }: { onStart: () => void }) {
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      ref={overlay}
-      onClick={next}
-    >
-      <div className={styles.picture} aria-hidden="true">
-        <div className={styles.phone} data-focus={focus}>
+    <>
+      {/* 小さな台本が、指で左へめくられる動きをくり返す */}
+      <div className={styles.stage} aria-hidden="true">
+        <div className={styles.phone}>
           <div className={styles.pages}>
-            <i data-part="stage" />
-            <b data-part="read" />
-            <b data-part="read" />
-            <b data-part="read" />
+            <MiniPage />
+            <MiniPage />
           </div>
         </div>
-        {focus === 'swipe' && <span className={styles.finger} />}
+        <span className={styles.finger} />
       </div>
-      <h2 id={titleId}>
-        {title[0]}
+      <h2 className={styles.title} tabIndex={-1}>
+        左へめくって、
         <br />
-        {title[1]}
+        はじめましょう
       </h2>
-      <p className={styles.lead}>{lead}</p>
-      <div className={styles.dots} aria-hidden="true">
-        {FRAMES.map((_, i) => (
-          <i key={i} data-on={i === frame} />
-        ))}
-      </div>
-      <button className={styles.next} type="button" ref={button}>
-        {last ? 'さわって閉じる' : 'さわってつぎへ'}
-      </button>
+      <ul className={styles.legend}>
+        <li>
+          <span className={styles.icon} aria-hidden="true">
+            <i className={styles.stageIcon} />
+          </span>
+          <span>白い面の図は、お子さんと一緒に見ます</span>
+        </li>
+        <li>
+          <span className={styles.icon} aria-hidden="true">
+            <SpeakingIcon />
+          </span>
+          <span>
+            大きな文字のセリフを、そのまま読み上げます
+            <small>教え方のポイントは、押すとたためます</small>
+          </span>
+        </li>
+        <li>
+          <span className={styles.icon} aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="17" cy="12" r="3" fill="currentColor" stroke="none" />
+              <path d="M12 12H3M6 9l-3 3 3 3" />
+            </svg>
+          </span>
+          <span>
+            左へめくるか「次」を押すと、次のページへ進みます
+            <small>右へめくると、前のページにもどります</small>
+          </span>
+        </li>
+      </ul>
+      <NextPageButton label="はじめる" primary onClick={onStart} />
+    </>
+  )
+}
+
+function MiniPage() {
+  return (
+    <div className={styles.page}>
+      <i />
+      <b />
+      <b />
+      <b />
     </div>
   )
 }

@@ -217,11 +217,19 @@ test('both addition routes render all steps with matching progress, counter reus
           )
           assert.match(active, /aria-hidden="false"/)
           assert.ok(html.includes(`${index + 1} / ${pages.length}ページ`))
-          // 台本はスワイプだけで送る（前へ・次へのボタンはない）
-          assert.ok(
-            !html.includes('aria-label="前のページ"') &&
-              !html.includes('aria-label="次のページ"'),
+          // 台本は左右にめくるほか、左右の端の矢印でも送れる。最初のページには、前へ戻る矢印を出さない
+          const edge = (name) =>
+            html.match(
+              new RegExp(
+                `<button[^>]*data-hidden="(true|false)"[^>]*aria-label="${name}"`,
+              ),
+            )?.[1]
+          assert.equal(
+            edge('前のページ'),
+            String(index === 0),
+            `${route}/${page}: back edge`,
           )
+          assert.ok(edge('次のページ'), `${route}/${page}: next edge`)
           // アプリのおはじきは、おはじきのページと、たしかめのひとりで解くページで使う
           assert.equal(
             (html.match(/<dialog /g) ?? []).length,

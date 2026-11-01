@@ -6,7 +6,9 @@ import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
 import { Oyajii } from './Oyajii'
-import { ScriptGuide } from './ScriptGuide'
+import { ScriptGuideSlide } from './ScriptGuide'
+import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
+import { NextPageButton, PageEdges } from './ScriptPaging'
 import { ScriptControls } from './scriptControls'
 import { ScriptCurtain, type Curtain } from './ScriptCurtain'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
@@ -278,6 +280,11 @@ const HEADINGS = {
   finish: ['🎉', 'おしまい'],
 } as const
 
+// ページの下の「次」のボタンに出す、次のページの名前。セリフは出さず、何をする画面かだけを示す
+function nextLabel(beat: Beat) {
+  return beat.kind === 'say' && beat.label ? beat.label : HEADINGS[beat.kind][1]
+}
+
 // 画面が替わったときに読み上げる文。正解のめやすは入れない
 // （読み上げ機能を使っていると、考えているお子さんに答えが聞こえてしまうため）
 function announcement(beat: Beat) {
@@ -398,16 +405,26 @@ export function TeachingScript({
     setHistoryKey(keys.history)
     setHistory(loadProgress(keys, [question, ...turns]).history)
   }
+  // 使い方のページ。ページを分けない台本を最初のページから始めるときだけ、最初のページの前に置く
+  // （ページを分けた台本（flow）では、LessonSlides が置く）
+  const guide = useScriptGuide(started && !flow, history.length === 1)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  // 指を離してから、ページを送り終えるまで
+  const [moving, setMoving] = useState(false)
   const [slideWidth, setSlideWidth] = useState(320)
+  const carousel = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const sliding = useRef(false)
+  // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない
+  const swipedAt = useRef(0)
   const gesture = useRef<{
     id: number
     x: number
     y: number
     axis: 'x' | 'y' | null
+    // 指を捕まえたか（「次」のボタンの上からは、横に動いてから捕まえる）
+    captured: boolean
   } | null>(null)
   const menu = useMenuLink()
   const startButton = useRef<HTMLButtonElement>(null)
@@ -479,15 +496,41 @@ export function TeachingScript({
       : go(ask(index + 1))
   const back = () => {
     if (history.length > 1) setHistory(history.slice(0, -1))
+    // 最初のページの前に使い方のページがあれば、そこへ戻る
+    else if (guide.present) guide.revisit()
     else setStarted(false)
   }
-  const canAdvance = beat.kind !== 'finish'
-  const canBack = history.length > 1
-  const activeCardIndex =
-    script
-      .slice(0, index)
-      .reduce((sum, turn) => sum + beatsOf(turn).length, 0) + position.beat
-  const swipe = async (delta: number) => {
+  // 使い方のページからは、台本の進み具合を変えずに、最初のページへ進む
+  const forward = () => (guide.showing ? guide.pass() : advance())
+  const canAdvance = guide.showing || beat.kind !== 'finish'
+  const canBack = !guide.showing && (history.length > 1 || guide.present)
+  // 1ページずつ並べたカード（最後は、おしまい）
+  const cards = [
+    ...script.map((turn) => beatsOf(turn)),
+    [{ kind: 'finish' } as Beat],
+  ].flatMap((turnBeats, turnIndex) =>
+    turnBeats.map((cardBeat, beatIndex) => ({
+      cardBeat,
+      turnIndex,
+      beatIndex,
+    })),
+  )
+  const activeCardIndex = cards.findIndex(
+    (card) => card.turnIndex === index && card.beatIndex === position.beat,
+  )
+  // 使い方のページを置くときは、カードはその分だけ後ろへずれる
+  const guideOffset = guide.present ? 1 : 0
+  const activePanel = guide.showing ? 0 : activeCardIndex + guideOffset
+  const panelStyle = (panel: number) => {
+    const offset = panel - activePanel
+    return {
+      transform:
+        'translateX(calc(' + offset * 100 + '% + ' + offset * 12 + 'px))',
+    }
+  }
+  // refocus は、ページの中のボタン（「次」・「はじめる」）で送るとき。
+  // ページが替わると台本の中身を作り直してボタンが消えるので、台本の領域へフォーカスを戻す（続けて ← → で送れる）
+  const swipe = async (delta: number, refocus = false) => {
     if (sliding.current || !(delta < 0 ? canAdvance : canBack)) {
       setDragX(0)
       return
@@ -495,6 +538,8 @@ export function TeachingScript({
     const element = track.current
     if (!element) return
     sliding.current = true
+    // 送っている間は、入ってくるページを薄くしない
+    setMoving(true)
     const reduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches
@@ -514,12 +559,14 @@ export function TeachingScript({
       await animation.finished
       flushSync(() => {
         setDragX(0)
-        if (delta < 0) advance()
+        if (delta < 0) forward()
         else back()
       })
+      if (refocus) carousel.current?.focus({ preventScroll: true })
     } finally {
       animation.cancel()
       sliding.current = false
+      setMoving(false)
     }
   }
 
@@ -605,7 +652,6 @@ export function TeachingScript({
         <ScriptControls.Provider value={{ finish: () => finish() }}>
           {flow}
         </ScriptControls.Provider>
-        <ScriptGuide />
       </div>
     )
 
@@ -617,28 +663,34 @@ export function TeachingScript({
     >
       {curtainView}
       {close}
-      <ScriptGuide />
       <div
         className={styles.pageDots}
         role="img"
-        aria-label={`台本の進み具合 ${activeCardIndex + 1} / ${totalBeats + 1}ページ`}
+        aria-label={
+          guide.showing
+            ? `台本の進み具合 ${GUIDE_TITLE}`
+            : `台本の進み具合 ${activeCardIndex + 1} / ${totalBeats + 1}ページ`
+        }
       >
+        {/* 使い方のページは、台本のページの数に入れず、左に小さな点で出す */}
+        {guide.present && <span aria-hidden="true" data-guide data-done />}
         {Array.from({ length: totalBeats + 1 }, (_, i) => (
           <span
             key={i}
             aria-hidden="true"
-            data-current={i === activeCardIndex}
-            data-done={i < activeCardIndex}
+            data-current={!guide.showing && i === activeCardIndex}
+            data-done={!guide.showing && i < activeCardIndex}
           />
         ))}
       </div>
       {/* 画面が替わったことを、読み上げで伝える */}
       <p className={styles.srOnly} aria-live="polite">
-        {announcement(beat)}
+        {guide.showing ? GUIDE_TITLE : announcement(beat)}
       </p>
       <div className={styles.carouselFrame}>
         <div
           className={styles.carousel}
+          ref={carousel}
           role="region"
           aria-roledescription="カルーセル"
           aria-label="声かけの台本"
@@ -650,18 +702,19 @@ export function TeachingScript({
               back()
             } else if (event.key === 'ArrowRight' && canAdvance) {
               event.preventDefault()
-              advance()
+              forward()
             }
           }}
           onPointerDown={(event) => {
             if (!event.isPrimary || event.button !== 0 || sliding.current)
               return
-            if (
-              (event.target as Element).closest(
-                'summary, button, a, input, select, textarea, [role="button"]',
-              )
+            const control = (event.target as Element).closest(
+              'summary, button, a, input, select, textarea, [role="button"]',
             )
-              return
+            // ページの下の「次」・「はじめる」のボタンの上からは、横に動いたときだけ送る。
+            // 親指を置きやすい場所なので。ただのタップは、捕まえずにそのままボタンに届ける
+            const onPageButton = !!control?.hasAttribute('data-page-button')
+            if (control && !onPageButton) return
             setSlideWidth(
               (track.current?.getBoundingClientRect().width ?? 320) + 12,
             )
@@ -670,8 +723,10 @@ export function TeachingScript({
               x: event.clientX,
               y: event.clientY,
               axis: null,
+              captured: !onPageButton,
             }
-            event.currentTarget.setPointerCapture(event.pointerId)
+            if (!onPageButton)
+              event.currentTarget.setPointerCapture(event.pointerId)
           }}
           onPointerMove={(event) => {
             const start = gesture.current
@@ -682,7 +737,13 @@ export function TeachingScript({
             if (start.axis === null) {
               if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return
               start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-              if (start.axis === 'x') setDragging(true)
+              if (start.axis === 'x') {
+                if (!start.captured) {
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                  start.captured = true
+                }
+                setDragging(true)
+              }
             }
             if (start.axis !== 'x') return
             const allowed = dx < 0 ? canAdvance : canBack
@@ -693,6 +754,7 @@ export function TeachingScript({
             const start = gesture.current
             if (!start || start.id !== event.pointerId) return
             gesture.current = null
+            if (start.axis === 'x') swipedAt.current = event.timeStamp
             const dx = event.clientX - start.x
             // アニメーションの開始位置を読むまではドラッグ時の transform を保つ。
             if (
@@ -708,78 +770,97 @@ export function TeachingScript({
             setDragging(false)
             if (!sliding.current) setDragX(0)
           }}
-          onLostPointerCapture={() => {
+          onClickCapture={(event) => {
+            if (event.timeStamp - swipedAt.current > 400) return
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+          onLostPointerCapture={(event) => {
+            // 「次」のボタンから台本の領域へ指を捕まえ直すと、ボタンから「指を失った」が伝わってくるので、
+            // 台本の領域自身のものだけを見る
+            if (event.target !== event.currentTarget) return
             gesture.current = null
             setDragging(false)
             if (!sliding.current) setDragX(0)
           }}
         >
+          {/* ページが替わるたびに作り直して、送り終えたときに動きが残らないようにする */}
           <div
             className={styles.dragTrack}
             ref={track}
-            key={history.length}
+            key={history.length + (guide.showing ? '-guide' : '')}
             data-dragging={dragging}
+            // 指で動かしている間と、送っている間は、となりのページを薄くしない
+            data-moving={dragging || moving}
             style={{ transform: `translateX(${dragX}px)` }}
           >
-            {[
-              ...script.map((turn) => beatsOf(turn)),
-              [{ kind: 'finish' } as Beat],
-            ].flatMap((turnBeats, turnIndex) =>
-              turnBeats.map((cardBeat, beatIndex) => {
-                const active =
-                  turnIndex === index && beatIndex === position.beat
-                const cardIndex =
-                  script
-                    .slice(0, turnIndex)
-                    .reduce((sum, turn) => sum + beatsOf(turn).length, 0) +
-                  beatIndex
-                const offset = cardIndex - activeCardIndex
-                return (
-                  <div
-                    className={styles.panel}
-                    key={turnIndex + '-' + beatIndex}
-                    data-active={active}
-                    style={{
-                      transform:
-                        'translateX(calc(' +
-                        offset * 100 +
-                        '% + ' +
-                        offset * 12 +
-                        'px))',
-                    }}
-                    aria-hidden={!active}
-                    inert={!active}
-                  >
-                    {turnIndex === 0 &&
-                      beatIndex === 0 &&
-                      !question.sayContent && (
-                        <div className={styles.firstQuestion}>
-                          {question.show}
-                        </div>
-                      )}
-                    <div className={styles.readingContent}>
-                      {cardBeat.kind !== 'say' && (
-                        <h2 className={styles.heading}>
-                          <span aria-hidden="true">
-                            {HEADINGS[cardBeat.kind][0]}{' '}
-                          </span>
-
-                          {HEADINGS[cardBeat.kind][1]}
-                        </h2>
-                      )}
-                      <BeatView beat={cardBeat} active={active} />
-                    </div>
-                    {turnIndex < script.length && !counters && renderVisual && (
-                      <div className={styles.reference}>
-                        {renderVisual(turnIndex)}
+            {guide.present && (
+              <div
+                className={styles.panel}
+                data-active={guide.showing}
+                style={panelStyle(0)}
+                aria-hidden={!guide.showing}
+                inert={!guide.showing}
+              >
+                <ScriptGuideSlide onStart={() => void swipe(-1, true)} />
+              </div>
+            )}
+            {cards.map(({ cardBeat, turnIndex, beatIndex }, cardIndex) => {
+              const active =
+                !guide.showing &&
+                turnIndex === index &&
+                beatIndex === position.beat
+              const next = cards[cardIndex + 1]?.cardBeat
+              return (
+                <div
+                  className={styles.panel}
+                  key={turnIndex + '-' + beatIndex}
+                  data-active={active}
+                  style={panelStyle(cardIndex + guideOffset)}
+                  aria-hidden={!active}
+                  inert={!active}
+                >
+                  {turnIndex === 0 &&
+                    beatIndex === 0 &&
+                    !question.sayContent && (
+                      <div className={styles.firstQuestion}>
+                        {question.show}
                       </div>
                     )}
+                  <div className={styles.readingContent}>
+                    {cardBeat.kind !== 'say' && (
+                      <h2 className={styles.heading}>
+                        <span aria-hidden="true">
+                          {HEADINGS[cardBeat.kind][0]}{' '}
+                        </span>
+
+                        {HEADINGS[cardBeat.kind][1]}
+                      </h2>
+                    )}
+                    <BeatView beat={cardBeat} active={active} />
                   </div>
-                )
-              }),
-            )}
+                  {turnIndex < script.length && !counters && renderVisual && (
+                    <div className={styles.reference}>
+                      {renderVisual(turnIndex)}
+                    </div>
+                  )}
+                  {next && (
+                    <NextPageButton
+                      label={nextLabel(next)}
+                      onClick={() => void swipe(-1, true)}
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
+        <PageEdges
+          canBack={canBack}
+          canNext={canAdvance}
+          onBack={() => void swipe(1)}
+          onNext={() => void swipe(-1)}
+        />
       </div>
       {counters && section !== 'finish' && (
         <CounterDisplay
