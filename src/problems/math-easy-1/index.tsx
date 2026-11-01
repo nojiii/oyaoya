@@ -8,9 +8,9 @@ import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
-import figureDiscount from './images/band-2.webp'
-import figurePrice from './images/band-3.webp'
 import { TapeDiagram as TapeDiagram1 } from './TapeDiagram1'
+import { TapeDiagram as TapeDiagram2 } from './TapeDiagram2'
+import { TapeDiagram as TapeDiagram3 } from './TapeDiagram3'
 import styles from './math-easy-1.module.css'
 
 const LIST_PRICE = 1200
@@ -23,23 +23,26 @@ const QUESTION_TEXT = `定価${LIST_PRICE}円のノートセットが、${DISCOU
 // 子どもに読み上げるセリフ。台本のページと準備画面の「声かけを先に読んでおく」の両方で使う
 const words = {
   whole:
-    '20％引きは、もとの値段の20％分だけ安くなるってことだよ。100％を1とすると、20％はいくつかな？',
-  discount: `じゃあ、全体の1が${LIST_PRICE}円だとすると、20％（0.2）はいくらになるかな？`,
-  price: `${DISCOUNT}円安くなるんだね。じゃあ、お店に払うお金は、どんな式で求められるかな？`,
+    'まず20%っていうのは、全部で100個あったらそのうちの20個という意味なんだ。例えば100円の20%は20円だよ。つまり、全体を10個に分けたうちの2個分なんだ。',
+  discount:
+    'さっき20%は10個に分けたうちの2個分って説明したね。まず1200円を10個に分けてみよう。1200÷10で1個分は120円になるね。',
+  price:
+    '20%は10個のうち2個だったね。1個120円だから、2個だと120×2で240円になるね。',
+  subtract:
+    '240円安くなることがわかったね。問題では20%引きって言ってたから、もとの1200円から240円を引いてみよう',
   ask: 'じゃあ、計算してみよう。代金はいくらになったかな？',
   right: `正解！ ${LIST_PRICE}円のノートセットが、${SALE_PRICE}円で買えるね！`,
   wrong: `おしい！ ${LIST_PRICE}円から${DISCOUNT}円安くなるんだったね。払うお金はいくらかな？ もう一度、一緒に計算してみよう。`,
-  explain: `どうやって${SALE_PRICE}円になったのか、おしえてくれる？`,
 }
 
-// 台本のページ。左へスワイプで次、右へで前。explain が「たしかめ」
+// 台本のページ。左へスワイプで次、右へで前
 const pages = [
   'read',
   'whole',
   'discount',
   'price',
+  'subtract',
   'answer',
-  'explain',
 ] as const
 type Page = (typeof pages)[number]
 
@@ -87,10 +90,6 @@ function PriceTag() {
       <span className={styles.discount}>{DISCOUNT_RATE}％引き</span>
     </div>
   )
-}
-
-function Figure({ src, alt }: { src: string; alt: string }) {
-  return <img className={styles.figure} src={src} alt={alt} draggable={false} />
 }
 
 // ステージに置く式。お子さんが答えてから「？」を押して、答えを見る
@@ -151,7 +150,7 @@ function MathEasyFlow() {
   const { finish } = useScriptControls()
   const { page, revealed, reveal, next, back } = flow.usePages()
   // 答えのページは「？」で答えを見てから次へ進める
-  const canNext = page === 'answer' ? revealed : page !== 'explain'
+  const canNext = page !== 'answer'
 
   const slides: Record<Page, LessonSlide> = {
     read: {
@@ -175,7 +174,7 @@ function MathEasyFlow() {
         <>
           <TeachingPoints
             collapsible
-            note="分かりづらそうなときは、「100％＝1」「10％＝0.1」と順を追って確認しましょう。図を見せてもよいかもしれません。"
+            note="100%のうち20%は10個のうち2個であることを伝えましょう。図を見せてもよいかもしれません。"
           />
           <SpokenWords>{words.whole}</SpokenWords>
         </>
@@ -184,17 +183,12 @@ function MathEasyFlow() {
     discount: {
       id: 'discount',
       title: '20％分はいくらか考えましょう',
-      stage: (
-        <Figure
-          src={figureDiscount}
-          alt="1200円（100％）の帯のうち、20％の部分が？円になっている図"
-        />
-      ),
+      stage: <TapeDiagram2 step="price" />,
       content: (
         <>
           <TeachingPoints
             collapsible
-            note={`迷っている場合は、「${LIST_PRICE}円の10％はいくら？」と10％から始め、「じゃあ20％はその2つ分だから？」と順に聞きましょう。`}
+            note="1200円を10等分して1個の金額を求めましょう。"
           />
           <SpokenWords>{words.discount}</SpokenWords>
         </>
@@ -203,19 +197,28 @@ function MathEasyFlow() {
     price: {
       id: 'price',
       title: '代金を求める式を考えましょう',
-      stage: (
-        <Figure
-          src={figurePrice}
-          alt="1200円（100％）の帯のうち、20％の部分が240円、80％の部分が？円になっている図"
-        />
-      ),
+      stage: <TapeDiagram3 step="price" />,
       content: (
         <>
           <TeachingPoints
             collapsible
-            note={`「${LIST_PRICE}−${DISCOUNT}」の式が出れば大丈夫です。${LIST_PRICE}×0.8のように、**80％分を直接求める式でも正解**です。`}
+            note="20%は2個分なので120円を2倍にしましょう"
           />
           <SpokenWords>{words.price}</SpokenWords>
+        </>
+      ),
+    },
+    subtract: {
+      id: 'subtract',
+      title: '値引き額を定価から引きましょう',
+      stage: <TapeDiagram3 step="price" />,
+      content: (
+        <>
+          <TeachingPoints
+            collapsible
+            note="20%引きの意味を教えて全体の金額である1200円から引きましょう。"
+          />
+          <SpokenWords>{words.subtract}</SpokenWords>
         </>
       ),
     },
@@ -238,6 +241,9 @@ function MathEasyFlow() {
               <SpokenWords title="ちがう答えだったら" minor>
                 {words.wrong}
               </SpokenWords>
+              <button className={flowStyles.finish} type="button" onClick={finish}>
+                終わる
+              </button>
             </>
           ) : (
             <>
@@ -249,30 +255,6 @@ function MathEasyFlow() {
             </>
           )}
         </div>
-      ),
-    },
-    // 最後のページ：「たしかめ」。答えが合ったかだけでなく、考え方が身についたかを確かめる。「終わる」で準備の画面へ戻る
-    explain: {
-      id: 'explain',
-      section: 'たしかめ',
-      title: 'どうやって求めたか、聞いてみましょう',
-      stage: (
-        <Figure
-          src={figurePrice}
-          alt="1200円（100％）の帯のうち、20％の部分が240円、80％の部分が？円になっている図"
-        />
-      ),
-      content: (
-        <>
-          <TeachingPoints
-            collapsible
-            note={`**「20％は0.2」→「${LIST_PRICE}円の0.2で${DISCOUNT}円安くなる」→「${LIST_PRICE}円から${DISCOUNT}円を引く」**の順に、お子さんが自分の言葉で話せるかを見ます。${LIST_PRICE}×0.8で求めたときは、「払うのは80％分」と言えていれば十分です。\n\n途中までしか言えなくても大丈夫です。言えたところをほめて、続きを一緒に考えましょう。`}
-          />
-          <SpokenWords>{words.explain}</SpokenWords>
-          <button className={flowStyles.finish} type="button" onClick={finish}>
-            終わる
-          </button>
-        </>
       ),
     },
   }
@@ -310,9 +292,9 @@ export default function MathEasy1() {
         { say: words.whole },
         { say: words.discount },
         { say: words.price },
+        { say: words.subtract },
         { say: words.ask },
         { say: `（答えたら）${words.right}` },
-        { say: `（たしかめ）${words.explain}` },
       ]}
     />
   )
