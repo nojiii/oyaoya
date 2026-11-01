@@ -5,7 +5,7 @@ type MarkShape = 'circle' | 'triangle' | 'square' | 'cross'
 
 // 長さはすべて cm で持ち、描くときに SCALE 倍する
 const SCALE = 30
-// 外の長方形の横と縦。全体が 白72㎠＋ピンク64㎠＝136㎠ になるように縦を決める
+// 外の長方形の横と縦。全体が 白72㎠＋灰色64㎠＝136㎠ になるように縦を決める
 const WIDTH = 12
 const HEIGHT = 136 / WIDTH
 // 白い四角形の頂点。問題の 8cm・5cm・4cm・7cm から決まる
@@ -27,26 +27,26 @@ const MARGIN_Y = 56
 const VIEW_WIDTH = WIDTH * SCALE + MARGIN_X * 2
 const VIEW_HEIGHT = HEIGHT * SCALE + MARGIN_Y * 2
 
-// 四角形の辺ごとの、外のピンクの三角形と、補助線でできる内側の白い三角形。同じ印で同じ面積を示す
-const PAIRS: { mark: MarkShape; pink: Point[]; white: Point[] }[] = [
+// 四角形の辺ごとの、外の灰色の三角形と、補助線でできる内側の白い三角形。同じ印で同じ面積を示す
+const PAIRS: { mark: MarkShape; gray: Point[]; white: Point[] }[] = [
   {
     mark: 'circle',
-    pink: [[0, 0], TOP, LEFT],
+    gray: [[0, 0], TOP, LEFT],
     white: [[TOP[0], LEFT[1]], TOP, LEFT],
   },
   {
     mark: 'triangle',
-    pink: [[WIDTH, 0], TOP, RIGHT],
+    gray: [[WIDTH, 0], TOP, RIGHT],
     white: [[TOP[0], RIGHT[1]], TOP, RIGHT],
   },
   {
     mark: 'cross',
-    pink: [[WIDTH, HEIGHT], RIGHT, BOTTOM],
+    gray: [[WIDTH, HEIGHT], RIGHT, BOTTOM],
     white: [[BOTTOM[0], RIGHT[1]], RIGHT, BOTTOM],
   },
   {
     mark: 'square',
-    pink: [[0, HEIGHT], BOTTOM, LEFT],
+    gray: [[0, HEIGHT], BOTTOM, LEFT],
     white: [[BOTTOM[0], LEFT[1]], BOTTOM, LEFT],
   },
 ]
@@ -222,7 +222,7 @@ export function AreaFigure({
       aria-label={label}
     >
       <g transform={`translate(${MARGIN_X} ${MARGIN_Y})`}>
-        <rect className={styles.pink} width={px(WIDTH)} height={px(HEIGHT)} />
+        <rect className={styles.gray} width={px(WIDTH)} height={px(HEIGHT)} />
         <polygon
           className={highlight ? styles.highlight : styles.white}
           points={quad}
@@ -238,9 +238,9 @@ export function AreaFigure({
         <polygon className={styles.edge} points={quad} />
         <RightAngles />
 
-        {shownPairs.map(({ mark, pink, white }) => (
+        {shownPairs.map(({ mark, gray, white }) => (
           <g key={mark}>
-            <Mark shape={mark} at={centroid(pink)} />
+            <Mark shape={mark} at={centroid(gray)} />
             <Mark shape={mark} at={centroid(white)} />
           </g>
         ))}
