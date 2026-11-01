@@ -3,6 +3,9 @@ import { flushSync } from 'react-dom'
 import styles from './TeachingScript.module.css'
 import flowStyles from './AdditionFlow.module.css'
 import { Oyajii } from './Oyajii'
+import { ScriptGuideSlide } from './ScriptGuide'
+import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
+import { NextPageButton, PageEdges } from './ScriptPaging'
 
 export interface LessonSlide {
   id: string
@@ -14,8 +17,12 @@ export interface LessonSlide {
   content: ReactNode
 }
 
+// 使い方のページ（ScriptGuide）を、台本の最初のページの前に置くときの id
+const GUIDE_ID = 'scriptGuide'
+
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
-// 前へ・次へのボタンは置かず、左右のスワイプ（キーボードでは ← →）だけで送る
+// 左右のスワイプ（キーボードでは ← →）で送る。左右の端の矢印と、ページの下の「次」のボタンを押しても送れる。
+// 初めて台本を開いたときは、最初のページの前に使い方のページを置く
 export function LessonSlides({
   label,
   slides,
@@ -35,17 +42,27 @@ export function LessonSlides({
   onBack: () => void
 }) {
   const index = slides.findIndex((slide) => slide.id === currentId)
-  const canBack = index > 0
+  // 使い方のページ。台本を最初のページから始めるときだけ、最初のページの前に置く
+  const guide = useScriptGuide(true, index === 0)
+  // 並べるページ（使い方のページを置くときは、その分だけ後ろへずれる）と、今のページの位置
+  const pages: LessonSlide[] = guide.present
+    ? [{ id: GUIDE_ID, title: GUIDE_TITLE, content: null }, ...slides]
+    : slides
+  const position = guide.showing ? 0 : index + (guide.present ? 1 : 0)
+  // 最後のページの先へは送らない（送ろうとすると、ページが動いてから戻ってしまう）
+  const canForward = guide.showing || (canNext && position < pages.length - 1)
+  const canBack = position > 0
   const track = useRef<HTMLDivElement>(null)
-  const previousId = useRef(currentId)
+  const activeId = pages[position]?.id ?? currentId
+  const previousId = useRef(activeId)
   useEffect(() => {
-    if (previousId.current === currentId) return
-    previousId.current = currentId
+    if (previousId.current === activeId) return
+    previousId.current = activeId
     // ページの見出しへフォーカスを移す。ステージの中（閉じたダイアログなど）の見出しは選ばない
     track.current
       ?.querySelector<HTMLElement>('[data-active="true"] > h2')
       ?.focus({ preventScroll: true })
-  }, [currentId])
+  }, [activeId])
   const sliding = useRef(false)
   // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない（送ると同時に方法を選ばないように）
   const swipedAt = useRef(0)
@@ -56,12 +73,12 @@ export function LessonSlides({
   // 送っている間だけ、前後のページの高い方まで枠を広げておく
   const [reach, setReach] = useState<number | null>(null)
   const measureReach = () => {
-    const pages = [...(track.current?.children ?? [])].slice(
-      Math.max(0, index - 1),
-      index + 2,
+    const near = [...(track.current?.children ?? [])].slice(
+      Math.max(0, position - 1),
+      position + 2,
     )
     setReach(
-      Math.max(...pages.map((page) => page.getBoundingClientRect().height)),
+      Math.max(...near.map((page) => page.getBoundingClientRect().height)),
     )
   }
   const swipeArea = useRef<HTMLDivElement>(null)
@@ -87,14 +104,17 @@ export function LessonSlides({
     element.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => element.removeEventListener('touchmove', onTouchMove)
   }, [])
-  const pageLabel = totalKnown
-    ? `${index + 1} / ${slides.length}ページ`
-    : `${index + 1}ページ`
-  // 今のページで、まだ送れない（方法を選ぶ前など）ときは、ページの下の「次」の行を隠しておく
-  const waiting = (i: number) => i === index && !canNext
+  // 使い方のページは、台本のページの数に入れない
+  const pageLabel = guide.showing
+    ? GUIDE_TITLE
+    : totalKnown
+      ? `${index + 1} / ${slides.length}ページ`
+      : `${index + 1}ページ`
+  // 今のページで、まだ送れない（方法を選ぶ前など）ときは、ページの下の「次」のボタンを隠しておく
+  const waiting = (i: number) => i === position && !canForward
 
   const navigate = async (direction: -1 | 1) => {
-    if (sliding.current || !(direction === 1 ? canNext : canBack)) {
+    if (sliding.current || !(direction === 1 ? canForward : canBack)) {
       setDragX(0)
       return
     }
@@ -122,7 +142,11 @@ export function LessonSlides({
       flushSync(() => {
         setDragX(0)
         setReach(null)
-        if (direction === 1) onNext()
+        // 使い方のページと台本の最初のページの間は、台本の進み具合を変えずに行き来する
+        if (direction === 1) {
+          if (guide.showing) guide.pass()
+          else onNext()
+        } else if (guide.present && index === 0) guide.revisit()
         else onBack()
       })
     } finally {
@@ -156,7 +180,7 @@ export function LessonSlides({
   }
 
   return (
-    // スワイプは、台本の枠の中だけでなく、画面の左右の余白・進み具合・「次」の行・その下の空きからも受ける。
+    // スワイプは、台本の枠の中だけでなく、画面の左右の余白・進み具合・「次」のボタン・その下の空きからも受ける。
     // 親指は画面の端や下のほうから動かし始めることが多いため
     <div
       className={styles.swipeArea}
@@ -208,7 +232,7 @@ export function LessonSlides({
           { x: event.clientX, t: event.timeStamp },
         ]
         const distance = Math.max(-start.width, Math.min(start.width, dx))
-        setDragX((dx < 0 ? canNext : canBack) ? distance : distance * 0.12)
+        setDragX((dx < 0 ? canForward : canBack) ? distance : distance * 0.12)
       }}
       onPointerUp={(event) => {
         if (gesture.current?.id !== event.pointerId) return
@@ -239,8 +263,13 @@ export function LessonSlides({
         role="img"
         aria-label={`台本の進み具合 ${pageLabel}`}
       >
+        {guide.present && <span aria-hidden="true" data-guide data-done />}
         {slides.map((slide, i) => (
-          <span key={slide.id} aria-hidden="true" data-done={i <= index} />
+          <span
+            key={slide.id}
+            aria-hidden="true"
+            data-done={!guide.showing && i <= index}
+          />
         ))}
       </div>
       <p className={styles.srOnly} aria-live="polite">
@@ -271,6 +300,8 @@ export function LessonSlides({
             className={styles.dragTrack}
             ref={track}
             data-dragging={dragging}
+            // 指で動かしている間と、送っている間（枠を広げている間）は、となりのページを薄くしない
+            data-moving={dragging || reach !== null}
             style={{
               transform: `translateX(${dragX}px)`,
               minHeight: reach ?? undefined,
@@ -281,65 +312,68 @@ export function LessonSlides({
                 setReach(null)
             }}
           >
-            {slides.map((slide, i) => (
+            {pages.map((slide, i) => (
               <section
                 className={`${styles.panel} ${flowStyles.slide}`}
                 key={slide.id}
                 data-slide={slide.id}
-                data-active={i === index}
+                data-active={i === position}
                 role="group"
                 aria-roledescription="スライド"
                 aria-label={slide.title}
-                aria-hidden={i !== index}
-                inert={i !== index}
+                aria-hidden={i !== position}
+                inert={i !== position}
                 style={{
-                  transform: `translateX(calc(${(i - index) * 100}% + ${(i - index) * 12}px))`,
+                  transform: `translateX(calc(${(i - position) * 100}% + ${(i - position) * 12}px))`,
                 }}
               >
-                {/* ステージ：お子さんと一緒に見るもの */}
-                <div className={flowStyles.stage}>
-                  {slide.stage ?? <Oyajii className={flowStyles.stageMascot} />}
-                </div>
-                <h2 className={flowStyles.title} tabIndex={-1}>
-                  {slide.section && (
-                    <span className={flowStyles.section}>{slide.section}</span>
-                  )}
-                  {slide.title}
-                </h2>
-                {slide.content}
-                <NextPage slide={slides[i + 1]} hidden={waiting(i)} />
+                {slide.id === GUIDE_ID ? (
+                  <ScriptGuideSlide />
+                ) : (
+                  <>
+                    {/* ステージ：お子さんと一緒に見るもの */}
+                    <div className={flowStyles.stage}>
+                      {slide.stage ?? (
+                        <Oyajii className={flowStyles.stageMascot} />
+                      )}
+                    </div>
+                    <h2 className={flowStyles.title} tabIndex={-1}>
+                      {slide.section && (
+                        <span className={flowStyles.section}>
+                          {slide.section}
+                        </span>
+                      )}
+                      {slide.title}
+                    </h2>
+                    {slide.content}
+                  </>
+                )}
+                {slide.id === GUIDE_ID ? (
+                  <NextPageButton
+                    label="はじめる"
+                    primary
+                    onClick={() => void navigate(1)}
+                  />
+                ) : (
+                  pages[i + 1] && (
+                    <NextPageButton
+                      label={pages[i + 1].title}
+                      hidden={waiting(i)}
+                      onClick={() => void navigate(1)}
+                    />
+                  )
+                )}
               </section>
             ))}
           </div>
         </div>
+        <PageEdges
+          canBack={canBack}
+          canNext={canForward}
+          onBack={() => void navigate(-1)}
+          onNext={() => void navigate(1)}
+        />
       </div>
     </div>
-  )
-}
-
-// ページの下の「次」の行。ボタンではなく、左へスワイプした先を示す案内。
-// ページの中に置いて、スワイプしている間もページといっしょに動かす。
-// 送れないときも場所は空けておき、送れるようになったら浮かび上がらせる（ページの高さを変えない）
-function NextPage({ slide, hidden }: { slide?: LessonSlide; hidden: boolean }) {
-  if (!slide) return null
-  return (
-    <p className={flowStyles.next} data-hidden={hidden}>
-      <span>
-        次<b>{slide.title}</b>
-      </span>
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14M13 6l6 6-6 6" />
-      </svg>
-    </p>
   )
 }

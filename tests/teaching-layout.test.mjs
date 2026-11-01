@@ -81,11 +81,11 @@ test('every published script has teaching points, reading labels and only suppor
           !html.includes('aria-label="取り組む問題"'),
           id + ': no separate question section',
         )
-        // 台本はスワイプだけで送る。前へ・次へのボタンは置かず、キーボードでは台本の領域で ← → を使う
+        // 台本は左右にめくって送る。左右の端の矢印でも送れる。キーボードでは台本の領域で ← → を使う
         assert.ok(
-          !html.includes('aria-label="前のページ"') &&
-            !html.includes('aria-label="次のページ"'),
-          id + ': no page buttons',
+          html.includes('aria-label="前のページ"') &&
+            html.includes('aria-label="次のページ"'),
+          id + ': page edges',
         )
         assert.match(
           html,

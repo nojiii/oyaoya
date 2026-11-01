@@ -1,182 +1,190 @@
-/* 台本の使い方の説明。後ろの台本が透けて見える暗さの幕を全体にかけ、下に文字を置く */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 0 28px max(48px, env(safe-area-inset-bottom));
-  color: #fff;
-  cursor: pointer;
-  touch-action: none;
-}
-.overlay::before {
-  /* 幕は1枚だけ。画面の幅が 480px より広いときも、左右まで覆う */
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: rgb(24 20 17 / 72%);
-}
-.overlay h2 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 900;
-  line-height: 1.45;
-  letter-spacing: -0.01em;
-}
-.lead {
-  margin: 12px 0 0;
-  color: #e9e1da;
-  font-size: 15px;
+/* 台本の使い方のページ。台本のほかのページと同じ形（ステージ → 見出し → 本文）で、橙の上に白い文字で組む */
+
+/* ステージ。ページを分けた台本のステージ（AdditionFlow.module.css の .stage）と同じ大きさにする */
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 256px;
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--teach-stage);
 }
 
-/* 小さな画面の絵。説明している部分だけを明るくする */
-.picture {
-  position: relative;
-  height: 220px;
-  margin-bottom: 24px;
-}
+/* 小さな台本の画面。2ページを横に並べ、左へめくる動きをくり返す */
 .phone {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  width: 116px;
-  height: 200px;
-  margin-left: -58px;
+  width: 92px;
+  height: 140px;
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 16px;
   background: var(--teach-bg);
 }
 .pages {
-  position: absolute;
-  inset: 0;
+  display: flex;
+  gap: 6px;
+  animation: pages 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-.pages i {
+.page {
+  position: relative;
+  flex: none;
+  width: 92px;
+  height: 140px;
+}
+.page i {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  height: 78px;
+  top: 9px;
+  right: 9px;
+  left: 9px;
+  height: 56px;
   border-radius: 6px;
   background: var(--teach-stage);
 }
-.pages b {
+/* 2ページ目は、ステージの高さを変えて、別のページだと分かるようにする */
+.page + .page i {
+  height: 40px;
+}
+.page b {
   position: absolute;
-  left: 14px;
-  height: 8px;
+  left: 10px;
+  height: 7px;
   border-radius: 4px;
   background: var(--teach-text);
-  opacity: 0.7;
+  opacity: 0.75;
 }
-.pages b:nth-of-type(1) {
-  top: 104px;
-  right: 30px;
+.page b:nth-of-type(1) {
+  top: 78px;
+  right: 24px;
 }
-.pages b:nth-of-type(2) {
-  top: 122px;
-  right: 14px;
+.page b:nth-of-type(2) {
+  top: 93px;
+  right: 10px;
 }
-.pages b:nth-of-type(3) {
-  top: 140px;
-  right: 40px;
-}
-.pages [data-part] {
-  transition: opacity 0.3s;
-}
-.phone[data-focus='stage'] [data-part='read'],
-.phone[data-focus='read'] [data-part='stage'] {
-  opacity: 0.18;
-}
-.phone[data-focus='swipe'] .pages {
-  animation: page 2.4s ease-in-out infinite;
+.page b:nth-of-type(3) {
+  top: 108px;
+  right: 34px;
 }
 .finger {
   position: absolute;
-  top: 120px;
+  top: 50%;
   left: 50%;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
   border-radius: 50%;
-  background: #fff;
-  animation: finger 2.4s ease-in-out infinite;
+  background: rgb(26 23 20 / 28%);
+  opacity: 0;
+  animation: finger 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes pages {
+  0%,
+  22% {
+    transform: none;
+    opacity: 1;
+  }
+  52%,
+  84% {
+    transform: translateX(-98px);
+    opacity: 1;
+  }
+  90% {
+    transform: translateX(-98px);
+    opacity: 0;
+  }
+  91% {
+    transform: none;
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
 }
 @keyframes finger {
   0%,
-  10% {
-    transform: translateX(46px);
+  12% {
+    transform: translateX(34px);
     opacity: 0;
   }
-  20% {
-    transform: translateX(46px);
+  22% {
+    transform: translateX(34px);
     opacity: 1;
   }
-  55% {
-    transform: translateX(-46px);
+  52% {
+    transform: translateX(-34px);
     opacity: 1;
   }
-  70%,
+  62%,
   100% {
-    transform: translateX(-46px);
+    transform: translateX(-34px);
     opacity: 0;
   }
 }
-@keyframes page {
-  0%,
-  20% {
-    transform: none;
-  }
-  55%,
-  80% {
-    transform: translateX(-30px);
-    opacity: 0.4;
-  }
-  100% {
-    transform: none;
-  }
-}
+/* 動きを減らす設定の人には、めくる前の画面と、めくる向きの指だけを止めて出す */
 @media (prefers-reduced-motion: reduce) {
-  .finger,
-  .phone[data-focus='swipe'] .pages {
+  .pages {
     animation: none;
   }
+  .finger {
+    animation: none;
+    opacity: 1;
+  }
 }
 
-/* 何段目か */
-.dots {
-  display: flex;
-  gap: 6px;
-  margin-top: 30px;
+/* 見出し。ページを分けた台本の見出し（AdditionFlow.module.css の .title）と同じ大きさ */
+.title {
+  margin: 0.25rem 0 0;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
-.dots i {
-  width: 6px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgb(255 255 255 / 30%);
-}
-.dots i[data-on='true'] {
-  width: 20px;
-  background: var(--color-accent-bright);
+.title:focus {
+  outline: none;
 }
 
-/* 次へ進むボタン（画面のどこをさわっても進む。キーボードではこのボタンで進む） */
-.next {
-  align-self: flex-start;
-  min-height: 44px;
-  margin-top: 18px;
+/* 見る・読む・めくるの3つ。アイコンを左に置き、文は短く */
+.legend {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
   padding: 0;
-  border: none;
-  background: none;
-  color: #d9cfc6;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
+  list-style: none;
 }
-.next:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 4px;
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.legend small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--teach-muted);
+}
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--teach-soft);
+  color: var(--teach-text);
+}
+.icon svg {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  color: inherit;
+}
+/* ステージ（白い面）を表す、小さな白い四角 */
+.stageIcon {
+  width: 24px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--teach-stage);
 }
