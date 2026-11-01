@@ -6,7 +6,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { TeachingScript } from '../src/components/TeachingScript.tsx'
 import { LessonSlides } from '../src/components/LessonSlides.tsx'
-import { stub, stubAnimations } from './domStubs.mjs'
+import {
+  stub,
+  stubAnimations,
+  stubPointerCapture,
+  stubSize,
+} from './domStubs.mjs'
 
 const GUIDE_KEY = 'oyaoya:script-guide:v2'
 
@@ -226,4 +231,64 @@ test('paged scripts skip the guide page once seen, or when they start from a lat
   )
   assert.equal(activeSlide(), 'b')
   assert.equal(document.querySelector('[data-slide="scriptGuide"]'), null)
+})
+
+const pointer = (pointerId, clientX, clientY = 80) => ({
+  pointerId,
+  clientX,
+  clientY,
+  isPrimary: true,
+  button: 0,
+})
+
+test('the next button keeps keyboard focus on the script, and a swipe may start on it', async () => {
+  stubSize(296, 400)
+  stubFinishedAnimations()
+  const captured = stubPointerCapture()
+  localStorage.setItem(GUIDE_KEY, 'done')
+  const carousel = await renderScript()
+
+  // 「次」のボタンで送ると、ボタンは作り直されて消えるので、台本の領域へフォーカスを戻す
+  const next = screen.getByRole('button', { name: /^次\s*こう声がけしよう$/ })
+  next.focus()
+  fireEvent.click(next)
+  await waitFor(() => assert.equal(progress(), '台本の進み具合 2 / 3ページ'))
+  assert.equal(document.activeElement, carousel)
+
+  // 「次」のボタンの上から始めたスワイプも受ける。押しただけでは捕まえず、横に動いてから捕まえる
+  const button = screen.getByRole('button', { name: /^次\s*おしまい$/ })
+  fireEvent.pointerDown(button, pointer(3, 200))
+  assert.deepEqual(captured, [])
+  fireEvent.pointerMove(carousel, pointer(3, 100))
+  assert.deepEqual(captured, [3])
+  fireEvent.pointerUp(carousel, pointer(3, 100))
+  await waitFor(() => assert.equal(progress(), '台本の進み具合 3 / 3ページ'))
+})
+
+test('with reduced motion, a drag that springs back leaves the neighbours dimmed and the edges shown', async () => {
+  stubSize(296, 400)
+  stubAnimations()
+  stubPointerCapture()
+  // 動きを減らす設定。戻る動きがないので、動き終わりの合図（transitionend）は来ない
+  stub(window, 'matchMedia', () => ({
+    matches: true,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+  }))
+  localStorage.setItem(GUIDE_KEY, 'done')
+  render(createElement(Slides))
+  const region = screen.getByRole('region', { name: 'テストの台本' })
+  const track = region.firstElementChild
+
+  // 送るほどは動かさずに離す
+  fireEvent.pointerDown(region, pointer(5, 200))
+  fireEvent.pointerMove(region, pointer(5, 190))
+  assert.equal(track.dataset.moving, 'true')
+  assert.notEqual(track.style.minHeight, '')
+  fireEvent.pointerUp(region, pointer(5, 190))
+  assert.equal(track.dataset.moving, 'false')
+  assert.equal(track.style.minHeight, '')
+  assert.equal(activeSlide(), 'a')
 })

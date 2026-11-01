@@ -62,14 +62,15 @@
 
 /* 左右の端のボタン。台本の枠（TeachingScript.module.css の .carouselFrame）の、左右の余白に置く。
    ステージの高さ（256px）の真ん中あたりに、縦に長く置く。
-   押せる幅は、余白（1.25rem）とステージの内側の余白の一部まで。ステージの中身には重ならない */
+   押せる幅は、ふだんは余白（1.25rem）だけ。ページがステージから始まる台本（LessonSlides）では、
+   --page-edge-width でステージの内側の余白の一部まで広げる（ステージの中身には重ならない） */
 .edge {
   position: absolute;
   top: 86px;
   z-index: 1;
   display: grid;
   align-items: center;
-  width: 28px;
+  width: var(--page-edge-width, 1.25rem);
   height: 96px;
   padding: 0;
   border: none;

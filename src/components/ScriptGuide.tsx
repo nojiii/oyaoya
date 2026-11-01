@@ -1,10 +1,12 @@
 import styles from './ScriptGuide.module.css'
+import { NextPageButton } from './ScriptPaging'
 import { SpeakingIcon } from './SpeakingIcon'
 
-// 使い方のページの中身。台本のほかのページと同じく、ステージ → 見出し → 本文 の順に置く
-// （ページの「次」のボタンは、置く側の台本が足す）。
-// 見出しは、ページを送ったときにフォーカスを移せるよう、ページの直下に置く
-export function ScriptGuideSlide() {
+// 使い方のページの中身。台本のほかのページと同じく、ステージ → 見出し → 本文 → ボタン の順に置く。
+// 「はじめる」（onStart）は、左へめくるのと同じく、台本の最初のページへ進む。
+// 見出しは、ページを送ったときにフォーカスを移せるよう、ページの直下に置く。
+// ステージやセリフの位置は台本によって違う（図がセリフの下にある台本もある）ので、上・下とは書かない
+export function ScriptGuideSlide({ onStart }: { onStart: () => void }) {
   return (
     <>
       {/* 小さな台本が、指で左へめくられる動きをくり返す */}
@@ -27,14 +29,14 @@ export function ScriptGuideSlide() {
           <span className={styles.icon} aria-hidden="true">
             <i className={styles.stageIcon} />
           </span>
-          <span>上の白い面は、お子さんと一緒に見ます</span>
+          <span>白い面の図は、お子さんと一緒に見ます</span>
         </li>
         <li>
           <span className={styles.icon} aria-hidden="true">
             <SpeakingIcon />
           </span>
           <span>
-            下のセリフを、そのまま読み上げます
+            大きな文字のセリフを、そのまま読み上げます
             <small>教え方のポイントは、押すとたためます</small>
           </span>
         </li>
@@ -58,6 +60,7 @@ export function ScriptGuideSlide() {
           </span>
         </li>
       </ul>
+      <NextPageButton label="はじめる" primary onClick={onStart} />
     </>
   )
 }

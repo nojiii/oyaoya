@@ -413,13 +413,18 @@ export function TeachingScript({
   // 指を離してから、ページを送り終えるまで
   const [moving, setMoving] = useState(false)
   const [slideWidth, setSlideWidth] = useState(320)
+  const carousel = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const sliding = useRef(false)
+  // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない
+  const swipedAt = useRef(0)
   const gesture = useRef<{
     id: number
     x: number
     y: number
     axis: 'x' | 'y' | null
+    // 指を捕まえたか（「次」のボタンの上からは、横に動いてから捕まえる）
+    captured: boolean
   } | null>(null)
   const menu = useMenuLink()
   const startButton = useRef<HTMLButtonElement>(null)
@@ -510,10 +515,9 @@ export function TeachingScript({
       beatIndex,
     })),
   )
-  const activeCardIndex =
-    script
-      .slice(0, index)
-      .reduce((sum, turn) => sum + beatsOf(turn).length, 0) + position.beat
+  const activeCardIndex = cards.findIndex(
+    (card) => card.turnIndex === index && card.beatIndex === position.beat,
+  )
   // 使い方のページを置くときは、カードはその分だけ後ろへずれる
   const guideOffset = guide.present ? 1 : 0
   const activePanel = guide.showing ? 0 : activeCardIndex + guideOffset
@@ -524,7 +528,9 @@ export function TeachingScript({
         'translateX(calc(' + offset * 100 + '% + ' + offset * 12 + 'px))',
     }
   }
-  const swipe = async (delta: number) => {
+  // refocus は、ページの中のボタン（「次」・「はじめる」）で送るとき。
+  // ページが替わると台本の中身を作り直してボタンが消えるので、台本の領域へフォーカスを戻す（続けて ← → で送れる）
+  const swipe = async (delta: number, refocus = false) => {
     if (sliding.current || !(delta < 0 ? canAdvance : canBack)) {
       setDragX(0)
       return
@@ -556,6 +562,7 @@ export function TeachingScript({
         if (delta < 0) forward()
         else back()
       })
+      if (refocus) carousel.current?.focus({ preventScroll: true })
     } finally {
       animation.cancel()
       sliding.current = false
@@ -683,6 +690,7 @@ export function TeachingScript({
       <div className={styles.carouselFrame}>
         <div
           className={styles.carousel}
+          ref={carousel}
           role="region"
           aria-roledescription="カルーセル"
           aria-label="声かけの台本"
@@ -700,12 +708,13 @@ export function TeachingScript({
           onPointerDown={(event) => {
             if (!event.isPrimary || event.button !== 0 || sliding.current)
               return
-            if (
-              (event.target as Element).closest(
-                'summary, button, a, input, select, textarea, [role="button"]',
-              )
+            const control = (event.target as Element).closest(
+              'summary, button, a, input, select, textarea, [role="button"]',
             )
-              return
+            // ページの下の「次」・「はじめる」のボタンの上からは、横に動いたときだけ送る。
+            // 親指を置きやすい場所なので。ただのタップは、捕まえずにそのままボタンに届ける
+            const onPageButton = !!control?.hasAttribute('data-page-button')
+            if (control && !onPageButton) return
             setSlideWidth(
               (track.current?.getBoundingClientRect().width ?? 320) + 12,
             )
@@ -714,8 +723,10 @@ export function TeachingScript({
               x: event.clientX,
               y: event.clientY,
               axis: null,
+              captured: !onPageButton,
             }
-            event.currentTarget.setPointerCapture(event.pointerId)
+            if (!onPageButton)
+              event.currentTarget.setPointerCapture(event.pointerId)
           }}
           onPointerMove={(event) => {
             const start = gesture.current
@@ -726,7 +737,13 @@ export function TeachingScript({
             if (start.axis === null) {
               if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return
               start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-              if (start.axis === 'x') setDragging(true)
+              if (start.axis === 'x') {
+                if (!start.captured) {
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                  start.captured = true
+                }
+                setDragging(true)
+              }
             }
             if (start.axis !== 'x') return
             const allowed = dx < 0 ? canAdvance : canBack
@@ -737,6 +754,7 @@ export function TeachingScript({
             const start = gesture.current
             if (!start || start.id !== event.pointerId) return
             gesture.current = null
+            if (start.axis === 'x') swipedAt.current = event.timeStamp
             const dx = event.clientX - start.x
             // アニメーションの開始位置を読むまではドラッグ時の transform を保つ。
             if (
@@ -752,7 +770,15 @@ export function TeachingScript({
             setDragging(false)
             if (!sliding.current) setDragX(0)
           }}
-          onLostPointerCapture={() => {
+          onClickCapture={(event) => {
+            if (event.timeStamp - swipedAt.current > 400) return
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+          onLostPointerCapture={(event) => {
+            // 「次」のボタンから台本の領域へ指を捕まえ直すと、ボタンから「指を失った」が伝わってくるので、
+            // 台本の領域自身のものだけを見る
+            if (event.target !== event.currentTarget) return
             gesture.current = null
             setDragging(false)
             if (!sliding.current) setDragX(0)
@@ -776,12 +802,7 @@ export function TeachingScript({
                 aria-hidden={!guide.showing}
                 inert={!guide.showing}
               >
-                <ScriptGuideSlide />
-                <NextPageButton
-                  label="はじめる"
-                  primary
-                  onClick={() => void swipe(-1)}
-                />
+                <ScriptGuideSlide onStart={() => void swipe(-1, true)} />
               </div>
             )}
             {cards.map(({ cardBeat, turnIndex, beatIndex }, cardIndex) => {
@@ -826,7 +847,7 @@ export function TeachingScript({
                   {next && (
                     <NextPageButton
                       label={nextLabel(next)}
-                      onClick={() => void swipe(-1)}
+                      onClick={() => void swipe(-1, true)}
                     />
                   )}
                 </div>

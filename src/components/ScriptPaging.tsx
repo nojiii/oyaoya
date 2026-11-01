@@ -22,7 +22,8 @@ const icon = (path: string) => (
 // ページの下の「次」のボタン。次のページの名前と、右向きの矢印を置く。
 // ページの中に置いて、めくっている間もページといっしょに動かす。
 // 送れないとき（方法を選ぶ前など）も場所は空けておき、送れるようになったら浮かび上がらせる（ページの高さを変えない）。
-// primary は、使い方のページの「はじめる」。次のページの名前の代わりに、label だけを大きく出す
+// primary は、使い方のページの「はじめる」。次のページの名前の代わりに、label だけを大きく出す。
+// data-page-button は、このボタンの上から始めたスワイプも台本が受けるための印（TeachingScript）
 export function NextPageButton({
   label,
   hidden = false,
@@ -40,6 +41,7 @@ export function NextPageButton({
       type="button"
       data-hidden={hidden}
       data-primary={primary || undefined}
+      data-page-button
       onClick={onClick}
     >
       {primary ? (

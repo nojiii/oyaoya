@@ -20,6 +20,9 @@ export interface LessonSlide {
 // 使い方のページ（ScriptGuide）を、台本の最初のページの前に置くときの id
 const GUIDE_ID = 'scriptGuide'
 
+const reducedMotion = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
 // 左右のスワイプ（キーボードでは ← →）で送る。左右の端の矢印と、ページの下の「次」のボタンを押しても送れる。
 // 初めて台本を開いたときは、最初のページの前に使い方のページを置く
@@ -68,6 +71,8 @@ export function LessonSlides({
   const swipedAt = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  // ページを送る動きの間（指を離してから、送り終えるまで）
+  const [navigating, setNavigating] = useState(false)
   // 横に送っている間の、台本の枠の高さ。隣のページは今のページに重ねて置いている（AdditionFlow.module.css）ので、
   // 枠が今のページの高さのままだと、長い隣のページは下が切れて見え、送り終えた瞬間に伸びる。
   // 送っている間だけ、前後のページの高い方まで枠を広げておく
@@ -80,6 +85,12 @@ export function LessonSlides({
     setReach(
       Math.max(...near.map((page) => page.getBoundingClientRect().height)),
     )
+  }
+  // 送らずに元の位置へ戻す。戻る動きがないとき（動きを減らす設定、または動かしていない）は、
+  // 動き終わりの合図（transitionend）が来ないので、枠の高さもここで戻す
+  const settle = () => {
+    setDragX(0)
+    if (dragX === 0 || reducedMotion()) setReach(null)
   }
   const swipeArea = useRef<HTMLDivElement>(null)
   const gesture = useRef<{
@@ -114,15 +125,22 @@ export function LessonSlides({
   const waiting = (i: number) => i === position && !canForward
 
   const navigate = async (direction: -1 | 1) => {
-    if (sliding.current || !(direction === 1 ? canForward : canBack)) {
+    if (sliding.current) {
       setDragX(0)
+      return
+    }
+    if (!(direction === 1 ? canForward : canBack)) {
+      settle()
       return
     }
     const element = track.current
     if (!element) return
     sliding.current = true
     // ← → で送るときは、ドラッグを通らないので、ここで枠を広げる
-    flushSync(measureReach)
+    flushSync(() => {
+      measureReach()
+      setNavigating(true)
+    })
     const width = element.getBoundingClientRect().width + 12
     const animation = element.animate(
       [
@@ -130,9 +148,7 @@ export function LessonSlides({
         { transform: `translateX(${-direction * width}px)` },
       ],
       {
-        duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 0
-          : 300,
+        duration: reducedMotion() ? 0 : 300,
         easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
         fill: 'forwards',
       },
@@ -152,6 +168,7 @@ export function LessonSlides({
     } finally {
       animation.cancel()
       sliding.current = false
+      setNavigating(false)
     }
   }
 
@@ -176,7 +193,7 @@ export function LessonSlides({
     const far = Math.abs(dx) >= Math.min(55, start.width * 0.2)
     const flick = Math.abs(dx) >= 20 && Math.abs(speed) >= 0.3 && speed * dx > 0
     if (far || flick) void navigate(dx < 0 ? 1 : -1)
-    else if (!sliding.current) setDragX(0)
+    else if (!sliding.current) settle()
   }
 
   return (
@@ -207,7 +224,7 @@ export function LessonSlides({
         if (event.pointerType === 'mouse' && event.buttons === 0) {
           gesture.current = null
           setDragging(false)
-          setDragX(0)
+          if (!sliding.current) settle()
           return
         }
         const dx = event.clientX - start.x
@@ -255,7 +272,7 @@ export function LessonSlides({
         if (event.target !== event.currentTarget) return
         gesture.current = null
         setDragging(false)
-        if (!sliding.current) setDragX(0)
+        if (!sliding.current) settle()
       }}
     >
       <div
@@ -300,8 +317,8 @@ export function LessonSlides({
             className={styles.dragTrack}
             ref={track}
             data-dragging={dragging}
-            // 指で動かしている間と、送っている間（枠を広げている間）は、となりのページを薄くしない
-            data-moving={dragging || reach !== null}
+            // 指で動かしている間と、送っている間は、となりのページを薄くしない
+            data-moving={dragging || navigating}
             style={{
               transform: `translateX(${dragX}px)`,
               minHeight: reach ?? undefined,
@@ -328,7 +345,7 @@ export function LessonSlides({
                 }}
               >
                 {slide.id === GUIDE_ID ? (
-                  <ScriptGuideSlide />
+                  <ScriptGuideSlide onStart={() => void navigate(1)} />
                 ) : (
                   <>
                     {/* ステージ：お子さんと一緒に見るもの */}
@@ -346,22 +363,14 @@ export function LessonSlides({
                       {slide.title}
                     </h2>
                     {slide.content}
+                    {pages[i + 1] && (
+                      <NextPageButton
+                        label={pages[i + 1].title}
+                        hidden={waiting(i)}
+                        onClick={() => void navigate(1)}
+                      />
+                    )}
                   </>
-                )}
-                {slide.id === GUIDE_ID ? (
-                  <NextPageButton
-                    label="はじめる"
-                    primary
-                    onClick={() => void navigate(1)}
-                  />
-                ) : (
-                  pages[i + 1] && (
-                    <NextPageButton
-                      label={pages[i + 1].title}
-                      hidden={waiting(i)}
-                      onClick={() => void navigate(1)}
-                    />
-                  )
                 )}
               </section>
             ))}

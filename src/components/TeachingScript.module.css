@@ -291,6 +291,11 @@
   overflow: hidden;
   overflow: clip;
 }
+/* ページを分けた台本（LessonSlides）は、どのページもステージ（内側の余白 1.25rem）から始まるので、
+   左右の端のボタン（ScriptPaging.module.css）を、余白より 8px 広げて押しやすくする */
+.swipeArea .carouselFrame {
+  --page-edge-width: calc(1.25rem + 8px);
+}
 .carousel {
   touch-action: pan-y pinch-zoom;
 }
