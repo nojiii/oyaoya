@@ -152,7 +152,7 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('たしかめ'))
           continue
         }
-        // 大学祭の数学（易しい）第1問も、答えのあとに「たしかめ」を置く
+        // 大学祭の算数（易しい）第1問も、答えのあとに「たしかめ」を置く
         if (id === 'math-easy-1') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('問題を読んでみましょう'))
@@ -160,7 +160,7 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           continue
         }
-        // 大学祭の数学（難しい）第1問も、見本と同じページを分けた台本にする
+        // 大学祭の算数（難しい）第1問も、見本と同じページを分けた台本にする
         if (id === 'math-hard-1') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んで、図をよく見てみましょう'))

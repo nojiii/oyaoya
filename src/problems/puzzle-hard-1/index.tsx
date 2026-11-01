@@ -9,6 +9,7 @@ import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
 import styles from './puzzle-hard-1.module.css'
+import { PrisonersFigure } from './PrisonersFigure'
 
 // 問題文。台本の最初のページと、準備画面の「声かけを先に読んでおく」の両方で使う
 const QUESTION = [
@@ -40,18 +41,6 @@ const words = {
     'そのとおり！ Dさんがだまっているから、Cさんは自分が「白」だとわかるね！',
 }
 
-// 図に出す4人。壁の左にAさん、右にBさん・Cさん・Dさんが壁に近い順に並ぶ
-const people = ['A', 'B', 'C', 'D'] as const
-type Person = (typeof people)[number]
-// unknown は、その人にはまだわからない色（「？」の帽子）
-type Hat = 'black' | 'white' | 'unknown'
-type Hats = Record<Person, Hat>
-
-// 問題の帽子。黒が2つ、白が2つ
-const HATS: Hats = { A: 'black', B: 'white', C: 'black', D: 'white' }
-// たしかめで使う帽子。Bさんが黒、Cさんが白。AさんとDさんの色は、出さずに考える
-const CHECK_HATS: Hats = { A: 'unknown', B: 'black', C: 'white', D: 'unknown' }
-
 // 台本のページ。左へスワイプで次、右へで前。explain・check が「たしかめ」
 const pages = [
   'read',
@@ -67,86 +56,6 @@ const pages = [
 type Page = (typeof pages)[number]
 
 const flow = pagedFlow('puzzle-hard-1', pages)
-
-const hatNames: Record<Hat, string> = {
-  black: '黒',
-  white: '白',
-  unknown: 'わからない色',
-}
-
-// 4人の並び（x は人の中心）。壁より左を向くのが B・C・D、右を向くのが A
-const positions: Record<Person, number> = { A: 48, B: 156, C: 228, D: 300 }
-
-// ステージに置く図。dim の人は薄くして、いま考えている人から外す。
-// compact は、答えの行と一緒に置くページで図を小さくし、ステージの高さをほかのページとそろえる
-function Prisoners({
-  hats,
-  dim = [],
-  compact = false,
-}: {
-  hats: Hats
-  dim?: Person[]
-  compact?: boolean
-}) {
-  const label = `壁の左にAさん、右に壁に近い順にBさん・Cさん・Dさんが立ち、4人とも壁のほうを向いています。帽子は${people
-    .map((person) => `${person}さんが${hatNames[hats[person]]}`)
-    .join('、')}です`
-  return (
-    <svg
-      className={`${styles.figure} ${compact ? styles.compact : ''}`}
-      viewBox="0 0 352 196"
-      role="img"
-      aria-label={label}
-    >
-      <text className={styles.wallName} x="98" y="30">
-        壁
-      </text>
-      <rect
-        className={styles.wall}
-        x="92"
-        y="40"
-        width="12"
-        height="140"
-        rx="3"
-      />
-      {people.map((person) => {
-        const x = positions[person]
-        const hat = hats[person]
-        // 向いているほうに目を置く
-        const eye = person === 'A' ? x + 9 : x - 9
-        return (
-          <g
-            key={person}
-            className={dim.includes(person) ? styles.dim : undefined}
-          >
-            <rect
-              className={styles.body}
-              x={x - 22}
-              y="120"
-              width="44"
-              height="52"
-              rx="18"
-            />
-            <circle className={styles.head} cx={x} cy="98" r="20" />
-            <circle className={styles.eye} cx={eye} cy="98" r="2.6" />
-            <g className={styles.hat} data-hat={hat}>
-              <rect x={x - 15} y="52" width="30" height="26" rx="5" />
-              <rect x={x - 24} y="74" width="48" height="7" rx="3.5" />
-            </g>
-            {hat === 'unknown' && (
-              <text className={styles.unknown} x={x} y="72">
-                ？
-              </text>
-            )}
-            <text className={styles.name} x={x} y="192">
-              {person}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
 
 // ステージに置く答え。お子さんが答えてから「？」を押して、答えを見る
 function Answer({
@@ -209,7 +118,7 @@ function PuzzleHardFlow() {
     read: {
       id: 'read',
       title: 'まずは問題を読んで、図をよく見てみましょう',
-      stage: <Prisoners hats={HATS} />,
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints note="下の問題を、お子さんと**一緒に読みましょう**。" />
@@ -224,7 +133,7 @@ function PuzzleHardFlow() {
     see: {
       id: 'see',
       title: 'だれに、だれの帽子が見えるか確かめましょう',
-      stage: <Prisoners hats={HATS} />,
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -241,12 +150,7 @@ function PuzzleHardFlow() {
     suppose: {
       id: 'suppose',
       title: 'もしも、BさんとCさんが2人とも白だったら',
-      stage: (
-        <Prisoners
-          hats={{ A: 'unknown', B: 'white', C: 'white', D: 'unknown' }}
-          dim={['A']}
-        />
-      ),
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -262,9 +166,7 @@ function PuzzleHardFlow() {
     silent: {
       id: 'silent',
       title: '本当の帽子で、Dさんを考えましょう',
-      stage: (
-        <Prisoners hats={{ ...HATS, A: 'unknown', D: 'unknown' }} dim={['A']} />
-      ),
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -281,12 +183,7 @@ function PuzzleHardFlow() {
     suppose2: {
       id: 'suppose2',
       title: 'Cさんの気持ちになって考えましょう',
-      stage: (
-        <Prisoners
-          hats={{ A: 'unknown', B: 'white', C: 'unknown', D: 'unknown' }}
-          dim={['A']}
-        />
-      ),
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -302,12 +199,7 @@ function PuzzleHardFlow() {
     notice: {
       id: 'notice',
       title: 'Dさんがだまっていることに気づきましょう',
-      stage: (
-        <Prisoners
-          hats={{ A: 'unknown', B: 'white', C: 'unknown', D: 'unknown' }}
-          dim={['A']}
-        />
-      ),
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -326,7 +218,7 @@ function PuzzleHardFlow() {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          <Prisoners hats={HATS} compact />
+          <PrisonersFigure />
           <Answer
             label="答えたのは"
             answer="Cさん"
@@ -369,7 +261,7 @@ function PuzzleHardFlow() {
       id: 'explain',
       section: 'たしかめ',
       title: 'どうしてわかったのか、聞いてみましょう',
-      stage: <Prisoners hats={HATS} />,
+      stage: <PrisonersFigure />,
       content: (
         <>
           <TeachingPoints
@@ -389,7 +281,7 @@ function PuzzleHardFlow() {
       title: 'ひとりで考えてみましょう',
       stage: (
         <>
-          <Prisoners hats={CHECK_HATS} compact />
+          <PrisonersFigure />
           <Answer
             label="答えるのは"
             answer="Cさん"
@@ -449,7 +341,7 @@ export default function PuzzleHard1() {
       flow={<PuzzleHardFlow />}
       flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
-      picture={<Prisoners hats={HATS} />}
+      picture={<PrisonersFigure />}
       prepare={{
         goal: '見えている帽子と「だまっている人」から、答えた人を考えます。',
         materials: ['問題の図（この画面）'],

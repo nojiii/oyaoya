@@ -110,17 +110,17 @@ export const curriculum: Group[] = [
 export const festivalCurriculum: Group[] = [
   {
     slug: 'math-easy',
-    name: '数学（易しい）',
+    name: '算数（易しい）',
     children: [
       // 第一引数のタグは既存の TAGS（'数の理解', '形・図形' など）から選ぶ必要があります
-      unit('数の理解', 'math-easy-1', '数学 易しい 第1問', ['math-easy-1']),
+      unit('数の理解', 'math-easy-1', '算数 易しい 第1問', ['math-easy-1']),
     ],
   },
   {
     slug: 'math-hard',
-    name: '数学（難しい）',
+    name: '算数（難しい）',
     children: [
-      unit('形・図形', 'math-hard-1', '数学 難しい 第1問', ['math-hard-1']),
+      unit('形・図形', 'math-hard-1', '算数 難しい 第1問', ['math-hard-1']),
     ],
   },
   // 謎解きは1つだけにした。slug と問題IDは、難しい・易しいの2つがあったころの puzzle-hard のまま

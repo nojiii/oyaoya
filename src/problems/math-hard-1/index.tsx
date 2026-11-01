@@ -1,4 +1,4 @@
-// 大学祭の数学（難しい）第1問。台本の書き方は src/problems/sample にそろえる
+// 大学祭の算数（難しい）第1問。台本の書き方は src/problems/sample にそろえる
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
 import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
@@ -66,7 +66,7 @@ function MathHardFlow() {
     read: {
       id: 'read',
       title: 'まずは問題を読んで、図をよく見てみましょう',
-      stage: <Figure src={figureQuestion} alt="数学の問題に使う図形" />,
+      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
       content: (
         <>
           <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**" />
@@ -203,7 +203,7 @@ function MathHardFlow() {
     answer: {
       id: 'answer',
       title: 'ピンクの部分の面積を確かめましょう',
-      stage: <Figure src={figureQuestion} alt="数学の問題に使う図形" />,
+      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
       content: (
         <>
           <TeachingPoints
@@ -221,7 +221,7 @@ function MathHardFlow() {
 
   return (
     <LessonSlides
-      label="数学 難しい 第1問の台本"
+      label="算数 難しい 第1問の台本"
       slides={pages.map((page) => slides[page])}
       currentId={page}
       totalKnown
@@ -239,7 +239,7 @@ export default function MathHard1() {
       flow={<MathHardFlow />}
       flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
-      picture={<Figure src={figureQuestion} alt="数学の問題に使う図形" />}
+      picture={<Figure src={figureQuestion} alt="算数の問題に使う図形" />}
       prepare={{
         goal: '図形の面積を分けて考え、ピンクの部分の面積を求めます。',
         materials: ['紙と鉛筆', '問題の図形'],

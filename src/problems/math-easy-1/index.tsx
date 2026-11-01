@@ -1,4 +1,4 @@
-// 大学祭の数学（易しい）第1問。台本の書き方は src/problems/sample にそろえる
+// 大学祭の算数（易しい）第1問。台本の書き方は src/problems/sample にそろえる
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
@@ -284,7 +284,7 @@ function MathEasyFlow() {
 
   return (
     <LessonSlides
-      label="数学 易しい 第1問の台本"
+      label="算数 易しい 第1問の台本"
       slides={pages.map((page) => slides[page])}
       currentId={page}
       totalKnown
