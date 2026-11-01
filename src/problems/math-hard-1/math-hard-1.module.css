@@ -1,10 +1,101 @@
 /* 算数（難しい）第1問だけで使う見た目 */
 
-/* ステージに置く問題の図。白地の画像なので、角だけ丸める */
+/* ステージに置く問題の図（AreaFigure）。枠線や影は使わず、面の色と線だけで描く */
 .figure {
   display: block;
   width: 100%;
   max-height: 300px;
-  border-radius: 16px;
-  object-fit: contain;
+}
+
+/* 文字の寄せ（text-anchor）は辺ごとに変えるので、ここでは決めず AreaFigure の属性で決める */
+.figure text {
+  font-family: var(--font);
+  font-weight: 900;
+  fill: var(--color-text);
+}
+
+/* 問題文の「ピンクの部分」。言葉と合わせるので、色はピンクのままにする */
+.pink {
+  fill: #f9c6d4;
+}
+
+.white {
+  fill: #fff;
+}
+
+/* 白い三角形4つをぬるとき。ピンクと見分けやすい橙にする */
+.highlight {
+  fill: var(--color-accent-bright);
+}
+
+.edge {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.rightAngle {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2.5;
+}
+
+/* 補助線。丸い点を並べた点線にする */
+.guide {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 0 10;
+}
+
+.mark {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 外の辺の長さ */
+.bracket {
+  fill: none;
+  stroke: var(--color-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.figure .length {
+  font-size: 26px;
+}
+
+/* 真ん中の長方形の横と縦。新しく求めた長さなので橙で書く */
+.sideBracket {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.figure .side {
+  font-size: 20px;
+  font-weight: 700;
+  fill: var(--color-accent);
+}
+
+.figure .area {
+  font-size: 34px;
+}
+
+/* 真ん中の長方形の中に書くときは、長方形に収まる大きさにする */
+.figure .area[data-small] {
+  font-size: 24px;
+}
+
+/* cm² の 2 */
+.figure .squared {
+  font-size: 0.6em;
 }

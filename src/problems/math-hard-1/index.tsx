@@ -7,15 +7,7 @@ import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
-import figureQuestion from './images/figure-1.webp'
-import figureDiagonal from './images/figure-6.webp'
-import figureRectangle from './images/figure-7.webp'
-// 4・5ページ目は同じ図を使う
-import figureCenter from './images/figure-8.webp'
-import figureDimensions from './images/figure-9.webp'
-import figureArea from './images/figure-4.webp'
-import figureWhiteArea from './images/figure-10.webp'
-import styles from './math-hard-1.module.css'
+import { AreaFigure } from './AreaFigure'
 
 const QUESTION_TEXT =
   '白い部分の面積は72㎠です。ピンクの部分の面積は何㎠でしょうか？'
@@ -53,9 +45,16 @@ type Page = (typeof pages)[number]
 
 const flow = pagedFlow('math-hard-1', pages)
 
-function Figure({ src, alt }: { src: string; alt: string }) {
-  return <img className={styles.figure} src={src} alt={alt} draggable={false} />
-}
+// 問題の図。最初と最後のページ、準備の画面で使う
+const questionFigure = <AreaFigure label="算数の問題に使う図形" area={72} />
+// 4・5ページ目は同じ図を使う
+const centerFigure = (
+  <AreaFigure
+    label="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
+    guides="all"
+    marks="all"
+  />
+)
 
 function MathHardFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
@@ -66,7 +65,7 @@ function MathHardFlow() {
     read: {
       id: 'read',
       title: 'まずは問題を読んで、図をよく見てみましょう',
-      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
+      stage: questionFigure,
       content: (
         <>
           <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**" />
@@ -78,9 +77,9 @@ function MathHardFlow() {
       id: 'diagonal',
       title: '補助線を引いてみましょう',
       stage: (
-        <Figure
-          src={figureDiagonal}
-          alt="左上のピンクの三角形に点線を引いて、長方形を作った図"
+        <AreaFigure
+          label="左上のピンクの三角形に点線を引いて、長方形を作った図"
+          guides="corner"
         />
       ),
       content: (
@@ -97,9 +96,10 @@ function MathHardFlow() {
       id: 'rectangle',
       title: 'ピンクと白の三角形の面積をくらべましょう',
       stage: (
-        <Figure
-          src={figureRectangle}
-          alt="点線の長方形が、同じ印を付けたピンクと白の三角形に分かれた図"
+        <AreaFigure
+          label="点線の長方形が、同じ印を付けたピンクと白の三角形に分かれた図"
+          guides="corner"
+          marks="corner"
         />
       ),
       content: (
@@ -115,12 +115,7 @@ function MathHardFlow() {
     center: {
       id: 'center',
       title: 'ほかの三角形も同じように考えましょう',
-      stage: (
-        <Figure
-          src={figureCenter}
-          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
-        />
-      ),
+      stage: centerFigure,
       content: (
         <>
           <TeachingPoints
@@ -134,12 +129,7 @@ function MathHardFlow() {
     pink: {
       id: 'pink',
       title: '真ん中に残った長方形に注目しましょう',
-      stage: (
-        <Figure
-          src={figureCenter}
-          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
-        />
-      ),
+      stage: centerFigure,
       content: (
         <>
           <TeachingPoints
@@ -154,9 +144,10 @@ function MathHardFlow() {
       id: 'dimensions',
       title: '長方形の横と縦の長さを求めましょう',
       stage: (
-        <Figure
-          src={figureDimensions}
-          alt="真ん中の長方形の横に4cm、縦に2cmと書いた図"
+        <AreaFigure
+          label="真ん中の長方形の横に4cm、縦に2cmと書いた図"
+          guides="all"
+          sides
         />
       ),
       content: (
@@ -172,7 +163,14 @@ function MathHardFlow() {
     area: {
       id: 'area',
       title: '長方形の面積を求めましょう',
-      stage: <Figure src={figureArea} alt="真ん中の長方形に8㎠と書いた図" />,
+      stage: (
+        <AreaFigure
+          label="真ん中の長方形に8㎠と書いた図"
+          guides="all"
+          sides
+          area={8}
+        />
+      ),
       content: (
         <>
           <TeachingPoints collapsible note="長方形の面積を求めましょう" />
@@ -184,9 +182,11 @@ function MathHardFlow() {
       id: 'whiteArea',
       title: '白い三角形の面積を求めましょう',
       stage: (
-        <Figure
-          src={figureWhiteArea}
-          alt="白い部分から真ん中の長方形を除いた、4つの白い三角形をぬった図"
+        <AreaFigure
+          label="白い部分から真ん中の長方形を除いた、4つの白い三角形をぬった図"
+          guides="all"
+          marks="all"
+          highlight
         />
       ),
       content: (
@@ -203,7 +203,7 @@ function MathHardFlow() {
     answer: {
       id: 'answer',
       title: 'ピンクの部分の面積を確かめましょう',
-      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
+      stage: questionFigure,
       content: (
         <>
           <TeachingPoints
@@ -239,7 +239,7 @@ export default function MathHard1() {
       flow={<MathHardFlow />}
       flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
-      picture={<Figure src={figureQuestion} alt="算数の問題に使う図形" />}
+      picture={questionFigure}
       prepare={{
         goal: '図形の面積を分けて考え、ピンクの部分の面積を求めます。',
         materials: ['紙と鉛筆', '問題の図形'],
