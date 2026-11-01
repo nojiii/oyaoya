@@ -7,34 +7,27 @@ import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
-import figureQuestion from './images/figure-1.webp'
-import figureDiagonal from './images/figure-6.webp'
-import figureRectangle from './images/figure-7.webp'
-// 4・5ページ目は同じ図を使う
-import figureCenter from './images/figure-8.webp'
-import figureDimensions from './images/figure-9.webp'
-import figureArea from './images/figure-4.webp'
-import figureWhiteArea from './images/figure-10.webp'
-import styles from './math-hard-1.module.css'
+import { AreaFigure } from './AreaFigure'
 
 const QUESTION_TEXT =
-  '白い部分の面積は72㎠です。ピンクの部分の面積は何㎠でしょうか？'
+  '白い部分の面積は72㎠です。灰色の部分の面積は何㎠でしょうか？'
 
 // 子どもに読み上げるセリフ。台本のページと準備画面の「声かけを先に読んでおく」の両方で使う
 const words = {
   diagonal:
-    'まず、左上にあるピンクの三角形に注目してみよう。点線を引くと長方形ができるよ。',
+    'まず、左上にある灰色の三角形に注目してみよう。点線を引くと長方形ができるよ。',
   rectangle:
-    '長方形をななめの線で分けると、同じ大きさの三角形が2つできるんだ。だから、このピンクと白の三角形は同じ面積だよ。',
+    '長方形をななめの線で分けると、同じ大きさの三角形が2つできるんだ。だから、この灰色と白の三角形は同じ面積だよ。',
   center:
-    '他の三角形も同じように分けられるよ。つまり、ピンクと白の三角形の合計面積は同じなんだ。',
-  pink: 'でも、真ん中に小さな長方形が残っているね。まずはこの長方形の面積を求めてみよう。',
+    '他の三角形も同じように分けられるよ。つまり、灰色と白の三角形の合計面積は同じなんだ。',
+  remaining:
+    'でも、真ん中に小さな長方形が残っているね。まずはこの長方形の面積を求めてみよう。',
   dimensions: '横の長さは8−4で4cm。縦の長さは7−5で2cmになるよ。',
   area: '長方形の面積は、4×2で8㎠だね。',
   whiteArea:
     '白い部分の面積72㎠から8㎠を引くと白い三角形の面積は64㎠になるね。',
   answer:
-    '白とピンクの三角形は同じ面積だったね。だからピンクの部分の面積は64㎠になるね',
+    '白と灰色の三角形は同じ面積だったね。だから灰色の部分の面積は64㎠になるね。',
 }
 
 // 台本のページ。左へスワイプで次、右へで前
@@ -43,7 +36,7 @@ const pages = [
   'diagonal',
   'rectangle',
   'center',
-  'pink',
+  'remaining',
   'dimensions',
   'area',
   'whiteArea',
@@ -53,9 +46,16 @@ type Page = (typeof pages)[number]
 
 const flow = pagedFlow('math-hard-1', pages)
 
-function Figure({ src, alt }: { src: string; alt: string }) {
-  return <img className={styles.figure} src={src} alt={alt} draggable={false} />
-}
+// 問題の図。最初と最後のページ、準備の画面で使う
+const questionFigure = <AreaFigure label="算数の問題に使う図形" area={72} />
+// 4・5ページ目は同じ図を使う
+const centerFigure = (
+  <AreaFigure
+    label="4つの灰色の三角形と、同じ面積の白い三角形に同じ印を付けた図"
+    guides="all"
+    marks="all"
+  />
+)
 
 function MathHardFlow() {
   // 最後のページの「終わる」で、準備の画面へ戻る
@@ -66,7 +66,7 @@ function MathHardFlow() {
     read: {
       id: 'read',
       title: 'まずは問題を読んで、図をよく見てみましょう',
-      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
+      stage: questionFigure,
       content: (
         <>
           <TeachingPoints note="まずは、下の問題をお子さんと**一緒に読みましょう**" />
@@ -78,9 +78,9 @@ function MathHardFlow() {
       id: 'diagonal',
       title: '補助線を引いてみましょう',
       stage: (
-        <Figure
-          src={figureDiagonal}
-          alt="左上のピンクの三角形に点線を引いて、長方形を作った図"
+        <AreaFigure
+          label="左上の灰色の三角形に点線を引いて、長方形を作った図"
+          guides="corner"
         />
       ),
       content: (
@@ -95,18 +95,19 @@ function MathHardFlow() {
     },
     rectangle: {
       id: 'rectangle',
-      title: 'ピンクと白の三角形の面積をくらべましょう',
+      title: '灰色と白の三角形の面積をくらべましょう',
       stage: (
-        <Figure
-          src={figureRectangle}
-          alt="点線の長方形が、同じ印を付けたピンクと白の三角形に分かれた図"
+        <AreaFigure
+          label="点線の長方形が、同じ印を付けた灰色と白の三角形に分かれた図"
+          guides="corner"
+          marks="corner"
         />
       ),
       content: (
         <>
           <TeachingPoints
             collapsible
-            note="長方形の性質を利用して、白とピンクの三角形の面積が同じことを確認しましょう"
+            note="長方形の性質を利用して、白と灰色の三角形の面積が同じことを確認しましょう"
           />
           <SpokenWords>{words.rectangle}</SpokenWords>
         </>
@@ -115,38 +116,28 @@ function MathHardFlow() {
     center: {
       id: 'center',
       title: 'ほかの三角形も同じように考えましょう',
-      stage: (
-        <Figure
-          src={figureCenter}
-          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
-        />
-      ),
+      stage: centerFigure,
       content: (
         <>
           <TeachingPoints
             collapsible
-            note="すべての白とピンクの三角形の面積が同じであり、合計面積も同じことを確認しましょう"
+            note="すべての白と灰色の三角形の面積が同じであり、合計面積も同じことを確認しましょう"
           />
           <SpokenWords>{words.center}</SpokenWords>
         </>
       ),
     },
-    pink: {
-      id: 'pink',
+    remaining: {
+      id: 'remaining',
       title: '真ん中に残った長方形に注目しましょう',
-      stage: (
-        <Figure
-          src={figureCenter}
-          alt="4つのピンクの三角形と、同じ面積の白い三角形に同じ印を付けた図"
-        />
-      ),
+      stage: centerFigure,
       content: (
         <>
           <TeachingPoints
             collapsible
             note="残った真ん中の長方形に注目しましょう"
           />
-          <SpokenWords>{words.pink}</SpokenWords>
+          <SpokenWords>{words.remaining}</SpokenWords>
         </>
       ),
     },
@@ -154,9 +145,10 @@ function MathHardFlow() {
       id: 'dimensions',
       title: '長方形の横と縦の長さを求めましょう',
       stage: (
-        <Figure
-          src={figureDimensions}
-          alt="真ん中の長方形の横に4cm、縦に2cmと書いた図"
+        <AreaFigure
+          label="真ん中の長方形の横に4cm、縦に2cmと書いた図"
+          guides="all"
+          sides
         />
       ),
       content: (
@@ -172,7 +164,14 @@ function MathHardFlow() {
     area: {
       id: 'area',
       title: '長方形の面積を求めましょう',
-      stage: <Figure src={figureArea} alt="真ん中の長方形に8㎠と書いた図" />,
+      stage: (
+        <AreaFigure
+          label="真ん中の長方形に8㎠と書いた図"
+          guides="all"
+          sides
+          area={8}
+        />
+      ),
       content: (
         <>
           <TeachingPoints collapsible note="長方形の面積を求めましょう" />
@@ -184,9 +183,11 @@ function MathHardFlow() {
       id: 'whiteArea',
       title: '白い三角形の面積を求めましょう',
       stage: (
-        <Figure
-          src={figureWhiteArea}
-          alt="白い部分から真ん中の長方形を除いた、4つの白い三角形をぬった図"
+        <AreaFigure
+          label="白い部分から真ん中の長方形を除いた、4つの白い三角形をぬった図"
+          guides="all"
+          marks="all"
+          highlight
         />
       ),
       content: (
@@ -202,13 +203,13 @@ function MathHardFlow() {
     // 最後のページ：声かけを終えたら準備の画面へ戻る
     answer: {
       id: 'answer',
-      title: 'ピンクの部分の面積を確かめましょう',
-      stage: <Figure src={figureQuestion} alt="算数の問題に使う図形" />,
+      title: '灰色の部分の面積を確かめましょう',
+      stage: questionFigure,
       content: (
         <>
           <TeachingPoints
             collapsible
-            note="白い三角形とピンクの三角形は同じ面積なので、白い三角形の面積がそのままピンクの部分の面積になることを確認しましょう"
+            note="白い三角形と灰色の三角形は同じ面積なので、白い三角形の面積がそのまま灰色の部分の面積になることを確認しましょう"
           />
           <SpokenWords>{words.answer}</SpokenWords>
           <button className={flowStyles.finish} type="button" onClick={finish}>
@@ -239,9 +240,9 @@ export default function MathHard1() {
       flow={<MathHardFlow />}
       flowStatus={() => flow.status(location.pathname)}
       // 準備の画面のステージに大きく出す図
-      picture={<Figure src={figureQuestion} alt="算数の問題に使う図形" />}
+      picture={questionFigure}
       prepare={{
-        goal: '図形の面積を分けて考え、ピンクの部分の面積を求めます。',
+        goal: '図形の面積を分けて考え、灰色の部分の面積を求めます。',
         materials: ['紙と鉛筆', '問題の図形'],
         point:
           'すぐに答えを出そうとせず、図形をいくつかの部分に分けて考えます。',
@@ -256,7 +257,7 @@ export default function MathHard1() {
         { say: words.diagonal },
         { say: words.rectangle },
         { say: words.center },
-        { say: words.pink },
+        { say: words.remaining },
         { say: words.dimensions },
         { say: words.area },
         { say: words.whiteArea },
