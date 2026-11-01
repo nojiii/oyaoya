@@ -18,8 +18,8 @@ export const problems = {
   counting: lesson('counting'),
 
   // アルファベット順の位置に新しい問題を追加
-  'math-easy-1': { title: '数学 易しい 第1問', default: MathEasy1 },
-  'math-hard-1': { title: '数学 難しい 第1問', default: MathHard1 },
+  'math-easy-1': { title: '算数 易しい 第1問', default: MathEasy1 },
+  'math-hard-1': { title: '算数 難しい 第1問', default: MathHard1 },
   'puzzle-easy-1': { title: '謎解き 易しい 第1問', default: PuzzleEasy1 },
   'puzzle-hard-1': { title: '謎解き 難しい 第1問', default: PuzzleHard1 },
   // 台本とデザインの見本。一覧（curriculum.ts）には置かない
