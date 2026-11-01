@@ -7,7 +7,11 @@ import {
   TeachingScript,
   type FlowStatus,
 } from '../../components/TeachingScript'
-import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
+import {
+  LessonSlides,
+  RevealHint,
+  type LessonSlide,
+} from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { useScriptControls } from '../../components/scriptControls'
@@ -139,11 +143,7 @@ function Equation({
           </button>
         )}
       </p>
-      {!visible && (
-        <p className={flowStyles.revealHint}>
-          お子さんが答えたら、「？」をタップ
-        </p>
-      )}
+      {!visible && <RevealHint />}
     </>
   )
 }
@@ -316,6 +316,8 @@ function SampleFlow({ eat }: { eat: number }) {
           )}
         </div>
       ),
+      // 答えを見る前は、「次」の行の代わりに「答えを見る」ボタンを置く（LessonSlides）
+      onReveal: revealed ? undefined : () => setRevealed(true),
     },
     // ここから「たしかめ」。答えが合ったかだけでなく、解き方が身についたかを確かめる。
     // 教え方のポイントには、できているかを見分けるところ（親が見るところ）を書く
@@ -375,6 +377,7 @@ function SampleFlow({ eat }: { eat: number }) {
           )}
         </>
       ),
+      onReveal: revealed ? undefined : () => setRevealed(true),
     },
   }
 

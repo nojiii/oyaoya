@@ -2,7 +2,11 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
-import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
+import {
+  LessonSlides,
+  RevealHint,
+  type LessonSlide,
+} from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
@@ -108,9 +112,7 @@ function RevealButton({ onReveal }: { onReveal: () => void }) {
           ？
         </button>
       </p>
-      <p className={flowStyles.revealHint}>
-        お子さんが答えたら、「？」をタップ
-      </p>
+      <RevealHint />
     </>
   )
 }
@@ -287,6 +289,7 @@ function PuzzleEasyFlow() {
           )}
         </div>
       ),
+      onReveal: revealed ? undefined : reveal,
     },
     // ここから「たしかめ」。答えが合ったかだけでなく、考え方が身についたかを確かめる
     explain: {
@@ -340,6 +343,7 @@ function PuzzleEasyFlow() {
           )}
         </>
       ),
+      onReveal: revealed ? undefined : reveal,
     },
   }
 

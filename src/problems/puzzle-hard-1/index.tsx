@@ -2,7 +2,11 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
-import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
+import {
+  LessonSlides,
+  RevealHint,
+  type LessonSlide,
+} from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
@@ -105,9 +109,7 @@ function Answer({
         )}
       </p>
       {/* 答えを見たあとも場所は残し、ステージの高さ（下の文字の位置）を変えない */}
-      <p className={`${flowStyles.revealHint} ${visible ? styles.hidden : ''}`}>
-        お子さんが答えたら、「？」をタップ
-      </p>
+      <RevealHint className={visible ? styles.hidden : ''} />
     </>
   )
 }
@@ -280,6 +282,7 @@ function PuzzleHardFlow() {
           )}
         </div>
       ),
+      onReveal: revealed ? undefined : reveal,
     },
     // ここから「たしかめ」。答えが合ったかだけでなく、考え方が身についたかを確かめる
     explain: {
@@ -343,6 +346,7 @@ function PuzzleHardFlow() {
           )}
         </>
       ),
+      onReveal: revealed ? undefined : reveal,
     },
   }
 

@@ -2,7 +2,11 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingScript } from '../../components/TeachingScript'
-import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
+import {
+  LessonSlides,
+  RevealHint,
+  type LessonSlide,
+} from '../../components/LessonSlides'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
@@ -136,11 +140,7 @@ function Equation({
           )}
         </span>
       </p>
-      {!visible && (
-        <p className={flowStyles.revealHint}>
-          お子さんが答えたら、「？」をタップ
-        </p>
-      )}
+      {!visible && <RevealHint />}
     </>
   )
 }
@@ -260,6 +260,7 @@ function MathEasyFlow() {
           )}
         </div>
       ),
+      onReveal: revealed ? undefined : reveal,
     },
   }
 

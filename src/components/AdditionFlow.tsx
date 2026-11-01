@@ -8,7 +8,7 @@ import {
 import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
-import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { LessonSlides, RevealHint, type LessonSlide } from './LessonSlides'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -105,9 +105,7 @@ export function AdditionEquation({
           </button>
         )}
       </p>
-      {!visible && (
-        <p className={styles.revealHint}>お子さんが答えたら、「？」をタップ</p>
-      )}
+      {!visible && <RevealHint />}
     </>
   )
 }
@@ -408,6 +406,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
         </>
       ),
       content: <AdditionAnswer a={a} b={b} visible={answerShown} />,
+      onReveal: answerShown ? undefined : () => dispatch({ type: 'reveal' }),
     },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
@@ -455,6 +454,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
           )}
         </AdditionCheck>
       ),
+      onReveal: checkShown ? undefined : () => dispatch({ type: 'reveal' }),
     },
   }
   return (
