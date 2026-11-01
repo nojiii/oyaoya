@@ -2,6 +2,7 @@ import { Link, useLoaderData } from 'react-router'
 import { Oyajii } from '../components/Oyajii'
 import { ItemLink } from './ItemLink'
 import { RowArrow } from './RowArrow'
+import { TagPicture } from './TagPicture'
 import type { loadHome } from './loaders'
 import { FESTIVAL_URL, useFestival } from './festival'
 
@@ -27,6 +28,9 @@ export default function Home() {
                 to={group.url}
                 empty={group.count === 0}
               >
+                {group.tag && group.count > 0 && (
+                  <TagPicture index={group.tag.index} />
+                )}
                 <span className="row-text">
                   <span className="item-name">{group.name}</span>
                   {group.count === 0 && (

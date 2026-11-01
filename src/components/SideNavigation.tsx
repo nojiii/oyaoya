@@ -114,46 +114,62 @@ export function SideNavigation() {
           )}
           <section className="sheet-section">
             <h3>{festival ? '難しさから選ぶ' : '学年・単元から選ぶ'}</h3>
-            {groups.map((group) => (
-              <details className="sheet-group" key={group.slug}>
-                <summary>{group.name}</summary>
+            {groups.map((group) =>
+              // 下の段がなく問題を直接持つ分類（大学祭の各カテゴリ）は、開かずにそのまま進めるリンクにする
+              group.problems?.length && !group.children?.length ? (
                 <MenuLink
                   group={group}
                   className="sheet-link"
+                  key={group.slug}
                   to={`${base}/${group.slug}`}
                   onClick={close}
+                  current={group.problems?.some(
+                    (id) => pathname === `${base}/problems/${id}`,
+                  )}
                 >
-                  {group.name}の一覧
+                  {group.name}
                 </MenuLink>
-                {group.children?.map((subject) => (
-                  <div key={subject.slug}>
-                    <MenuLink
-                      group={subject}
-                      className="sheet-link"
-                      to={`${base}/${group.slug}/${subject.slug}`}
-                      onClick={close}
-                    >
-                      {subject.name}の単元を選ぶ
-                    </MenuLink>
-                    {subject.children?.map((unit) => {
-                      const url = `${base}/${group.slug}/${subject.slug}/${unit.slug}`
-                      return (
-                        <MenuLink
-                          group={unit}
-                          className="sheet-link sheet-unit"
-                          key={url}
-                          to={url}
-                          onClick={close}
-                          current={pathname === url}
-                        >
-                          {unit.name}
-                        </MenuLink>
-                      )
-                    })}
-                  </div>
-                ))}
-              </details>
-            ))}
+              ) : (
+                <details className="sheet-group" key={group.slug}>
+                  <summary>{group.name}</summary>
+                  <MenuLink
+                    group={group}
+                    className="sheet-link"
+                    to={`${base}/${group.slug}`}
+                    onClick={close}
+                  >
+                    {group.name}の一覧
+                  </MenuLink>
+                  {group.children?.map((subject) => (
+                    <div key={subject.slug}>
+                      <MenuLink
+                        group={subject}
+                        className="sheet-link"
+                        to={`${base}/${group.slug}/${subject.slug}`}
+                        onClick={close}
+                      >
+                        {subject.name}の単元を選ぶ
+                      </MenuLink>
+                      {subject.children?.map((unit) => {
+                        const url = `${base}/${group.slug}/${subject.slug}/${unit.slug}`
+                        return (
+                          <MenuLink
+                            group={unit}
+                            className="sheet-link sheet-unit"
+                            key={url}
+                            to={url}
+                            onClick={close}
+                            current={pathname === url}
+                          >
+                            {unit.name}
+                          </MenuLink>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </details>
+              ),
+            )}
           </section>
         </nav>
       </dialog>
