@@ -8,9 +8,9 @@ import { TeachingPoints } from '../../components/TeachingPoints'
 import { pagedFlow } from '../../components/pagedFlow'
 import { useScriptControls } from '../../components/scriptControls'
 import flowStyles from '../../components/AdditionFlow.module.css'
-import figureWhole from './images/band-1.webp'
 import figureDiscount from './images/band-2.webp'
 import figurePrice from './images/band-3.webp'
+import { TapeDiagram as TapeDiagram1 } from './TapeDiagram1'
 import styles from './math-easy-1.module.css'
 
 const LIST_PRICE = 1200
@@ -170,12 +170,7 @@ function MathEasyFlow() {
     whole: {
       id: 'whole',
       title: '20％引きとはどういうことなのか考えましょう',
-      stage: (
-        <Figure
-          src={figureWhole}
-          alt="全体の1（100％）を、0.8（80％）と0.2（20％）に分けた帯の図"
-        />
-      ),
+      stage: <TapeDiagram1 step="price" />,
       content: (
         <>
           <TeachingPoints
