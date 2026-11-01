@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import styles from './TeachingScript.module.css'
 import flowStyles from './AdditionFlow.module.css'
@@ -12,10 +12,45 @@ export interface LessonSlide {
   // ページの上のステージに置く「見るもの」（図・問題・式など）。なければキャラクターを置く
   stage?: ReactNode
   content: ReactNode
+  // 答えを見る前のページだけに渡す、答えを出す処理（ステージの「？」と同じもの）。
+  // あると、「次」の行の代わりに「答えを見る」ボタンを置き、ページに来たときと、
+  // 左へめくろうとしたときに、押して答えを見ることを吹き出しで知らせる（ほかのページはスワイプで進むため）
+  onReveal?: () => void
+}
+
+// 押して答えを見ることを知らせるとき、押す場所（「？」と「答えを見る」）を小さく揺らす
+const SHAKE: Keyframe[] = [
+  { transform: 'translateX(0)' },
+  { transform: 'translateX(-6px)' },
+  { transform: 'translateX(6px)' },
+  { transform: 'translateX(-4px)' },
+  { transform: 'translateX(0)' },
+]
+
+// 答えを見る「？」の下に置く札。押して答えを見ることを示す
+export function RevealHint({ className = '' }: { className?: string }) {
+  return (
+    <p className={`${flowStyles.revealHint} ${className}`}>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="8" />
+      </svg>
+      押して答えを見る
+    </p>
+  )
 }
 
 // 足し算の分岐でも、既存のスライドと同じ見た目・操作を使う。
-// 前へ・次へのボタンは置かず、左右のスワイプ（キーボードでは ← →）だけで送る
+// 前へ・次へのボタンは置かず、左右のスワイプ（キーボードでは ← →）だけで送る。
+// 答えを見る前のページ（onReveal）だけは、押して答えを出してから送る
 export function LessonSlides({
   label,
   slides,
@@ -46,6 +81,32 @@ export function LessonSlides({
       ?.querySelector<HTMLElement>('[data-active="true"] > h2')
       ?.focus({ preventScroll: true })
   }, [currentId])
+  // 吹き出しを出しているページ。3.5秒で消す
+  const [pointed, setPointed] = useState<string | null>(null)
+  const pointTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const point = useCallback((id: string) => {
+    setPointed(id)
+    clearTimeout(pointTimer.current)
+    pointTimer.current = setTimeout(() => setPointed(null), 3500)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    track.current
+      ?.querySelectorAll<HTMLElement>(
+        `:scope > [data-active="true"] :is(.${flowStyles.reveal}, .${flowStyles.revealAction})`,
+      )
+      .forEach((element) => element.animate(SHAKE, { duration: 360 }))
+  }, [])
+  useEffect(() => () => clearTimeout(pointTimer.current), [])
+  // 答えを見る前のページに来たら、ここは押して答えを見ることを知らせる
+  const revealing = slides[index]?.onReveal !== undefined
+  useEffect(() => {
+    if (!revealing) return
+    const timer = setTimeout(() => point(currentId), 350)
+    return () => clearTimeout(timer)
+  }, [currentId, revealing, point])
+  // 送れない向きにめくったとき。答えを見る前のページなら、もう一度知らせる
+  const blocked = () => {
+    if (revealing) point(currentId)
+  }
   const sliding = useRef(false)
   // 横にスワイプした直後（0.4秒以内）のクリックは、ボタンに届けない（送ると同時に方法を選ばないように）
   const swipedAt = useRef(0)
@@ -96,6 +157,7 @@ export function LessonSlides({
   const navigate = async (direction: -1 | 1) => {
     if (sliding.current || !(direction === 1 ? canNext : canBack)) {
       setDragX(0)
+      if (direction === 1 && !canNext) blocked()
       return
     }
     const element = track.current
@@ -152,7 +214,10 @@ export function LessonSlides({
     const far = Math.abs(dx) >= Math.min(55, start.width * 0.2)
     const flick = Math.abs(dx) >= 20 && Math.abs(speed) >= 0.3 && speed * dx > 0
     if (far || flick) void navigate(dx < 0 ? 1 : -1)
-    else if (!sliding.current) setDragX(0)
+    else {
+      if (!sliding.current) setDragX(0)
+      if (dx < 0 && !canNext) blocked()
+    }
   }
 
   return (
@@ -298,6 +363,17 @@ export function LessonSlides({
               >
                 {/* ステージ：お子さんと一緒に見るもの */}
                 <div className={flowStyles.stage}>
+                  {slide.onReveal && (
+                    // 見て分かるための吹き出し。同じことは「答えを見る」ボタンが伝えるので、読み上げない
+                    <p
+                      className={flowStyles.revealBubble}
+                      data-show={i === index && pointed === slide.id}
+                      aria-hidden="true"
+                    >
+                      <b>ここは、押して答えを見ます</b>
+                      お子さんが答えたら「？」を押します
+                    </p>
+                  )}
                   {slide.stage ?? <Oyajii className={flowStyles.stageMascot} />}
                 </div>
                 <h2 className={flowStyles.title} tabIndex={-1}>
@@ -307,13 +383,58 @@ export function LessonSlides({
                   {slide.title}
                 </h2>
                 {slide.content}
-                <NextPage slide={slides[i + 1]} hidden={waiting(i)} />
+                {slide.onReveal ? (
+                  <RevealAction onReveal={slide.onReveal} />
+                ) : (
+                  <NextPage slide={slides[i + 1]} hidden={waiting(i)} />
+                )}
               </section>
             ))}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+// 答えを見る前のページで、「次」の行の代わりに置くボタン。いつも「次」の行を見ている場所で、押して答えを見る。
+// 教え方のポイントを開いたまま下まで読んでいても、ここで押せる。押したら、答えの出たステージを見えるところへ出す
+function RevealAction({ onReveal }: { onReveal: () => void }) {
+  const button = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <button
+        className={flowStyles.revealAction}
+        type="button"
+        ref={button}
+        onClick={() => {
+          const stage = button.current
+            ?.closest('section')
+            ?.querySelector(`.${flowStyles.stage}`)
+          onReveal()
+          stage?.scrollIntoView?.({ block: 'nearest' })
+        }}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        答えを見る
+      </button>
+      <p className={flowStyles.revealActionNote}>
+        お子さんが答えたら押してください
+      </p>
+    </>
   )
 }
 
