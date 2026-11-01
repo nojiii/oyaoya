@@ -263,6 +263,11 @@
 .pageDots :is([data-done='true'], [data-current='true']) {
   background: var(--teach-text);
 }
+/* 使い方のページ（ScriptGuide）は、台本のページと分けて、左に小さな点で出す */
+.pageDots [data-guide] {
+  flex: 0 0 4px;
+  margin-right: 4px;
+}
 
 /* 台本は横にスワイプ。縦スクロールとピンチズームはブラウザに任せる */
 /* スワイプを受ける範囲（LessonSlides）。左右は body の余白（1.25rem）まで、
@@ -276,11 +281,22 @@
   min-height: calc(100dvh - 12px);
   touch-action: pan-y pinch-zoom;
 }
+/* 台本の枠。左右は body の余白（1.25rem）まで広げ、となりのページの端をその余白に少しだけ見せる。
+   枠の外は切る（となりのページで横にスクロールできないように）。clip が使えないブラウザでは hidden で切る。
+   上下の 6px は、台本の領域にフォーカスしたときの枠（outline: 2px、outline-offset: 3px）を切らないため */
 .carouselFrame {
   position: relative;
+  margin: -6px -1.25rem;
+  padding: 6px 1.25rem;
+  overflow: hidden;
+  overflow: clip;
+}
+/* ページを分けた台本（LessonSlides）は、どのページもステージ（内側の余白 1.25rem）から始まるので、
+   左右の端のボタン（ScriptPaging.module.css）を、余白より 8px 広げて押しやすくする */
+.swipeArea .carouselFrame {
+  --page-edge-width: calc(1.25rem + 8px);
 }
 .carousel {
-  overflow: hidden;
   touch-action: pan-y pinch-zoom;
 }
 .carousel:focus-visible {
@@ -300,9 +316,15 @@
 .dragTrack > .panel {
   grid-area: 1 / 1;
   min-width: 0;
+  transition: opacity 0.25s;
 }
 .dragTrack > .panel[data-active='false'] {
   pointer-events: none;
+}
+/* 止まっている間は、となりのページを薄くして、余白に端がわずかに見えるだけにする。
+   めくっている間（data-moving）は、入ってくるページが薄いままにならないよう、濃さを戻す */
+.dragTrack:not([data-moving='true']) > .panel[data-active='false'] {
+  opacity: 0.25;
 }
 /* 台本の1ページ。上から、ステージ → 教え方のポイント → セリフ（こう声がけしよう）の順に並べる */
 .panel {
@@ -604,7 +626,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dragTrack {
+  .dragTrack,
+  .dragTrack > .panel {
     transition: none;
   }
 }

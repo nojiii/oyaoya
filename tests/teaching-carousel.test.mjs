@@ -11,8 +11,8 @@ import { stubAnimations, stubPointerCapture, stubSize } from './domStubs.mjs'
 // 最初のページの問題の図に、押せる見本（role="button"）を置く
 async function renderScript() {
   sessionStorage.setItem('teaching-started:/lesson', 'true')
-  // 使い方の説明は出さない
-  localStorage.setItem('oyaoya:script-guide:v1', 'done')
+  // 使い方のページは出さない
+  localStorage.setItem('oyaoya:script-guide:v2', 'done')
   const router = createMemoryRouter(
     [
       {

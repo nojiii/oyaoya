@@ -1,0 +1,116 @@
+/* 台本のページを送るボタン。橙の上に白い文字で組む */
+
+/* ページの下の「次」のボタン。左に次のページの名前、右に白い丸の矢印を置く。
+   ページの最後に置くので、ページの中の間（gap: 1rem）と合わせて、上を 1.5rem 空ける */
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 60px;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--teach-soft);
+  color: var(--teach-muted);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.25s;
+}
+.next b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--teach-text);
+}
+.next svg {
+  flex: none;
+  box-sizing: content-box;
+  padding: 12px;
+  border-radius: 50%;
+  background: var(--teach-text);
+  color: var(--color-accent);
+}
+/* 使い方のページの「はじめる」。白い面にして、いちばん目立たせる */
+.next[data-primary] {
+  background: var(--teach-text);
+  color: var(--color-accent);
+  font-size: 17px;
+  font-weight: 900;
+}
+.next[data-primary] svg {
+  background: var(--color-accent);
+  color: #fff;
+}
+.next:active {
+  transform: scale(0.98);
+}
+.next[data-hidden='true'] {
+  visibility: hidden;
+  opacity: 0;
+}
+.next:focus-visible {
+  outline: 3px solid var(--teach-text);
+  outline-offset: 3px;
+}
+
+/* 左右の端のボタン。台本の枠（TeachingScript.module.css の .carouselFrame）の、左右の余白に置く。
+   ステージの高さ（256px）の真ん中あたりに、縦に長く置く。
+   押せる幅は、ふだんは余白（1.25rem）だけ。ページがステージから始まる台本（LessonSlides）では、
+   --page-edge-width でステージの内側の余白の一部まで広げる（ステージの中身には重ならない） */
+.edge {
+  position: absolute;
+  top: 86px;
+  z-index: 1;
+  display: grid;
+  align-items: center;
+  width: var(--page-edge-width, 1.25rem);
+  height: 96px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--teach-text);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.2s;
+}
+/* めくっている間（台本の data-moving）は、動いているページに重ならないよう、矢印を消しておく */
+:has(> [data-moving='true']) ~ .edge {
+  opacity: 0;
+}
+.edge[data-side='back'] {
+  left: 0;
+  justify-items: start;
+}
+.edge[data-side='next'] {
+  right: 0;
+  justify-items: end;
+}
+.edge svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.edge:active svg {
+  opacity: 0.6;
+}
+.edge[data-hidden='true'] {
+  visibility: hidden;
+}
+.edge:focus-visible {
+  outline: 2px solid var(--teach-text);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .next,
+  .edge {
+    transition: none;
+  }
+}

@@ -81,11 +81,11 @@ test('every published script has teaching points, reading labels and only suppor
           !html.includes('aria-label="取り組む問題"'),
           id + ': no separate question section',
         )
-        // 台本はスワイプだけで送る。前へ・次へのボタンは置かず、キーボードでは台本の領域で ← → を使う
+        // 台本は左右にめくって送る。左右の端の矢印でも送れる。キーボードでは台本の領域で ← → を使う
         assert.ok(
-          !html.includes('aria-label="前のページ"') &&
-            !html.includes('aria-label="次のページ"'),
-          id + ': no page buttons',
+          html.includes('aria-label="前のページ"') &&
+            html.includes('aria-label="次のページ"'),
+          id + ': page edges',
         )
         assert.match(
           html,
@@ -152,11 +152,11 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('たしかめ'))
           continue
         }
-        // 大学祭の算数（易しい）第1問も、答えのあとに「たしかめ」を置く
+        // 大学祭の算数（易しい）第1問は、答えのページで終わる（たしかめのページは置かない）
         if (id === 'math-easy-1') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('問題を読んでみましょう'))
-          assert.ok(html.includes('たしかめ'))
+          assert.ok(!html.includes('data-slide="explain"'))
           assert.ok(html.includes('台本の進み具合'))
           continue
         }

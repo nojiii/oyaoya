@@ -17,8 +17,8 @@ test('leaving the script with the browser back button opens the preparation next
   ])
   sessionStorage.setItem(started, 'true')
   sessionStorage.setItem(progress, steps)
-  // 使い方の説明は出さない
-  localStorage.setItem('oyaoya:script-guide:v1', 'done')
+  // 使い方のページは出さない
+  localStorage.setItem('oyaoya:script-guide:v2', 'done')
   const router = createMemoryRouter(
     [
       { path: '/units', element: createElement('h1', null, '単元一覧') },
