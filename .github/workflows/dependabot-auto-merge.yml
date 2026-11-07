@@ -1,0 +1,37 @@
+name: Dependabot auto-merge
+on: pull_request
+permissions:
+  contents: read
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+# Dependabot の npm の PR のうち、patch / minor の更新を承認して auto-merge をオンにする。
+# 実際のマージは、main の Ruleset の必須チェック（lint / typecheck / build）が通ってから GitHub が行う。
+# major の更新と GitHub Actions の更新（.github/ の変更でオーナーのレビューが必須）は手で確認する。
+#
+# 承認とマージは DEPENDABOT_AUTO_MERGE_TOKEN（オーナーの Fine-grained PAT）で行う。
+# GITHUB_TOKEN でマージすると main への push で他のワークフローが動かず、本番デプロイされないため。
+# この secret は Dependabot 用の secret に登録する（Dependabot が起こしたワークフローにだけ渡る）。
+jobs:
+  auto-merge:
+    # 最後の push が Dependabot のものに限る（人が手を加えた PR は自動でマージしない）
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+      - name: Approve and enable auto-merge
+        # update-type は PR の中でいちばん大きい更新の種類（グループの PR でも1つ）。
+        # 種類が取れなかったときはマージしないよう、patch / minor を名指しで判定する
+        if: >-
+          ${{ steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' && (
+            steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+            steps.metadata.outputs.update-type == 'version-update:semver-minor'
+          ) }}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTO_MERGE_TOKEN }}

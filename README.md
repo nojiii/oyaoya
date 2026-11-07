@@ -95,9 +95,13 @@ pushする前に手元で確かめるなら:
 npm run lint && npm run format:check && npm test && npm run build
 ```
 
-依存パッケージとGitHub Actionsは、Dependabotが週1回更新PRを作る（[dependabot.yml](.github/dependabot.yml)）。CIが通れば通常のPRと同じようにレビューしてマージする。DependabotのPRにはプレビューは作られない。
+依存パッケージとGitHub Actionsは、Dependabotが週1回更新PRを作る（[dependabot.yml](.github/dependabot.yml)）。DependabotのPRにはプレビューは作られない。
 
-修正版が出ている脆弱性は、週1回の更新とは別に、Dependabotが修正のPRをすぐに作る（複数あれば1つのPRにまとめる）。修正版がまだない場合や、ほかの依存との兼ね合いで上げられない場合はPRが作られないので、Security タブのアラートを見て個別に対応する。脆弱性の修正は急ぐため、公開から7日待つ設定はこのPRには効かない。扱いは通常のDependabotのPRと同じ。
+npm の patch / minor の更新は自動でマージされる（[dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml)）。PRが作られるとオーナーの名前で承認と auto-merge が行われ、CIが通った時点でマージされて本番にデプロイされる。major の更新と GitHub Actions の更新は、CIが通れば通常のPRと同じようにレビューしてマージする。自動マージのPRでCIが落ちた場合も、マージされずに残るので手で対応する。
+
+自動マージには、オーナーの Fine-grained PAT（対象はこのリポジトリだけ、Contents と Pull requests が Read and write）を `DEPENDABOT_AUTO_MERGE_TOKEN` という名前で Dependabot 用の secret に登録して使っている（`gh secret set DEPENDABOT_AUTO_MERGE_TOKEN --app dependabot`）。GitHub が標準で用意するトークン（`GITHUB_TOKEN`）でマージすると、main への push で本番デプロイのワークフローが動かないため。PATの期限が切れると自動マージのワークフローが失敗するので、作り直して登録し直す。
+
+修正版が出ている脆弱性は、週1回の更新とは別に、Dependabotが修正のPRをすぐに作る（複数あれば1つのPRにまとめる）。修正版がまだない場合や、ほかの依存との兼ね合いで上げられない場合はPRが作られないので、Security タブのアラートを見て個別に対応する。脆弱性の修正は急ぐため、公開から7日待つ設定はこのPRには効かない。扱いは通常のDependabotのPRと同じで、patch / minor なら自動でマージされる。
 
 workflowで使う外部のActionsは、タグ（`@v7` など）ではなくコミットSHAで固定している（タグは後から別のコードに差し替えられる可能性があるため）。行末のコメントが対応するバージョンで、SHAとコメントの更新はDependabotが行う。Actionsを追加するときも同じ形式で書く。
 
@@ -110,6 +114,7 @@ GitHubのリポジトリ設定（Settings → Advanced Security）で、次を�
 - **Dependabot alerts**: 使っているパッケージに脆弱性が見つかると通知される。一覧はGitHubの Security タブ → Dependabot で見られる。手元では `npm audit` で確かめられる
 - **Malware alerts**: 使っているパッケージが、悪意あるコードを含むもの（乗っ取られて改ざんされたパッケージなど）だと判明すると通知される。脆弱性とは別の通知で、同じく Security タブで見られる。通知が来たら、アラートに書かれた手順に従ってそのパッケージを取り除くか安全なバージョンに戻す
 - **Dependabot security updates**: 上の脆弱性のうち修正版があるものについて、直すPRが自動で作られる（まとめ方は [dependabot.yml](.github/dependabot.yml)）
+- **Allow auto-merge**（Settings → General）: CIが通ったらマージする auto-merge を使えるようにする。Dependabot のPRの自動マージに必要
 - **Secret scanning と push protection**: GitHubが検出できる形式の秘密情報（主要なサービスのAPIキーなど）を含むコミットをpushすると、GitHubが拒否する。拒否されたら、そのコミットから秘密情報を取り除いてpushし直す。すべての秘密情報を検出できるわけではないので、これに頼らず、秘密情報はリポジトリに置かない（GitHubの Secrets に登録して使う）
 
 ### テストについて
