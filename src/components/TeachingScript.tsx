@@ -11,6 +11,7 @@ import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
 import { NextPageButton, PageEdges } from './ScriptPaging'
 import { ScriptControls } from './scriptControls'
 import { ScriptCurtain, type Curtain } from './ScriptCurtain'
+import { ScriptHelp, type ScriptHelpContent } from './ScriptHelp'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
 
 // 台本の1ステップ。親が言うこと（say）を中心に、必要なものだけを書く。
@@ -67,6 +68,8 @@ interface Props {
   question: Turn
   // 順番に読み上げる、解き方の台本
   turns: Turn[]
+  // 台本の右上の「困ったら」で出す答えのうち、この問題に合わせて書き換えるもの（ScriptHelp）
+  help?: ScriptHelpContent
 }
 
 type Section = 'question' | 'guide' | 'finish'
@@ -376,6 +379,7 @@ export function TeachingScript({
   renderVisual,
   flow,
   flowStatus,
+  help,
 }: Props) {
   const location = useLocation()
   // flow の進み具合。保存が読めないときは、はじめから
@@ -613,6 +617,10 @@ export function TeachingScript({
       </svg>
     </button>
   )
+  // 台本の右上の「困ったら」。「今日はここまで」は、「終わる」と同じ幕で準備の画面へ戻る（進み具合は残す）
+  const helpButton = (
+    <ScriptHelp help={help} point={prepare.point} onStop={() => finish()} />
+  )
 
   if (!started)
     return (
@@ -649,6 +657,7 @@ export function TeachingScript({
       >
         {curtainView}
         {close}
+        {helpButton}
         <ScriptControls.Provider value={{ finish: () => finish() }}>
           {flow}
         </ScriptControls.Provider>
@@ -663,6 +672,7 @@ export function TeachingScript({
     >
       {curtainView}
       {close}
+      {helpButton}
       <div
         className={styles.pageDots}
         role="img"
