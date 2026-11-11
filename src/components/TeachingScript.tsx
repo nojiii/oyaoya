@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
-import { useHomeUrl } from '../pages/festival'
+import { useFestival, useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
@@ -41,8 +41,7 @@ interface Prepare {
   point: ReactNode
   // 言わないようにしたいこと
   avoid: string[]
-  // 使い方の3つ目（一緒に確かめる）と、教え方のポイントの1つ目。単元に合わせて書きたいときだけ書く
-  together?: string
+  // 詳しい教え方の1つ目。単元に合わせて書きたいときだけ書く
   approach?: string
 }
 
@@ -59,8 +58,7 @@ interface Props {
   counters?: CounterProblem
   // 問題の数字を変える入力欄
   editor?: ReactNode
-  // 準備の画面のステージに大きく出す図（なければ、問題の数字を変える欄を出す）。
-  // 図があるときは、数字を変える欄は下の「数を変える」にたたむ
+  // 準備の画面のステージに大きく出す図。問題の数字を変える欄は、図の下に並べて出す
   picture?: ReactNode
   prepare: Prepare
   // 教える問題。台本の上部に常時表示する
@@ -164,6 +162,8 @@ function PrepareView({
       : counters?.mode === 'sub' || counters?.mode === 'borrow'
         ? '−'
         : '＋'
+  // 大学祭モードの画面は、展示のときのまま（使い方の説明も出す）
+  const festival = useFestival()
   const learning = counters
     ? counters.mode === 'count'
       ? `${counters.a}このおはじきを、一緒に数えます。`
@@ -171,9 +171,16 @@ function PrepareView({
     : prepare.goal
   return (
     <div className={styles.prepare}>
-      {/* ステージ：今日の問題の図を大きく出す */}
+      {/* ステージ：今日の問題の図を大きく出し、その下で数を変えられるようにする */}
       <div className={styles.stage}>
-        {picture ?? editor ?? <Oyajii className={styles.stageMascot} />}
+        {picture == null && editor == null ? (
+          <Oyajii className={styles.stageMascot} />
+        ) : (
+          <>
+            {picture}
+            {editor}
+          </>
+        )}
       </div>
 
       {/* 大事なこと：大きく太く */}
@@ -190,12 +197,6 @@ function PrepareView({
 
       {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない） */}
       <div className={styles.folds}>
-        {picture != null && editor != null && (
-          <details className={styles.extraNote}>
-            <summary>数を変える</summary>
-            <div className={styles.foldEditor}>{editor}</div>
-          </details>
-        )}
         <details className={styles.extraNote}>
           <summary>詳しい教え方・気をつけたいこと</summary>
           <p>
@@ -220,28 +221,25 @@ function PrepareView({
                 : `用意するもの：${prepare.materials.join('・')}`}
           </p>
         </details>
-        <details className={styles.extraNote}>
-          <summary>使い方は3ステップ</summary>
-          <ol className={styles.guideSteps}>
-            <li>
-              <b>準備する</b>
-              この画面で、今日の問題と教え方を確認します。
-            </li>
-            <li>
-              <b>台本を見て教える</b>
-              「台本」でセリフを読み、お子さんに声をかけます。
-            </li>
-            <li>
-              <b>一緒に確かめる</b>
-              {prepare.together ??
-                (prepare.counterChoice
-                  ? '台本で実物かアプリのおはじきを選び、一緒に動かして考えます。'
-                  : counters
-                    ? '台本の下からおはじき画面を開き、一緒に動かして考えます。'
-                    : '台本の図や身近なものを使って、一緒に答えを考えます。')}
-            </li>
-          </ol>
-        </details>
+        {festival && (
+          <details className={styles.extraNote}>
+            <summary>使い方は3ステップ</summary>
+            <ol className={styles.guideSteps}>
+              <li>
+                <b>準備する</b>
+                この画面で、今日の問題と教え方を確認します。
+              </li>
+              <li>
+                <b>台本を見て教える</b>
+                「台本」でセリフを読み、お子さんに声をかけます。
+              </li>
+              <li>
+                <b>一緒に確かめる</b>
+                台本の図や身近なものを使って、一緒に答えを考えます。
+              </li>
+            </ol>
+          </details>
+        )}
         {!prepare.counterChoice && (
           <details className={styles.extraNote}>
             <summary>声かけを先に読んでおく</summary>
@@ -399,7 +397,7 @@ export function TeachingScript({
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
   // 準備の画面で問題の数字を変えたら、その問題の進み具合を読み直す。
-  // 部品ごと作り直すと、準備の画面で開いていた「数を変える」の欄が閉じてしまうため
+  // 部品ごと作り直すと、準備の画面で開いていた折りたたみの欄が閉じてしまうため
   const [historyKey, setHistoryKey] = useState(keys.history)
   if (historyKey !== keys.history) {
     setHistoryKey(keys.history)

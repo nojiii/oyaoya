@@ -397,7 +397,7 @@ function SampleFlow({ eat }: { eat: number }) {
 export default function Sample() {
   const [eat, setEat] = useState<number>(2)
   const location = useLocation()
-  // 準備の画面の「数を変える」に出す欄
+  // 準備の画面で、図の下に出す数を変える欄
   const editor = (
     <fieldset className={choiceStyles.numberChoice}>
       <legend>食べる数</legend>
@@ -434,8 +434,7 @@ export default function Sample() {
           `先に「答えは${TOTAL - eat}こ」と言う`,
           '食べた分と残りを混ぜたまま数えさせる',
         ],
-        // 使い方の3つ目と、詳しい教え方の1つ目。単元に合わせて書きたいときだけ書く
-        together: '食べた分をよけてもらい、残りを一緒に確かめます。',
+        // 詳しい教え方の1つ目。単元に合わせて書きたいときだけ書く
         approach: '身近なお菓子を、お子さんの手でよけて数える',
       }}
       // 「声かけを先に読んでおく」に出す。台本のページと同じ words を使う
