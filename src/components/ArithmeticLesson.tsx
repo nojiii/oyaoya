@@ -214,19 +214,19 @@ export function ArithmeticLesson({
       prepare={{
         counterChoice: additionFlow,
         goal: `${model.equation} の解き方を、おはじきを動かしながら教えます。`,
-        materials: [
-          `おはじきやブロックを${isSubtract ? a : mode === 'times' ? a * b : a + b}こ`,
-          '紙と鉛筆',
-        ],
+        steps: additionFlow
+          ? [
+              '問題を読む',
+              'おはじきを合わせる',
+              '答えを確かめる',
+              '考え方を話してもらう',
+              'ひとりで解く',
+            ]
+          : ['問題を読む', 'おはじきを動かして考える', '答えを確かめる'],
         point:
           mode === 'carry'
             ? `まず${a}を10にします。${b}を${10 - a}と${b - (10 - a)}に分けると考えやすくなります。`
             : 'おはじきを一緒に動かして、数がどう変わるかを確かめます。',
-        avoid: [
-          '「なんでわからないの？」と言う',
-          '一度に全部説明する',
-          '答えだけを言って終わる',
-        ],
       }}
       question={{
         say: question,

@@ -138,8 +138,15 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     assert.ok(!prepare.includes('使い方は3ステップ'))
     // 数を変える欄は、たたまずに図の下に出す
     assert.ok(!prepare.includes('<summary>数を変える</summary>'))
-    // 教え方のポイントは、数える単元に合わせた文
-    assert.ok(prepare.includes('身近なものを、お子さんが1こずつ指さして数える'))
+    // 今日の教え方のポイントと、詳しい教え方の行は出さない
+    assert.ok(!prepare.includes('今日の教え方のポイント'))
+    assert.ok(!prepare.includes('詳しい教え方'))
+    // 代わりに、台本の大まかな流れを番号つきのステップで出す
+    assert.ok(prepare.includes('教え方の流れ'))
+    assert.match(
+      prepare,
+      /<ol[^>]*>(?:(?!<\/ol>).)*>1<\/span>問題を読む<\/li>(?:(?!<\/ol>).)*>5<\/span>言われた数だけ取ってもらう<\/li><\/ol>/,
+    )
     assert.ok(prepare.includes('2. 順番に声をかける'))
     assert.ok(prepare.includes('指でさしながら、1こずつ数えてみよう。'))
     assert.ok(prepare.includes('（答えたら）最後に言った数が、全部の数だよ。'))

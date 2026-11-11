@@ -19,9 +19,8 @@ function renderScript(props = {}) {
         element: createElement(TeachingScript, {
           prepare: {
             goal: '',
-            materials: [],
+            steps: [],
             point: 'すぐに答えを言わない',
-            avoid: [],
           },
           question: { say: 'もんだいを読もう' },
           turns: [{ say: 'つぎの声かけ' }],

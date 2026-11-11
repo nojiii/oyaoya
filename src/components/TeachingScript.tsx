@@ -36,14 +36,11 @@ interface Prepare {
   counterChoice?: boolean
   // この問題で、お子さんができるようになること
   goal: ReactNode
-  // 用意するもの
-  materials: string[]
-  // いちばん大事なこと（1つだけ）
+  // 台本の大まかな流れ。準備の画面に、番号つきのステップで出す。
+  // 1つは「問題を読む」のような短い言葉にし、全部で3〜6こにまとめる（台本のページと1対1にしなくてよい）
+  steps: string[]
+  // いちばん大事なこと（1つだけ）。台本の「困ったら」の「何を言えばいいか迷う」で出す
   point: ReactNode
-  // 言わないようにしたいこと
-  avoid: string[]
-  // 詳しい教え方の1つ目。単元に合わせて書きたいときだけ書く
-  approach?: string
 }
 
 // ページを分けた台本（flow）の進み具合。最後のページ（たしかめ）まで進んだら finished
@@ -191,72 +188,59 @@ function PrepareView({
         <h2 className={styles.prepareTitle}>この学習でやること</h2>
         <p className={styles.learning}>{learning}</p>
       </header>
+      {/* 台本の流れ：番号つきのステップを縦に並べ、線でつなぐ */}
       <section className={styles.prepareHeading}>
-        <h2 className={styles.prepareTitle}>今日の教え方のポイント</h2>
-        <p className={styles.keyPoint}>
-          <mark>すぐに答えを教えず</mark>、お子さんが考えるのを待つ
-        </p>
+        <h2 className={styles.prepareTitle}>教え方の流れ</h2>
+        <ol className={styles.steps}>
+          {prepare.steps.map((step, i) => (
+            <li key={step}>
+              <span className={styles.stepNumber} aria-hidden="true">
+                {i + 1}
+              </span>
+              {step}
+            </li>
+          ))}
+        </ol>
       </section>
 
-      {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない） */}
-      <div className={styles.folds}>
-        <details className={styles.extraNote}>
-          <summary>詳しい教え方・気をつけたいこと</summary>
-          <p>
-            {prepare.approach ??
-              (prepare.counterChoice
-                ? '実物のおはじきと、アプリのおはじきのどちらでも学べます。'
-                : counters
-                  ? '一緒におはじきを動かして考える'
-                  : '図や身近なものを使って、一緒に考える')}
-          </p>
-          <div>{prepare.point}</div>
-          <ul>
-            {prepare.avoid.map((text) => (
-              <li key={text}>{text}</li>
-            ))}
-          </ul>
-          <p>
-            {prepare.counterChoice
-              ? '実物を使う場合は、おはじきを用意してください。アプリのおはじきも選べます。'
-              : counters
-                ? 'おはじきはアプリに用意しています。実物の準備はいりません。'
-                : `用意するもの：${prepare.materials.join('・')}`}
-          </p>
-        </details>
-        {festival && (
-          <details className={styles.extraNote}>
-            <summary>使い方は3ステップ</summary>
-            <ol className={styles.guideSteps}>
-              <li>
-                <b>準備する</b>
-                この画面で、今日の問題と教え方を確認します。
-              </li>
-              <li>
-                <b>台本を見て教える</b>
-                「台本」でセリフを読み、お子さんに声をかけます。
-              </li>
-              <li>
-                <b>一緒に確かめる</b>
-                台本の図や身近なものを使って、一緒に答えを考えます。
-              </li>
-            </ol>
-          </details>
-        )}
-        {!prepare.counterChoice && (
-          <details className={styles.extraNote}>
-            <summary>声かけを先に読んでおく</summary>
-            <p className={styles.flowLabel}>1. 問題を出す</p>
-            <p className={styles.flowText}>{question.say}</p>
-            <p className={styles.flowLabel}>2. 順番に声をかける</p>
-            <ol className={styles.flow}>
-              {turns.map((turn) => (
-                <li key={turn.say}>{turn.say}</li>
-              ))}
-            </ol>
-          </details>
-        )}
-      </div>
+      {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない）。
+          たたむ行が1つもないときは、余白が空かないよう置かない */}
+      {(festival || !prepare.counterChoice) && (
+        <div className={styles.folds}>
+          {festival && (
+            <details className={styles.extraNote}>
+              <summary>使い方は3ステップ</summary>
+              <ol className={styles.guideSteps}>
+                <li>
+                  <b>準備する</b>
+                  この画面で、今日の問題と教え方を確認します。
+                </li>
+                <li>
+                  <b>台本を見て教える</b>
+                  「台本」でセリフを読み、お子さんに声をかけます。
+                </li>
+                <li>
+                  <b>一緒に確かめる</b>
+                  台本の図や身近なものを使って、一緒に答えを考えます。
+                </li>
+              </ol>
+            </details>
+          )}
+          {!prepare.counterChoice && (
+            <details className={styles.extraNote}>
+              <summary>声かけを先に読んでおく</summary>
+              <p className={styles.flowLabel}>1. 問題を出す</p>
+              <p className={styles.flowText}>{question.say}</p>
+              <p className={styles.flowLabel}>2. 順番に声をかける</p>
+              <ol className={styles.flow}>
+                {turns.map((turn) => (
+                  <li key={turn.say}>{turn.say}</li>
+                ))}
+              </ol>
+            </details>
+          )}
+        </div>
+      )}
 
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
