@@ -303,6 +303,62 @@ main:has([data-script-running]) .page-title {
   line-height: 1.35;
   letter-spacing: -0.02em;
 }
+/* ホームの「教えるときの約束」。行と同じ面の色にそろえ、番号だけ橙にする */
+.home-rules {
+  margin-top: 2.5rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  border-radius: 28px;
+  background: var(--color-soft);
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s backwards;
+}
+.home-rules-title {
+  margin: 0 0 1rem;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+.home-rules-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.home-rules-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+.home-rules-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+.home-rules-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.home-rules-name {
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.6;
+}
+.home-rules-sub {
+  font-size: 13px;
+  color: var(--color-muted);
+}
 /* 一覧に並べる項目（行） */
 ul.rows {
   display: grid;
@@ -490,7 +546,8 @@ main:has(a[data-moving='true']) .page-title {
 
 /* 動きを減らす設定の人には、出入りや切り替えの動きを付けない */
 @media (prefers-reduced-motion: reduce) {
-  ul.rows li {
+  ul.rows li,
+  .home-rules {
     animation: none;
   }
   ::view-transition-group(*),
