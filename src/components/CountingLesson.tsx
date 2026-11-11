@@ -47,6 +47,8 @@ export function CountingLesson({ initial }: Props) {
       editor={editor}
       picture={<CountingLine n={n} />}
       prepare={{
+        // 流れは「教え方の流れ」でわかるので、「声かけを先に読んでおく」は出さない
+        sayPreview: false,
         goal: `${n}このものを、1こずつ指さして数えます。`,
         steps: [
           '問題を読む',

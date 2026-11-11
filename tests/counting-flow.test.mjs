@@ -112,7 +112,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     assert.equal(restoreCountingPage('{', 5), 'read')
     assert.equal(restoreCountingPage(null, 5), 'read')
 
-    // 準備画面では、1〜10を選べて、セリフを先に読める
+    // 準備画面では、1〜10を選べて、教え方の流れが見える
     storage.clear()
     const router = createMemoryRouter(
       [
@@ -133,7 +133,9 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       assert.match(prepare, new RegExp(`<button[^>]*>${value}</button>`))
     assert.equal((prepare.match(/aria-pressed="true"/g) ?? []).length, 1)
     assert.match(prepare, /aria-pressed="true"[^>]*>5</)
-    assert.ok(prepare.includes('声かけを先に読んでおく'))
+    // 流れは「教え方の流れ」でわかるので、声かけの先読みは出さない。たたむ行が無いので、その枠も置かない
+    assert.ok(!prepare.includes('声かけを先に読んでおく'))
+    assert.ok(!prepare.includes('<details'))
     // 本編の準備画面には、使い方の3ステップを出さない
     assert.ok(!prepare.includes('使い方は3ステップ'))
     // 数を変える欄は、たたまずに図の下に出す
@@ -147,9 +149,6 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       prepare,
       /<ol[^>]*>(?:(?!<\/ol>).)*>1<\/span>問題を読む<\/li>(?:(?!<\/ol>).)*>5<\/span>言われた数だけ取ってもらう<\/li><\/ol>/,
     )
-    assert.ok(prepare.includes('2. 順番に声をかける'))
-    assert.ok(prepare.includes('指でさしながら、1こずつ数えてみよう。'))
-    assert.ok(prepare.includes('（答えたら）最後に言った数が、全部の数だよ。'))
     assert.ok(!prepare.includes('**'))
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage

@@ -212,7 +212,8 @@ export function ArithmeticLesson({
         <LessonVisual problem={{ mode, a, b }} step={step} />
       )}
       prepare={{
-        counterChoice: additionFlow,
+        // たし算（ページを分けた台本）では、「声かけを先に読んでおく」を出さない
+        sayPreview: !additionFlow,
         goal: `${model.equation} の解き方を、おはじきを動かしながら教えます。`,
         steps: additionFlow
           ? [

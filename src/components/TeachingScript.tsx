@@ -33,7 +33,8 @@ export interface Turn extends TeachingStepContent {
 
 // 始める前に読む内容。30秒ほどで読める量にする
 interface Prepare {
-  counterChoice?: boolean
+  // 準備の画面に「声かけを先に読んでおく」の行を出すか（書かなければ出す）
+  sayPreview?: boolean
   // この問題で、お子さんができるようになること
   goal: ReactNode
   // 台本の大まかな流れ。準備の画面に、番号つきのステップで出す。
@@ -205,7 +206,7 @@ function PrepareView({
 
       {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない）。
           たたむ行が1つもないときは、余白が空かないよう置かない */}
-      {(festival || !prepare.counterChoice) && (
+      {(festival || prepare.sayPreview !== false) && (
         <div className={styles.folds}>
           {festival && (
             <details className={styles.extraNote}>
@@ -226,7 +227,7 @@ function PrepareView({
               </ol>
             </details>
           )}
-          {!prepare.counterChoice && (
+          {prepare.sayPreview !== false && (
             <details className={styles.extraNote}>
               <summary>声かけを先に読んでおく</summary>
               <p className={styles.flowLabel}>1. 問題を出す</p>
