@@ -89,6 +89,8 @@ npm run build
 3. レビュアーはCI結果とコードを見て、プレビューURLで実際に操作して確認し、Approveする
 4. `main` へマージすると本番（`https://oyaoya-844ea.web.app`）へ自動デプロイされる
 
+大学祭モードは、本番とは別のサイト（`https://oyaoya-festival.web.app`）のトップに公開する。`festival` ブランチから作り、`main` の変更は入らない。`festival` ブランチは、展示したときの状態を残したタグ `festival-2026-11-01` に、大学祭モードだけをトップ（`/`）から出す変更を足したもの。以前の `/festival` 付きのURLで開かれたら、先頭の `/festival` を外したURLへ移す。公開し直すときは、GitHub の Actions のタブで「Deploy festival」を手で動かす（[firebase-hosting-festival.yml](.github/workflows/firebase-hosting-festival.yml)）。
+
 pushする前に手元で確かめるなら:
 
 ```bash
