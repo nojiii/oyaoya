@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useLocation, useLoaderData } from 'react-router'
-import { useFestival, useHomeUrl } from '../pages/festival'
 import type { loadProblem } from '../pages/loaders'
 import styles from './TeachingScript.module.css'
 import { CounterDisplay, type CounterProblem } from './CounterDisplay'
@@ -165,8 +164,6 @@ function PrepareView({
       : counters?.mode === 'sub' || counters?.mode === 'borrow'
         ? '−'
         : '＋'
-  // 大学祭モードの画面は、展示のときのまま（使い方の説明も出す）
-  const festival = useFestival()
   const learning = counters
     ? counters.mode === 'count'
       ? `${counters.a}このおはじきを、一緒に数えます。`
@@ -216,43 +213,19 @@ function PrepareView({
         </ol>
       </section>
 
-      {/* それ以外：小さく細く、同じ形の行にたたんで並べる（入れ子にしない）。
-          たたむ行が1つもないときは、余白が空かないよう置かない */}
-      {(festival || prepare.sayPreview !== false) && (
-        <div className={styles.folds}>
-          {festival && (
-            <details className={styles.extraNote}>
-              <summary>使い方は3ステップ</summary>
-              <ol className={styles.guideSteps}>
-                <li>
-                  <b>準備する</b>
-                  この画面で、今日の問題と教え方を確認します。
-                </li>
-                <li>
-                  <b>台本を見て教える</b>
-                  「台本」でセリフを読み、お子さんに声をかけます。
-                </li>
-                <li>
-                  <b>一緒に確かめる</b>
-                  台本の図や身近なものを使って、一緒に答えを考えます。
-                </li>
-              </ol>
-            </details>
-          )}
-          {prepare.sayPreview !== false && (
-            <details className={styles.extraNote}>
-              <summary>声かけを先に読んでおく</summary>
-              <p className={styles.flowLabel}>1. 問題を出す</p>
-              <p className={styles.flowText}>{question.say}</p>
-              <p className={styles.flowLabel}>2. 順番に声をかける</p>
-              <ol className={styles.flow}>
-                {turns.map((turn) => (
-                  <li key={turn.say}>{turn.say}</li>
-                ))}
-              </ol>
-            </details>
-          )}
-        </div>
+      {/* それ以外：小さく細く、たたんだ行に置く */}
+      {prepare.sayPreview !== false && (
+        <details className={styles.extraNote}>
+          <summary>声かけを先に読んでおく</summary>
+          <p className={styles.flowLabel}>1. 問題を出す</p>
+          <p className={styles.flowText}>{question.say}</p>
+          <p className={styles.flowLabel}>2. 順番に声をかける</p>
+          <ol className={styles.flow}>
+            {turns.map((turn) => (
+              <li key={turn.say}>{turn.say}</li>
+            ))}
+          </ol>
+        </details>
       )}
 
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
@@ -316,11 +289,10 @@ function BeatView({ beat, active }: { beat: Beat; active: boolean }) {
 // おしまいの後に戻る先。この問題が置かれている分類（一覧）のページで、どこにも置かれていなければホーム
 function useMenuLink() {
   const { crumbs } = useLoaderData<ReturnType<typeof loadProblem>>()
-  const homeUrl = useHomeUrl()
   const parent = crumbs.at(-1)
   return parent
     ? { url: parent.url, label: '単元一覧にもどる' }
-    : { url: homeUrl, label: 'ホームにもどる' }
+    : { url: '/', label: 'ホームにもどる' }
 }
 
 // 保存しておいた進み具合を読む。台本を直した後などで、今の台本に合わない位置があれば使わない。

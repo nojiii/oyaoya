@@ -16,19 +16,18 @@
 
 ### やりたいこと別：どこを触るか
 
-| やりたいこと                                     | 触る場所                                                                                                  |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| 問題を追加する                                   | [src/problems/](src/problems/)（手順は[問題を追加する](#問題を追加する)）                                 |
-| 問題の文章や見た目を直す                         | その問題のフォルダ（`src/problems/<問題ID>/`）                                                            |
-| 学年・教科・単元を増やす、並べ替える、段を増やす | [src/curriculum.ts](src/curriculum.ts)（書き方は[階層を変える](#階層を変える)）                           |
-| 大学祭用の問題を追加する                         | [src/problems/](src/problems/) と [src/curriculum.ts](src/curriculum.ts)（[大学祭モード](#大学祭モード)） |
-| 複数の問題で使う部品を作る、直す                 | [src/components/](src/components/)                                                                        |
-| ホームや一覧ページの文言・並びを変える           | [src/pages/](src/pages/)                                                                                  |
-| サイト全体の色・余白・文字サイズを変える         | [src/index.css](src/index.css)                                                                            |
-| 新しい種類のページ（URL）を増やす                | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                                    |
-| サイト全体で使う画像を置く                       | [public/](public/)                                                                                        |
-| キャラクター（おやじい）の絵や動きを変える       | [public/oyajii.riv](public/oyajii.riv)（手順は[キャラクター（おやじい）](#キャラクターおやじい)）         |
-| CI・デプロイの設定を変える                       | `.github/` と `firebase.json`（オーナーのレビューが必要）                                                 |
+| やりたいこと                                     | 触る場所                                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| 問題を追加する                                   | [src/problems/](src/problems/)（手順は[問題を追加する](#問題を追加する)）                         |
+| 問題の文章や見た目を直す                         | その問題のフォルダ（`src/problems/<問題ID>/`）                                                    |
+| 学年・教科・単元を増やす、並べ替える、段を増やす | [src/curriculum.ts](src/curriculum.ts)（書き方は[階層を変える](#階層を変える)）                   |
+| 複数の問題で使う部品を作る、直す                 | [src/components/](src/components/)                                                                |
+| ホームや一覧ページの文言・並びを変える           | [src/pages/](src/pages/)                                                                          |
+| サイト全体の色・余白・文字サイズを変える         | [src/index.css](src/index.css)                                                                    |
+| 新しい種類のページ（URL）を増やす                | [src/App.tsx](src/App.tsx) と [src/pages/](src/pages/)                                            |
+| サイト全体で使う画像を置く                       | [public/](public/)                                                                                |
+| キャラクター（おやじい）の絵や動きを変える       | [public/oyajii.riv](public/oyajii.riv)（手順は[キャラクター（おやじい）](#キャラクターおやじい)） |
+| CI・デプロイの設定を変える                       | `.github/` と `firebase.json`（オーナーのレビューが必要）                                         |
 
 それ以外のファイル（`tsconfig*.json`、`eslint.config.js` など）は道具の設定で、普段は触らない。
 
@@ -89,7 +88,7 @@ npm run build
 3. レビュアーはCI結果とコードを見て、プレビューURLで実際に操作して確認し、Approveする
 4. `main` へマージすると本番（`https://oyaoya-844ea.web.app`）へ自動デプロイされる
 
-大学祭モードは、本番とは別のサイト（`https://oyaoya-festival.web.app`）のトップに公開する。`festival` ブランチから作り、`main` の変更は入らない。`festival` ブランチは、展示したときの状態を残したタグ `festival-2026-11-01` に、大学祭モードだけをトップ（`/`）から出す変更を足したもの。以前の `/festival` 付きのURLで開かれたら、先頭の `/festival` を外したURLへ移す。公開し直すときは、GitHub の Actions のタブで「Deploy festival」を手で動かす（[firebase-hosting-festival.yml](.github/workflows/firebase-hosting-festival.yml)）。
+大学祭モードは本編（`main`）から外し、本番とは別のサイト（`https://oyaoya-festival.web.app`）のトップに公開している（くわしくは[大学祭モード](#大学祭モード)）。`festival` ブランチから作り、`main` の変更は入らない。`festival` ブランチは、展示したときの状態を残したタグ `festival-2026-11-01` に、大学祭モードだけをトップ（`/`）から出す変更を足したもの。以前の `/festival` 付きのURLで開かれたら、先頭の `/festival` を外したURLへ移す（本番の `/festival` を開いたときも、[firebase.json](firebase.json) で大学祭のサイトへ移す）。公開し直すときは、GitHub の Actions のタブで「Deploy festival」を手で動かす（[firebase-hosting-festival.yml](.github/workflows/firebase-hosting-festival.yml)）。
 
 pushする前に手元で確かめるなら:
 
@@ -152,7 +151,6 @@ src/
       units.ts             #     単元の一覧（問題ID・タイトル・計算の種類と最初の数字、または数える数）
   components/              # 複数の問題で使う部品
     TeachingScript.tsx     #   教えている最中に使う台本。準備の画面と、声かけを1ページずつ出す台本（左右にめくって進める）
-    pagedFlow.ts           #   ページを分けた台本の、進み具合の保存とページ送り（大学祭の問題で使う）
     ScriptGuide.tsx        #   台本を初めて開いたときに、最初のページの前に置く使い方のページ（出すかどうかは scriptGuideState.ts）
     ScriptPaging.tsx       #   台本のページを送るボタン（ページの下の「次」と、左右の端の矢印）
     ScriptHelp.tsx         #   台本の右上の「困ったら」。困りごとを選ぶと、言い直すセリフとすることを出す
@@ -241,7 +239,7 @@ tests/                     # テスト（npm test）
 - 教え方のヒント（`how`）・声をかける前の準備（`do`）・このセリフの理由（`why`。書かなければ `prepare.point`）・避けたい声かけ（`avoid`）は、ページの下に閉じて出す（押したときだけ開く）
 - 最後のページ（ページを分けた台本では、たしかめの最後のページ）には、準備の画面へ戻る「終わる」を置く（`flow` を使わない台本では、問題の一覧へ戻るボタンも置く）。最後まで終えた台本は、次に開くと最初のページから始まる
 - 進み具合は、同じタブの中では保存される（sessionStorage）。準備の画面や一覧を見直しても、続きから再開できる。最後まで終えた問題は、次に開いたときに準備の画面から始まる。準備の画面で問題の数字を変えると、新しい数字の台本の最初から始まる
-- ページを分けた台本で、保存するのがページの位置だけなら、[pagedFlow](src/components/pagedFlow.ts) を使うと保存とページ送りを書かずに済む（大学祭の問題がこの形）。選んだ方法なども覚えておく台本は、[見本](src/problems/sample/)のように自分で書く
+- ページを分けた台本の、進み具合の保存とページ送りは、[見本](src/problems/sample/)のように問題ごとに書く
 - 台本を進めている間は、画面全体を橙にし、上の帯と見出しを隠し、スマホの画面が自動で消えないようにする
 - 台本の右上に「困ったら」を置く（[ScriptHelp](src/components/ScriptHelp.tsx)）。押すと下からシートが出て、困りごと（答えられない・ちがう答え・何を言えばいいか迷う・疲れた）を1つ選ぶと、言い直すセリフとすることを1つずつ出す。「疲れた」では「今日はここまでにする」で、「終わる」と同じ幕で準備の画面へ戻る（進み具合は残す）。答えは全問共通のものを出し、問題に合わせたいものだけ `help` で書き換える（書き方は[見本](src/problems/sample/)）
 - `counters` を渡すと、台本の下におはじきの画面を出す。`renderVisual`（ステップごとの図）は、`counters` がないときだけ出す
@@ -307,7 +305,7 @@ export const curriculum: Group[] = [
 - 入れ子は何段でもよい。一覧には書いた順に並ぶ（じゅんび中の分類だけは、選べる分類の下にたたむ）
 - 段を足す、並べ替える、問題を別の分類へ移すといった変更は、このファイルの書き換えだけでできる
 - 分類のURLは `slug` を上からつないだもの（例: `/grade-1/math/addition-within-10`）。階層を変えると分類のURLは変わるが、問題のURLは変わらない
-- `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題・大学祭モードのURLと重なるため）
+- `slug` は半角の英小文字・数字・ハイフンで付ける。一番上の段では `problems` と `festival` は使えない（問題のURLと、大学祭のサイトへ移すURLと重なるため）
 - 1つの問題は、1つの分類にだけ置く（2つに置くと、戻り先と見出しのラベルが、先に書いた分類になってしまう。`npm test` が見つける）
 - 単元は `unit(タグ, slug, 名前, 問題ID)` で書く。問題IDを省くと「じゅんび中」になる。問題を作るときは、`slug` と同じ問題IDにする
 - タグは `TAGS` に書いたものから選ぶ。一覧の行の小さな絵（[src/pages/TagPicture.tsx](src/pages/TagPicture.tsx)）が、`TAGS` の並び順で決まる
@@ -327,21 +325,12 @@ export const curriculum: Group[] = [
 
 ## 大学祭モード
 
-大学祭の展示用に、通常とは別の問題を出すモード。URLの先頭に `/festival` を付けると大学祭モードになる（例: `/festival`、`/festival/problems/<問題ID>`）。ページの構成は通常モードと同じで、違うのは使う階層だけ。通常モードは [src/curriculum.ts](src/curriculum.ts) の `curriculum` を、大学祭モードは同じファイルの `festivalCurriculum` を使う。
+大学祭の展示用に、通常とは別の問題を出していたモード。展示を終えたので本編（`main`）から外し、本番とは別のサイト（`https://oyaoya-festival.web.app`）で、展示したときのまま公開している。本編の変更は大学祭のサイトに入らないので、本編は大学祭を気にせず変えてよい。
 
-大学祭モードの一番上の段は、難易度（かんたん・ふつう・むずかしいの3段階）。大学祭モードのホームには難易度が並ぶ。
-
-大学祭用の問題は、通常の問題と同じ手順で作る（[問題を追加する](#問題を追加する)）。違うのは手順4と5だけ。
-
-- 手順4: `curriculum` ではなく `festivalCurriculum` の、置きたい難易度の `problems` に問題IDを足す。書き方は `curriculum` と同じで、難易度の下に `children` で教科などの段を足してもよい
-- 手順5: `http://localhost:5173/festival/problems/<問題ID>` を開いて確かめる
-
-そのほかの決まり:
-
-- 大学祭用の問題は `festivalCurriculum` にだけ置く（`curriculum` に置くと、通常モードの一覧にも出る）
-- 問題のページ自体は、どちらのモードのURLでも開ける。その問題を置いていないモードで開くと、戻るボタンはホームへ戻る
-- 通常モードのホームの一番下に、大学祭モードへの入り口（「大学祭」）がある。大学祭モードから通常モードへ戻るボタンは置かない。会場ではQRコードなどで `/festival` を案内する。大学祭モードの中のリンクはすべて `/festival` 付きになるので、たどっている間は大学祭モードのまま
-- 枠（`src/pages/`）の表示を大学祭モードで変えたいときは、[src/pages/festival.ts](src/pages/festival.ts) の `useFestival()` で今のモードを調べる
+- 展示したときの状態は、タグ `festival-2026-11-01` に残している（2026-11-01 の `main`）
+- 大学祭のサイトは、`festival` ブランチから作る。このタグに、大学祭モードだけをトップ（`/`）から出す変更を足したもの。大学祭の画面を直すときは、`main` ではなく `festival` ブランチを直す
+- 公開し直すときは、GitHub の Actions のタブで「Deploy festival」を手で動かす（[firebase-hosting-festival.yml](.github/workflows/firebase-hosting-festival.yml)）
+- 本番の `/festival` を開くと、大学祭のサイトの同じページへ移る（[firebase.json](firebase.json)）。会場で配ったQRコードなどのため
 
 ## 表示の仕組み
 
@@ -352,8 +341,6 @@ export const curriculum: Group[] = [
 | `/`                             | ホーム（[Home.tsx](src/pages/Home.tsx)）                   | `curriculum.ts` の一番上の段を並べる   |
 | `/problems/<問題ID>`            | 問題（[ProblemDetail.tsx](src/pages/ProblemDetail.tsx)）   | `problems/index.ts` から問題IDで探す   |
 | それ以外（例: `/grade-1/math`） | 分類の一覧（[GroupDetail.tsx](src/pages/GroupDetail.tsx)） | `curriculum.ts` を `slug` の順にたどる |
-
-URLの先頭に `/festival` を付けると、同じ3種類のページが大学祭モードで出る（[大学祭モード](#大学祭モード)）。
 
 探す処理は [src/pages/loaders.ts](src/pages/loaders.ts) にある。見つからなければ「ページが見つかりませんでした。」と表示される。
 

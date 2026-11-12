@@ -3,20 +3,17 @@ import assert from 'node:assert/strict'
 
 // 1つの問題を2つの分類に置くと、パンくず・戻り先・色が最初に見つかった分類になってしまうため
 test('every problem is placed in exactly one group', async () => {
-  const { curriculum, festivalCurriculum } =
-    await import('../src/curriculum.ts')
-  for (const tree of [curriculum, festivalCurriculum]) {
-    const placed = []
-    const walk = (groups) => {
-      for (const group of groups) {
-        placed.push(...(group.problems ?? []))
-        walk(group.children ?? [])
-      }
+  const { curriculum } = await import('../src/curriculum.ts')
+  const placed = []
+  const walk = (groups) => {
+    for (const group of groups) {
+      placed.push(...(group.problems ?? []))
+      walk(group.children ?? [])
     }
-    walk(tree)
-    const duplicated = placed.filter((id, i) => placed.indexOf(id) !== i)
-    assert.deepEqual(duplicated, [])
   }
+  walk(curriculum)
+  const duplicated = placed.filter((id, i) => placed.indexOf(id) !== i)
+  assert.deepEqual(duplicated, [])
 })
 
 // units.ts の単元は、curriculum.ts の同じ slug の単元に置く。

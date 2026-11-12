@@ -203,10 +203,8 @@ test('the color switcher appears only in debug mode', async () => {
       )
       return renderToString(createElement(RouterProvider, { router }))
     }
-    // ふつうの画面にも、大学祭モードの画面にも出さない
-    for (const path of ['/', '/festival']) {
-      assert.ok(!render(path).includes('台本の色を変える'), path)
-    }
+    // ふだんの画面には出さない
+    assert.ok(!render('/').includes('台本の色を変える'))
     setDebugTheme('purple')
     assert.ok(render('/').includes('台本の色を変える'))
     setDebugTheme(null)

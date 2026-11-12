@@ -13,7 +13,7 @@ export type Tag = (typeof TAGS)[number]
 // 入れ子は何段でもよく、一覧には書いた順に並ぶ
 export interface Group {
   // URLになる（/<slug>/<slug>/...）。最上位では `problems` と `festival` は使えない
-  // （問題ページ・大学祭モードのURLと重なるため）
+  // （問題ページのURLと、大学祭のサイトへ移すURL（firebase.json）と重なるため）
   slug: string
   name: string
   tag?: Tag
@@ -103,15 +103,4 @@ export const curriculum: Group[] = [
     ],
   },
   { slug: 'grade-2', name: '小学2年生' },
-]
-
-// 大学祭モード（/festival 以下）の階層。大学祭用の問題はこちらにだけ置く。書き方は curriculum と同じ。
-// 一番上の段は教科と難易度。どれも問題が1つなので、単元の段を挟まずに問題を直接置き、
-// ホームから準備画面へ直接進めるようにする。
-// 第一引数のタグはホームの行の絵を決める。既存の TAGS（'数の理解', '形・図形' など）から選ぶ
-export const festivalCurriculum: Group[] = [
-  unit('数の理解', 'math-easy', '算数（易しい）', ['math-easy-1']),
-  unit('形・図形', 'math-hard', '算数（難しい）', ['math-hard-1']),
-  // 謎解きは1つだけにした。slug と問題IDは、難しい・易しいの2つがあったころの puzzle-hard のまま
-  unit('形・図形', 'puzzle-hard', '謎解き', ['puzzle-hard-1']),
 ]

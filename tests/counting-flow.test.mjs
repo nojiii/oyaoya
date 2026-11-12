@@ -118,7 +118,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       [
         {
           path: '/problems/:problemId',
-          loader: ({ params }) => loadProblem(params.problemId, false),
+          loader: ({ params }) => loadProblem(params.problemId),
           element: createElement(ProblemDetail),
         },
       ],
