@@ -147,7 +147,14 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     assert.ok(prepare.includes('教え方の流れ'))
     assert.match(
       prepare,
-      /<ol[^>]*>(?:(?!<\/ol>).)*>1<\/span>問題を読む<\/li>(?:(?!<\/ol>).)*>5<\/span>言われた数だけ取ってもらう<\/li><\/ol>/,
+      /<ol[^>]*>(?:(?!<\/ol>).)*>1<\/span><span[^>]*>問題を読む<\/span><\/li>(?:(?!<\/ol>).)*>5<\/span><span[^>]*>言われた数だけ取ってもらう<\/span><\/li><\/ol>/,
+    )
+    // 用意するものは、選んだ数に合わせて出す
+    assert.ok(prepare.includes('用意するもの'))
+    assert.ok(
+      prepare.includes(
+        'おはじき・ブロック・お菓子など、同じくらいの大きさのものを5こ',
+      ),
     )
     assert.ok(!prepare.includes('**'))
   } finally {

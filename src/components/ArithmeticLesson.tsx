@@ -215,6 +215,10 @@ export function ArithmeticLesson({
         // たし算（ページを分けた台本）では、「声かけを先に読んでおく」を出さない
         sayPreview: !additionFlow,
         goal: `${model.equation} の解き方を、おはじきを動かしながら教えます。`,
+        // おはじきは台本でアプリのものも選べるので、実物は使うときだけ
+        materials: [
+          `おはじきやブロックを${isSubtract ? a : mode === 'times' ? a * b : a + b}こ（アプリのおはじきを使うときは、いりません）`,
+        ],
         steps: additionFlow
           ? [
               '問題を読む',

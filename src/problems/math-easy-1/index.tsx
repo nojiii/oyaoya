@@ -287,6 +287,7 @@ export default function MathEasy1() {
       picture={<PriceTag />}
       prepare={{
         goal: '20％引きの意味を考えて、ノートセットの代金を求めます。',
+        materials: ['紙と鉛筆'],
         steps: [
           '問題を読む',
           '20％引きの意味を考える',

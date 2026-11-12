@@ -52,7 +52,6 @@ export function resolveDebugTheme(
 const TINTS = {
   '--teach-muted': 7,
   '--color-accent-soft': 12,
-  '--color-accent-mark': 26,
   '--color-accent-bright': 41,
 }
 

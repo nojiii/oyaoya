@@ -373,6 +373,7 @@ export default function PuzzleHard1() {
       picture={<PrisonersFigure hats={HATS} />}
       prepare={{
         goal: '見えている帽子と「だまっている人」から、答えた人を考えます。',
+        materials: ['問題の図（この画面）'],
         steps: [
           '問題と図を見る',
           'だれに何が見えるか確かめる',

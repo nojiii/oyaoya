@@ -50,6 +50,9 @@ export function CountingLesson({ initial }: Props) {
         // 流れは「教え方の流れ」でわかるので、「声かけを先に読んでおく」は出さない
         sayPreview: false,
         goal: `${n}このものを、1こずつ指さして数えます。`,
+        materials: [
+          `おはじき・ブロック・お菓子など、同じくらいの大きさのものを${n}こ`,
+        ],
         steps: [
           '問題を読む',
           '1列に並べて、指さして数える',

@@ -19,6 +19,7 @@ function renderScript(props = {}) {
         element: createElement(TeachingScript, {
           prepare: {
             goal: '',
+            materials: [],
             steps: [],
             point: 'すぐに答えを言わない',
           },

@@ -370,6 +370,7 @@ export default function PuzzleEasy1() {
       picture={<Boxes />}
       prepare={{
         goal: '札がぜんぶまちがいなことを使って、取り出す箱を決めます。',
+        materials: ['問題の図（この画面）'],
         steps: [
           '問題と箱を見る',
           '札がまちがいだと確かめる',

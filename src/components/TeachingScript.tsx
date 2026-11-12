@@ -31,12 +31,14 @@ export interface Turn extends TeachingStepContent {
   why?: ReactNode
 }
 
-// 始める前に読む内容。30秒ほどで読める量にする
+// 問題ごとに書く、教えるための内容。point 以外は準備の画面に出す（30秒ほどで読める量にする）
 interface Prepare {
   // 準備の画面に「声かけを先に読んでおく」の行を出すか（書かなければ出す）
   sayPreview?: boolean
   // この問題で、お子さんができるようになること
   goal: ReactNode
+  // 用意するもの。1つずつ、数も書く（例：「おはじきを7こ」）
+  materials: string[]
   // 台本の大まかな流れ。準備の画面に、番号つきのステップで出す。
   // 1つは「問題を読む」のような短い言葉にし、全部で3〜6こにまとめる（台本のページと1対1にしなくてよい）
   steps: string[]
@@ -189,16 +191,26 @@ function PrepareView({
         <h2 className={styles.prepareTitle}>この学習でやること</h2>
         <p className={styles.learning}>{learning}</p>
       </header>
+      {/* 始める前に手もとにそろえるもの */}
+      <section className={styles.prepareHeading}>
+        <h2 className={styles.prepareTitle}>用意するもの</h2>
+        {/* list-style をなくすと、Safari の読み上げでリストと伝わらなくなるため、role で補う */}
+        <ul className={styles.materials} role="list">
+          {prepare.materials.map((material) => (
+            <li key={material}>{material}</li>
+          ))}
+        </ul>
+      </section>
       {/* 台本の流れ：番号つきのステップを縦に並べ、線でつなぐ */}
       <section className={styles.prepareHeading}>
         <h2 className={styles.prepareTitle}>教え方の流れ</h2>
-        <ol className={styles.steps}>
+        <ol className={styles.steps} role="list">
           {prepare.steps.map((step, i) => (
             <li key={step}>
               <span className={styles.stepNumber} aria-hidden="true">
                 {i + 1}
               </span>
-              {step}
+              <span className={styles.stepText}>{step}</span>
             </li>
           ))}
         </ol>

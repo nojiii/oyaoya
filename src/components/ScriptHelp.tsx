@@ -52,7 +52,7 @@ export function ScriptHelp({
   onStop,
 }: {
   help?: ScriptHelpContent
-  // 今日の教え方のポイント（準備の画面の prepare.point）。「何を言えばいいか迷う」で一緒に出す
+  // 問題ごとのいちばん大事なこと（TeachingScript の prepare.point）。「何を言えばいいか迷う」で一緒に出す
   point?: ReactNode
   // 「今日はここまでにする」。台本を終わって、準備の画面へ戻る（進み具合は残す）
   onStop: () => void

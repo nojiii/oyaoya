@@ -243,6 +243,7 @@ export default function MathHard1() {
       picture={questionFigure}
       prepare={{
         goal: '図形の面積を分けて考え、灰色の部分の面積を求めます。',
+        materials: ['紙と鉛筆', '問題の図形'],
         steps: [
           '問題と図を見る',
           '補助線を引く',
