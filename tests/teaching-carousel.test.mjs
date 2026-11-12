@@ -19,7 +19,7 @@ async function renderScript() {
         path: '/lesson',
         loader: () => ({ crumbs: [] }),
         element: createElement(TeachingScript, {
-          prepare: { goal: '', materials: [], point: '', avoid: [] },
+          prepare: { goal: '', materials: [], steps: [], point: '' },
           question: {
             say: 'もんだいを読もう',
             show: createElement(

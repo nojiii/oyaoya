@@ -27,7 +27,7 @@
   aspect-ratio: 1;
 }
 
-/* はじめる前に。大事なこと（やること・いちばん大事なこと）は大きく太く、
+/* はじめる前に。大事なこと（やること・教え方の流れ）は大きく太く、
    それ以外は小さく細くして、同じ形の折りたたみの行に並べる */
 .prepare {
   display: grid;
@@ -51,23 +51,62 @@
   line-height: 1.4;
   letter-spacing: -0.02em;
 }
-/* いちばん大事なこと。淡い橙の面の中には、この大きな一文だけを置く */
-.keyPoint {
-  margin: 0.25rem 0 0;
-  padding: 1.1rem 1.25rem;
-  border-radius: 20px;
-  background: var(--color-accent-soft);
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1.55;
+/* 教え方の流れ。淡い橙の丸に番号を入れ、丸どうしを同じ色の線でつなぐ。
+   文字は「この学習でやること」より小さく、たたんだ行より大きく太くする */
+.steps {
+  display: grid;
+  gap: 14px;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
-.keyPoint mark {
-  padding: 0 2px;
-  border-radius: 4px;
-  background: var(--color-accent-mark);
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+/* 丸は行の上にそろえる。文字が2行になっても、丸と線の位置が変わらないように */
+.steps li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+/* 1行目を、丸の高さの真ん中にそろえる */
+.stepText {
+  padding-top: calc((32px - 1.45em) / 2);
+}
+/* 次のステップの丸までの線（丸の下から、次の丸の上まで） */
+.steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 32px;
+  bottom: -14px;
+  left: 15px;
+  width: 2px;
+  background: var(--color-accent-soft);
+}
+.stepNumber {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  /* 淡い橙の上でも 4.5:1 以上で読めるよう、橙に黒を少し混ぜる（そのままの橙では 4.44:1） */
+  color: color-mix(in srgb, var(--color-accent), #000 6%);
+  font-size: 15px;
+  font-weight: 900;
+}
+/* 用意するもの。教え方の流れと同じ大きさで、1つずつ行を分ける */
+.materials {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
 }
 .startHelp {
   margin: 0.5rem 0 -1rem;
@@ -77,7 +116,7 @@
   color: var(--color-muted);
 }
 
-/* たたんでおく行（詳しい教え方・使い方（大学祭モードだけ）・声かけを先に読む）。入れ子にせず縦に並べる */
+/* たたんでおく行（使い方（大学祭モードだけ）・声かけを先に読む）。入れ子にせず縦に並べる */
 .folds {
   display: grid;
   gap: 6px;
@@ -116,9 +155,6 @@
 }
 .extraNote > :last-child {
   margin-bottom: 1rem;
-}
-.extraNote ul {
-  padding-left: 1.25rem;
 }
 .extraNote summary:focus-visible {
   outline: 2px solid var(--color-accent);
@@ -165,6 +201,55 @@
   padding: 0.75rem 0 max(0.75rem, env(safe-area-inset-bottom));
   background: var(--color-bg);
   z-index: 4;
+}
+/* 準備の画面では、帯の面を敷かずにボタンだけを浮かせる（後ろの文字が帯で切れて見えないように）。
+   帯の余白に重なった文字は、そのまま押したり選んだりできるようにする */
+.prepare > .actions {
+  background: none;
+  pointer-events: none;
+}
+/* ボタンのまわりだけ、後ろの文字を少しぼかす。ボタンと同じ丸い形を、上下左右とも同じ幅（--halo）だけ
+   大きくして後ろに敷く。上はボタンの上の余白がそのまま --halo、下はホームバーの分の余白を差し引く。
+   ぼかしはボタンの縁でいちばん強く、外へ行くほど弱くする（マスクを、丸い両端と中ほどの3つに分けて作る） */
+.prepare > .actions::before {
+  --halo: 0.75rem;
+  /* 丸い両端の半径。ボタンの高さ（58px）の半分に、ぼかしの幅を足す */
+  --end: calc(29px + var(--halo));
+  --mask:
+    radial-gradient(
+        circle var(--end) at 100% 50%,
+        #000 calc(var(--end) - var(--halo)),
+        transparent var(--end)
+      )
+      left / var(--end) 100% no-repeat,
+    radial-gradient(
+        circle var(--end) at 0 50%,
+        #000 calc(var(--end) - var(--halo)),
+        transparent var(--end)
+      )
+      right / var(--end) 100% no-repeat,
+    linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--halo),
+        #000 calc(100% - var(--halo)),
+        transparent
+      )
+      center / calc(100% - 2 * var(--end)) 100% no-repeat;
+  content: '';
+  position: absolute;
+  top: calc(0.75rem - var(--halo));
+  right: calc(-1 * var(--halo));
+  bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) - var(--halo));
+  left: calc(-1 * var(--halo));
+  z-index: -1;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+.prepare > .actions :is(button, a) {
+  pointer-events: auto;
 }
 .actions[data-stack='true'] {
   flex-direction: column;

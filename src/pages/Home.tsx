@@ -67,7 +67,8 @@ export default function Home() {
           <h2 id="home-rules-title" className="home-rules-title">
             教えるときの3つの約束
           </h2>
-          <ol className="home-rules-list">
+          {/* list-style をなくすと、Safari の読み上げでリストと伝わらなくなるため、role で補う */}
+          <ol className="home-rules-list" role="list">
             {TEACHING_RULES.map((rule, i) => (
               <li key={rule.title}>
                 <span className="home-rules-number" aria-hidden="true">

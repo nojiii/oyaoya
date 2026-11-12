@@ -164,7 +164,6 @@ test('debug themes replace the script color and keep white text readable', async
   const tints = [
     '--teach-muted',
     '--color-accent-soft',
-    '--color-accent-mark',
     '--color-accent-bright',
   ]
   applyDebugTheme('blue', fakeStyle)
