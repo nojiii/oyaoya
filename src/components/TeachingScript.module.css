@@ -1,5 +1,6 @@
 /* 準備の画面と台本。色・書体は index.css の変数を使う。
-   枠線・影・グラデーションは使わず、面の明るさの差と、文字の大きさ・太さで強弱をつける */
+   枠線・影・グラデーションは使わず、面の明るさの差と、文字の大きさ・太さで強弱をつける
+   （例外は、準備の画面のボタンの上で本文を白に溶かすところだけ。飾りではなく、下に続きがあると見せるために使う） */
 
 .lessonPage {
   padding-bottom: 1rem;
@@ -186,51 +187,28 @@
   background: var(--color-bg);
   z-index: 4;
 }
-/* 準備の画面では、帯の面を敷かずにボタンだけを浮かせる（後ろの文字が帯で切れて見えないように）。
-   帯の余白に重なった文字は、そのまま押したり選んだりできるようにする */
+/* 準備の画面では、ボタンの上（--fade の高さ）で後ろの本文を白に溶かし、そこから下は白にする。
+   本文が線で切れずに薄れていくので、下にまだ続きがあるとわかる。
+   帯は body の左右の余白（1.25rem）まで広げて、画面の端まで届かせる */
 .prepare > .actions {
-  background: none;
+  --fade: 2.5rem;
+  margin-inline: -1.25rem;
+  padding: var(--fade) 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-bg) var(--fade)
+  );
+  /* 溶けていく部分に重なった文字は、そのまま押したり選んだりできるようにする */
   pointer-events: none;
 }
-/* ボタンのまわりだけ、後ろの文字を少しぼかす。ボタンと同じ丸い形を、上下左右とも同じ幅（--halo）だけ
-   大きくして後ろに敷く。上はボタンの上の余白がそのまま --halo、下はホームバーの分の余白を差し引く。
-   ぼかしはボタンの縁でいちばん強く、外へ行くほど弱くする（マスクを、丸い両端と中ほどの3つに分けて作る） */
+/* 白く塗った部分は、後ろの文字が見えないので押せないようにする */
 .prepare > .actions::before {
-  --halo: 0.75rem;
-  /* 丸い両端の半径。ボタンの高さ（58px）の半分に、ぼかしの幅を足す */
-  --end: calc(29px + var(--halo));
-  --mask:
-    radial-gradient(
-        circle var(--end) at 100% 50%,
-        #000 calc(var(--end) - var(--halo)),
-        transparent var(--end)
-      )
-      left / var(--end) 100% no-repeat,
-    radial-gradient(
-        circle var(--end) at 0 50%,
-        #000 calc(var(--end) - var(--halo)),
-        transparent var(--end)
-      )
-      right / var(--end) 100% no-repeat,
-    linear-gradient(
-        to bottom,
-        transparent,
-        #000 var(--halo),
-        #000 calc(100% - var(--halo)),
-        transparent
-      )
-      center / calc(100% - 2 * var(--end)) 100% no-repeat;
   content: '';
   position: absolute;
-  top: calc(0.75rem - var(--halo));
-  right: calc(-1 * var(--halo));
-  bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) - var(--halo));
-  left: calc(-1 * var(--halo));
+  inset: var(--fade) 0 0;
   z-index: -1;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  -webkit-mask: var(--mask);
-  mask: var(--mask);
+  pointer-events: auto;
 }
 .prepare > .actions :is(button, a) {
   pointer-events: auto;
