@@ -29,12 +29,13 @@ test('side navigation reads breadcrumbs from the matched route loader data', asy
   }
 })
 
-// 横のメニューでも、ホーム・一覧と同じく、問題がない分類（じゅんび中）は押せない
-test('side navigation links only to groups that have problems', async () => {
+// 大学祭用のサイトでは、横のナビにも大学祭のカテゴリだけを、URLの先頭に何も付けずに並べる
+test('side navigation lists only the festival categories without a URL prefix', async () => {
   let router
   try {
     const { SideNavigation } =
       await import('../src/components/SideNavigation.tsx')
+    const { festivalCurriculum } = await import('../src/curriculum.ts')
     router = createMemoryRouter([
       { path: '/', element: createElement(SideNavigation) },
     ])
@@ -43,19 +44,10 @@ test('side navigation links only to groups that have problems', async () => {
     const html = renderToString(
       createElement(RouterProvider, { router }),
     ).replaceAll('<!-- -->', '')
-    assert.ok(html.includes('href="/grade-1/math/addition-within-10"'))
-    assert.ok(html.includes('href="/grade-1"'))
-    for (const [slug, name] of [
-      ['grade-1/math/subtraction-meaning', 'ひき算ってなに？'],
-      ['grade-2', '小学2年生の一覧'],
-    ]) {
-      assert.ok(!html.includes(`href="/${slug}"`), slug + ': not a link')
-      assert.match(
-        html,
-        new RegExp(`<span[^>]*data-empty[^>]*>${name}<span[^>]*>じゅんび中`),
-        slug + ': shown as not ready',
-      )
-    }
+    for (const group of festivalCurriculum)
+      assert.ok(html.includes(`href="/${group.slug}"`), group.slug)
+    assert.ok(!html.includes('/festival'))
+    assert.ok(!html.includes('grade-1'))
   } finally {
     router?.dispose()
   }

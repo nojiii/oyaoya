@@ -3,14 +3,13 @@ import {
   RouterProvider,
   type RouteObject,
 } from 'react-router'
-import { FESTIVAL_URL } from './pages/festival'
 import { ErrorPage, Layout, Loading } from './pages/Layout'
 import { loadGroupPage, loadHome, loadProblem } from './pages/loaders'
 import GroupDetail from './pages/GroupDetail'
 import Home from './pages/Home'
 import ProblemDetail from './pages/ProblemDetail'
 
-// 通常モードと大学祭モードで同じページを並べる。違いは loader に渡す festival だけ
+// 通常モードと大学祭モードで同じページを並べる。違いは loader に渡す festival だけ（大学祭用のサイトでは大学祭モードだけを使う）
 function pages(festival: boolean): RouteObject[] {
   return [
     { index: true, loader: () => loadHome(festival), element: <Home /> },
@@ -33,7 +32,8 @@ const router = createBrowserRouter([
     element: <Layout />,
     errorElement: <ErrorPage />,
     hydrateFallbackElement: <Loading />,
-    children: [...pages(false), { path: FESTIVAL_URL, children: pages(true) }],
+    // 大学祭用のサイトでは、大学祭モードだけをトップから出す
+    children: pages(true),
   },
 ])
 

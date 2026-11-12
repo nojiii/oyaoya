@@ -17,7 +17,8 @@ export function SideNavigation() {
   const data = matches.at(-1)?.loaderData as { crumbs?: PageLink[] } | undefined
   const crumbs = data?.crumbs ?? []
   const groups = festival ? festivalCurriculum : curriculum
-  const base = festival ? homeUrl : ''
+  // 大学祭用のサイトでは、大学祭モードもURLの先頭に何も付けない
+  const base = ''
 
   useEffect(() => {
     if (!open) return

@@ -61,7 +61,7 @@ test('all published units navigate directly to preparation and old unit URLs sti
   assert.equal(loadGroupPage('grade-2', false).lesson, null)
 })
 
-// 大学祭のカテゴリはどれも問題が1つなので、ホームから問題選択を挟まず準備画面へ進み、戻るとホームに帰る
+// 大学祭用のサイトでは、ホーム（/）に大学祭のカテゴリを並べる。どれも問題が1つなので、ホームから問題選択を挟まず準備画面へ進み、戻るとホームに帰る
 test('festival home shows each category with a picture and links straight to its preparation screen', async () => {
   const { loadGroupPage, loadHome, loadProblem } =
     await import('../src/pages/loaders.ts')
@@ -73,7 +73,7 @@ test('festival home shows each category with a picture and links straight to its
     festivalCurriculum.map((group) => group.name),
   )
   for (const [i, group] of festivalCurriculum.entries()) {
-    const target = `/festival/problems/${group.problems[0]}`
+    const target = `/problems/${group.problems[0]}`
     assert.equal(groups[i].url, target, group.name)
     assert.ok(groups[i].tag, group.name)
     assert.equal(
@@ -85,22 +85,22 @@ test('festival home shows each category with a picture and links straight to its
   const router = createMemoryRouter(
     [
       {
-        path: '/festival',
+        path: '/',
         loader: () => loadHome(true),
         element: createElement(Home),
       },
     ],
-    { initialEntries: ['/festival'] },
+    { initialEntries: ['/'] },
   )
   try {
-    await router.navigate('/festival')
+    await router.navigate('/')
     const html = renderToString(createElement(RouterProvider, { router }))
     assert.equal(
       html.match(/class="row-picture"/g)?.length,
       festivalCurriculum.length,
     )
     for (const group of festivalCurriculum)
-      assert.ok(html.includes(`href="/festival/problems/${group.problems[0]}"`))
+      assert.ok(html.includes(`href="/problems/${group.problems[0]}"`))
   } finally {
     router.dispose()
   }
