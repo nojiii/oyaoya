@@ -189,6 +189,15 @@
   background: var(--color-bg);
   z-index: 4;
 }
+/* 準備の画面では、帯の面を敷かずにボタンだけを浮かせる（後ろの文字が帯で切れて見えないように）。
+   帯の余白に重なった文字は、そのまま押したり選んだりできるようにする */
+.prepare > .actions {
+  background: none;
+  pointer-events: none;
+}
+.prepare > .actions :is(button, a) {
+  pointer-events: auto;
+}
 .actions[data-stack='true'] {
   flex-direction: column;
 }
