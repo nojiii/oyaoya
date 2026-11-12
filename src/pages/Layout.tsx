@@ -7,14 +7,12 @@ import {
   useNavigation,
   useRouteError,
 } from 'react-router'
-import { useHomeUrl } from './festival'
 import type { PageLink } from './loaders'
 import { DebugThemePanel } from '../components/DebugThemePanel'
 import { SideNavigation } from '../components/SideNavigation'
 
 // 上の帯。ホームではロゴ、それ以外の画面では1つ上の一覧へ戻るボタンを左に置き、メニューは右に置く
 function Header() {
-  const homeUrl = useHomeUrl()
   const data = useMatches().at(-1)?.loaderData as
     { crumbs?: PageLink[] } | undefined
   const crumbs = data?.crumbs
@@ -23,7 +21,7 @@ function Header() {
       {crumbs ? (
         <Link
           className="back-link"
-          to={crumbs.at(-1)?.url ?? homeUrl}
+          to={crumbs.at(-1)?.url ?? '/'}
           viewTransition
           aria-label={`${crumbs.at(-1)?.name ?? 'ホーム'}にもどる`}
         >
@@ -42,7 +40,7 @@ function Header() {
           </svg>
         </Link>
       ) : (
-        <Link className="site-logo" to={homeUrl} viewTransition>
+        <Link className="site-logo" to="/" viewTransition>
           <span className="accent">O</span>ya<span className="accent">O</span>
           ya
         </Link>
@@ -77,7 +75,6 @@ export function Loading() {
 
 export function ErrorPage() {
   const error = useRouteError()
-  const homeUrl = useHomeUrl()
   const notFound = isRouteErrorResponse(error) && error.status === 404
   return (
     <>
@@ -89,7 +86,7 @@ export function ErrorPage() {
             : 'データの読み込みに失敗しました。'}
         </p>
         <p className="status">
-          <Link to={homeUrl}>ホームへもどる</Link>
+          <Link to="/">ホームへもどる</Link>
         </p>
       </main>
     </>

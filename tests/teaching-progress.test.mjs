@@ -21,7 +21,7 @@ test('saved progress decides whether the preparation or the script opens', async
         [
           {
             path: '/problems/:problemId',
-            loader: ({ params }) => loadProblem(params.problemId, false),
+            loader: ({ params }) => loadProblem(params.problemId),
             element: createElement(ProblemDetail),
           },
         ],
@@ -87,7 +87,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
         [
           {
             path: '/problems/:problemId',
-            loader: ({ params }) => loadProblem(params.problemId, false),
+            loader: ({ params }) => loadProblem(params.problemId),
             element: createElement(ProblemDetail),
           },
         ],
@@ -100,16 +100,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
         router.dispose()
       }
     }
-    // middle は途中のページ。答えのページのあとに、たしかめがある台本は answer も途中として確かめる
-    // （大学祭の問題は pagedFlow でページの位置だけを保存する）
-    const pagedLesson = (id, middle, last) => ({
-      path: `/problems/${id}`,
-      flowKey: `/problems/${id}`,
-      prefix: `${id}-flow:v1:`,
-      middle,
-      last,
-      progress: (page) => JSON.stringify({ page }),
-    })
+    // middle は途中のページ、last は最後のページ（たしかめ）
     const lessons = [
       {
         path: '/problems/addition-within-10',
@@ -128,10 +119,6 @@ test('flow lessons resume in the middle and start over from preparation after fi
         last: 'give',
         progress: (page) => JSON.stringify({ n: 5, page }),
       },
-      pagedLesson('math-easy-1', 'discount', 'answer'),
-      pagedLesson('math-hard-1', 'center', 'answer'),
-      pagedLesson('puzzle-easy-1', 'answer', 'check'),
-      pagedLesson('puzzle-hard-1', 'answer', 'check'),
     ]
     for (const { path, flowKey, prefix, middle, last, progress } of lessons) {
       storage.clear()

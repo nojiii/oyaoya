@@ -1,6 +1,5 @@
-import { curriculum, festivalCurriculum, TAGS, type Group } from '../curriculum'
+import { curriculum, TAGS, type Group } from '../curriculum'
 import { problems, type ProblemId } from '../problems'
-import { FESTIVAL_URL } from './festival'
 import { redirect } from 'react-router'
 
 // ページは curriculum と problems を直接読まず、ここの関数が返すデータだけを使う
@@ -31,62 +30,49 @@ export function countProblems(group: Group): number {
   )
 }
 
-// モードごとの違い。base はURLの先頭に付くパス、tree はそのモードで使う階層
-function modeOf(festival: boolean) {
-  return festival
-    ? { base: FESTIVAL_URL, tree: festivalCurriculum }
-    : { base: '', tree: curriculum }
-}
-
 // 同じ段に並ぶ分類を、リンク用の名前とURLにする（parentUrl は1つ上の分類のURL）
-function groupLinks(
-  groups: Group[],
-  parentUrl: string,
-  base: string,
-): GroupLink[] {
+function groupLinks(groups: Group[], parentUrl: string): GroupLink[] {
   return groups.map((group) => ({
     name: group.name,
     url:
       !group.children?.length && group.problems?.length === 1
-        ? `${base}/problems/${group.problems[0]}`
+        ? `/problems/${group.problems[0]}`
         : `${parentUrl}/${group.slug}`,
     count: countProblems(group),
     tag: group.tag && { name: group.tag, index: TAGS.indexOf(group.tag) },
   }))
 }
 
-function problemLinks(ids: ProblemId[], base: string): PageLink[] {
+function problemLinks(ids: ProblemId[]): PageLink[] {
   return ids.map((id) => ({
     name: problems[id].title,
-    url: `${base}/problems/${id}`,
+    url: `/problems/${id}`,
   }))
 }
 
 // 上から順にたどった分類を、戻り先と見出しのラベル用の名前とURLにする
-function toCrumbs(groups: Group[], base: string): PageLink[] {
-  let url = base
+function toCrumbs(groups: Group[]): PageLink[] {
+  let url = ''
   return groups.map((group) => {
     url = `${url}/${group.slug}`
     return { name: group.name, url }
   })
 }
 
-export function loadHome(festival: boolean) {
-  const { base, tree } = modeOf(festival)
-  return { groups: groupLinks(tree, base, base) }
+export function loadHome() {
+  return { groups: groupLinks(curriculum, '') }
 }
 
 // URL（例: grade-1/math/addition-within-10）を上からたどって分類を探す
-export function loadGroup(path: string, festival: boolean) {
-  const { base, tree } = modeOf(festival)
+export function loadGroup(path: string) {
   const groups: Group[] = []
-  let siblings = tree
+  let siblings = curriculum
   for (const slug of path.split('/').filter(Boolean)) {
     const group = siblings.find((g) => g.slug === slug) ?? notFound()
     groups.push(group)
     siblings = group.children ?? []
   }
-  const crumbs = toCrumbs(groups, base)
+  const crumbs = toCrumbs(groups)
   const current = crumbs.pop() ?? notFound()
   const group = groups[groups.length - 1]
   // 教材が1つの単元は、問題一覧を挟まず準備画面を表示する。
@@ -101,18 +87,15 @@ export function loadGroup(path: string, festival: boolean) {
     lesson,
     name: group.name,
     crumbs,
-    groups: groupLinks(siblings, current.url, base),
-    problems: problemLinks(group.problems ?? [], base),
+    groups: groupLinks(siblings, current.url),
+    problems: problemLinks(group.problems ?? []),
   }
 }
 
 // その問題が置かれている分類を上から順に返す（どこにも置かれていなければ空）
-export function loadGroupPage(path: string, festival: boolean) {
-  const data = loadGroup(path, festival)
-  if (data.lesson)
-    return redirect(
-      `${festival ? FESTIVAL_URL : ''}/problems/${data.lesson.id}`,
-    )
+export function loadGroupPage(path: string) {
+  const data = loadGroup(path)
+  if (data.lesson) return redirect(`/problems/${data.lesson.id}`)
   return data
 }
 
@@ -129,13 +112,12 @@ function isProblemId(id: string): id is ProblemId {
   return Object.hasOwn(problems, id)
 }
 
-export function loadProblem(id: string, festival: boolean) {
+export function loadProblem(id: string) {
   if (!isProblemId(id)) notFound()
-  const { base, tree } = modeOf(festival)
   const { title, default: Component } = problems[id]
-  const groups = groupsOf(id, tree)
+  const groups = groupsOf(id, curriculum)
   // 教材へ直接進む単元は、戻り先を1つ上の単元選択画面にする。
   const parent = groups.at(-1)
   if (!parent?.children?.length && parent?.problems?.length === 1) groups.pop()
-  return { title, Component, crumbs: toCrumbs(groups, base) }
+  return { title, Component, crumbs: toCrumbs(groups) }
 }

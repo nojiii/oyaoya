@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useMatches } from 'react-router'
-import { curriculum, festivalCurriculum, type Group } from '../curriculum'
-import { useFestival, useHomeUrl } from '../pages/festival'
+import { curriculum, type Group } from '../curriculum'
 import { countProblems, type PageLink } from '../pages/loaders'
 
 export function SideNavigation() {
@@ -10,14 +9,11 @@ export function SideNavigation() {
   const [open, setOpen] = useState(false)
   const titleId = useId()
   const sheetId = useId()
-  const homeUrl = useHomeUrl()
-  const festival = useFestival()
   const { pathname } = useLocation()
   const matches = useMatches()
   const data = matches.at(-1)?.loaderData as { crumbs?: PageLink[] } | undefined
   const crumbs = data?.crumbs ?? []
-  const groups = festival ? festivalCurriculum : curriculum
-  const base = festival ? homeUrl : ''
+  const groups = curriculum
 
   useEffect(() => {
     if (!open) return
@@ -90,9 +86,9 @@ export function SideNavigation() {
         <nav aria-label="学習メニュー">
           <Link
             className="sheet-link"
-            to={homeUrl}
+            to="/"
             onClick={close}
-            aria-current={pathname === homeUrl ? 'page' : undefined}
+            aria-current={pathname === '/' ? 'page' : undefined}
           >
             ホーム・学年を選ぶ
           </Link>
@@ -113,18 +109,18 @@ export function SideNavigation() {
             </section>
           )}
           <section className="sheet-section">
-            <h3>{festival ? '難しさから選ぶ' : '学年・単元から選ぶ'}</h3>
+            <h3>学年・単元から選ぶ</h3>
             {groups.map((group) =>
-              // 下の段がなく問題を直接持つ分類（大学祭の各カテゴリ）は、開かずにそのまま進めるリンクにする
+              // 下の段がなく問題を直接持つ分類は、開かずにそのまま進めるリンクにする
               group.problems?.length && !group.children?.length ? (
                 <MenuLink
                   group={group}
                   className="sheet-link"
                   key={group.slug}
-                  to={`${base}/${group.slug}`}
+                  to={`/${group.slug}`}
                   onClick={close}
                   current={group.problems?.some(
-                    (id) => pathname === `${base}/problems/${id}`,
+                    (id) => pathname === `/problems/${id}`,
                   )}
                 >
                   {group.name}
@@ -135,7 +131,7 @@ export function SideNavigation() {
                   <MenuLink
                     group={group}
                     className="sheet-link"
-                    to={`${base}/${group.slug}`}
+                    to={`/${group.slug}`}
                     onClick={close}
                   >
                     {group.name}の一覧
@@ -145,13 +141,13 @@ export function SideNavigation() {
                       <MenuLink
                         group={subject}
                         className="sheet-link"
-                        to={`${base}/${group.slug}/${subject.slug}`}
+                        to={`/${group.slug}/${subject.slug}`}
                         onClick={close}
                       >
                         {subject.name}の単元を選ぶ
                       </MenuLink>
                       {subject.children?.map((unit) => {
-                        const url = `${base}/${group.slug}/${subject.slug}/${unit.slug}`
+                        const url = `/${group.slug}/${subject.slug}/${unit.slug}`
                         return (
                           <MenuLink
                             group={unit}

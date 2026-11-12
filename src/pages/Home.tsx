@@ -4,7 +4,6 @@ import { ItemLink } from './ItemLink'
 import { RowArrow } from './RowArrow'
 import { TagPicture } from './TagPicture'
 import type { loadHome } from './loaders'
-import { useFestival } from './festival'
 
 // 親が教えるときに、やってはいけないこと
 const TEACHING_RULES = [
@@ -25,7 +24,6 @@ const TEACHING_RULES = [
 
 export default function Home() {
   const { groups } = useLoaderData<ReturnType<typeof loadHome>>()
-  const festival = useFestival()
 
   return (
     <>
@@ -61,28 +59,26 @@ export default function Home() {
         </ul>
       </section>
 
-      {/* 親が教えるときに守ること（本編だけに出す） */}
-      {!festival && (
-        <section className="home-rules" aria-labelledby="home-rules-title">
-          <h2 id="home-rules-title" className="home-rules-title">
-            教えるときの3つの約束
-          </h2>
-          {/* list-style をなくすと、Safari の読み上げでリストと伝わらなくなるため、role で補う */}
-          <ol className="home-rules-list" role="list">
-            {TEACHING_RULES.map((rule, i) => (
-              <li key={rule.title}>
-                <span className="home-rules-number" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <span className="home-rules-text">
-                  <span className="home-rules-name">{rule.title}</span>
-                  <span className="home-rules-sub">{rule.reason}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+      {/* 親が教えるときに守ること */}
+      <section className="home-rules" aria-labelledby="home-rules-title">
+        <h2 id="home-rules-title" className="home-rules-title">
+          教えるときの3つの約束
+        </h2>
+        {/* list-style をなくすと、Safari の読み上げでリストと伝わらなくなるため、role で補う */}
+        <ol className="home-rules-list" role="list">
+          {TEACHING_RULES.map((rule, i) => (
+            <li key={rule.title}>
+              <span className="home-rules-number" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span className="home-rules-text">
+                <span className="home-rules-name">{rule.title}</span>
+                <span className="home-rules-sub">{rule.reason}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
     </>
   )
 }

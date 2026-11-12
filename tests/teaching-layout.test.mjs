@@ -48,25 +48,12 @@ test('every published script has teaching points, reading labels and only suppor
     const { default: ProblemDetail } =
       await import('../src/pages/ProblemDetail.tsx')
     for (const id of Object.keys(problems)) {
-      // 大学祭用の問題（math- や puzzle- で始まるID）はテストを除外する。台本を作った問題だけ確かめる
-      if (
-        (id.startsWith('math-') || id.startsWith('puzzle-')) &&
-        ![
-          'math-easy-1',
-          'math-hard-1',
-          'puzzle-easy-1',
-          'puzzle-hard-1',
-        ].includes(id)
-      ) {
-        continue
-      }
-
       const path = '/problems/' + id
       const router = createMemoryRouter(
         [
           {
             path: '/problems/:problemId',
-            loader: ({ params }) => loadProblem(params.problemId, false),
+            loader: ({ params }) => loadProblem(params.problemId),
             element: createElement(ProblemDetail),
           },
         ],
@@ -150,29 +137,6 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           // 「たしかめ」のページを見本に含める
           assert.ok(html.includes('たしかめ'))
-          continue
-        }
-        // 大学祭の算数（易しい）第1問は、答えのページで終わる（たしかめのページは置かない）
-        if (id === 'math-easy-1') {
-          assert.match(html, /data-slide="read" data-active="true"/)
-          assert.ok(html.includes('問題を読んでみましょう'))
-          assert.ok(!html.includes('data-slide="explain"'))
-          assert.ok(html.includes('台本の進み具合'))
-          continue
-        }
-        // 大学祭の算数（難しい）第1問も、見本と同じページを分けた台本にする
-        if (id === 'math-hard-1') {
-          assert.match(html, /data-slide="read" data-active="true"/)
-          assert.ok(html.includes('まずは問題を読んで、図をよく見てみましょう'))
-          assert.ok(html.includes('台本の進み具合'))
-          continue
-        }
-        // 大学祭の謎解き（易しい・難しい）第1問も、答えのあとに「たしかめ」を置く
-        if (id === 'puzzle-easy-1' || id === 'puzzle-hard-1') {
-          assert.match(html, /data-slide="read" data-active="true"/)
-          assert.ok(html.includes('まずは問題を読んで'), id)
-          assert.ok(html.includes('たしかめ'), id)
-          assert.ok(html.includes('台本の進み具合'), id)
           continue
         }
         // ページを分けない台本でも、数字は準備の画面で変える。台本の中には数字の欄を出さない

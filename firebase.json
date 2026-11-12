@@ -2,6 +2,18 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      {
+        "source": "/festival",
+        "destination": "https://oyaoya-festival.web.app/",
+        "type": 301
+      },
+      {
+        "source": "/festival/:rest*",
+        "destination": "https://oyaoya-festival.web.app/:rest",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
