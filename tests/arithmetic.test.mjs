@@ -5,7 +5,7 @@ import { arithmetic } from '../src/problems/arithmetic.ts'
 test('every carrying pair splits the second number and preserves the total', () => {
   for (let a = 1; a <= 9; a++) {
     for (let b = 1; b <= 9; b++) {
-      if (a + b < 10) {
+      if (a + b < 11) {
         assert.throws(() => arithmetic('carry', a, b))
         continue
       }
@@ -59,6 +59,8 @@ test('invalid inputs cannot produce a lesson', () => {
   for (const [mode, a, b] of [
     ['carry', 10, 3],
     ['carry', 8, 0],
+    // 合計がちょうど10は、10までのたし算で扱う
+    ['carry', 7, 3],
     ['add', -1, 4],
     ['add', 9, 6],
     ['add', 5, 6],
