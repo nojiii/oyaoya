@@ -63,7 +63,8 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
   )
 }
 
-// 答えのページのステージに置く式。お子さんが答えたら「？」を押して、答えを見る
+// ステージに置く式。答えのページでは、初めから答えを出す（visible）。
+// たしかめのひとりで解くページでは、お子さんが答えたら「？」を押して、答えを見る
 export function AdditionEquation({
   a,
   b,
@@ -110,46 +111,24 @@ export function AdditionEquation({
   )
 }
 
-export function AdditionAnswer({
-  a,
-  b,
-  visible,
-}: {
-  a: number
-  b: number
-  visible: boolean
-}) {
-  // 親が答えを言う前に、お子さんに答えてもらう。答えを見たら、お子さんの答えに合わせて声をかける。
-  // 式と「？」はステージ（AdditionEquation）に出す
+// 答えのページの声かけ。お子さんには、前のページ（数える・アプリのおはじき）で「全部で何こ？」と聞いて、もう答えてもらっている。
+// 同じことを聞き直さず、初めから答えを出して、お子さんの答えに合わせて声をかける。答えの式はステージ（AdditionEquation）に出す
+export function AdditionAnswer({ a, b }: { a: number; b: number }) {
   return (
-    <>
-      <div aria-live="polite" className={styles.answer}>
-        {visible ? (
-          <>
-            <TeachingPoints
-              collapsible
-              note="ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。"
-            />
-            <SpokenWords title={`「${a + b}」と答えたら`}>
-              そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
-            </SpokenWords>
-            <SpokenWords title="ちがう数を答えたら" minor>
-              おしい！ 指でさしながら、もう一回数えてみよう。
-            </SpokenWords>
-          </>
-        ) : (
-          <>
-            <TeachingPoints
-              collapsible
-              note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
-            />
-            <SpokenWords>
-              {a}こと{b}こ、合わせて何こだった？
-            </SpokenWords>
-          </>
-        )}
-      </div>
-    </>
+    <div className={styles.answer}>
+      <TeachingPoints
+        collapsible
+        note={
+          'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。'
+        }
+      />
+      <SpokenWords title={`「${a + b}」と答えたら`}>
+        そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
+      </SpokenWords>
+      <SpokenWords title="ちがう数を答えたら" minor>
+        おしい！ 指でさしながら、もう一回数えてみよう。
+      </SpokenWords>
+    </div>
   )
 }
 
@@ -252,8 +231,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
   const count = Array.from({ length: a + b }, (_, i) => i + 1)
   // たしかめで、お子さんがひとりで解く問題
   const [c, d] = additionCheck(a, b)
-  // 「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
-  const answerShown = progress.page === 'answer' && progress.answerVisible
+  // たしかめのひとりで解くページで「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
   const checkShown = progress.page === 'check' && progress.answerVisible
   // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → 教え方のポイント → セリフ
   const slides: Record<AdditionPage, LessonSlide> = {
@@ -351,7 +329,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
         <>
           <TeachingPoints
             collapsible
-            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。`}
+            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。\n\n**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。`}
           />
           <SpokenWords>
             1こずつ一緒に数えてみよう！{' '}
@@ -382,7 +360,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
             note={`画面上の**${a}個と${b}個のおはじき**を動かして、一緒に確かめましょう。`}
           />
           <p className={styles.help}>
-            おはじきを合わせたら、「答えを確認する」へ進みます。
+            おはじきを合わせて、お子さんが何こか答えたら、「答えを確認する」へ進みます。
           </p>
         </>
       ),
@@ -392,21 +370,15 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       title: '答えを確認しましょう！',
       stage: (
         <>
-          {/* 「？」で答えを見たら、おやじいが喜ぶ（ページを移ると、答えはまた隠れる） */}
+          {/* 答えのページに来たら、おやじいが喜ぶ */}
           <Oyajii
             className={styles.answerMascot}
-            motion={answerShown ? 'correct' : null}
+            motion={progress.page === 'answer' ? 'correct' : null}
           />
-          <AdditionEquation
-            a={a}
-            b={b}
-            visible={answerShown}
-            onReveal={() => dispatch({ type: 'reveal' })}
-          />
+          <AdditionEquation a={a} b={b} visible />
         </>
       ),
-      content: <AdditionAnswer a={a} b={b} visible={answerShown} />,
-      onReveal: answerShown ? undefined : () => dispatch({ type: 'reveal' }),
+      content: <AdditionAnswer a={a} b={b} />,
     },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {

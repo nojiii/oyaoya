@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
-test('addition routes meet at the answer, go back along their own route and require an explicit reveal', async () => {
+test('addition routes meet at the answer, go back along their own route and reveal only the check answer by hand', async () => {
   const {
     advanceAddition: act,
     initialAdditionProgress: initial,
@@ -33,12 +33,10 @@ test('addition routes meet at the answer, go back along their own route and requ
     physical = act(physical, { type: 'next' })
   }
   assert.equal(physical.page, 'answer')
-  assert.equal(physical.answerVisible, false)
-  // 答えを見るまでは、たしかめへ進めない
-  assert.equal(act(physical, { type: 'next' }).page, 'answer')
-  physical = act(physical, { type: 'reveal' })
-  assert.equal(physical.answerVisible, true)
-  // たしかめ：話してもらう → ひとりで解く。ひとりで解くページが最後で、答えはまた「？」で見る
+  // 答えのページは、前のページでお子さんが答えているので、初めから答えを出す。「？」を押さずに、たしかめへ進める
+  assert.equal(canAdvanceAddition(physical), true)
+  assert.deepEqual(act(physical, { type: 'reveal' }), physical)
+  // たしかめ：話してもらう → ひとりで解く。ひとりで解くページが最後で、答えは「？」で見る
   physical = act(physical, { type: 'next' })
   assert.equal(physical.page, 'explain')
   assert.equal(physical.answerVisible, false)
@@ -84,8 +82,9 @@ test('addition routes meet at the answer, go back along their own route and requ
   assert.equal(canAdvanceAddition(app), true)
   const completed = act(app, { type: 'next' })
   assert.equal(completed.page, 'answer')
-  assert.equal(completed.answerVisible, false)
-  assert.equal(act(completed, { type: 'reveal' }).answerVisible, true)
+  assert.equal(canAdvanceAddition(completed), true)
+  assert.deepEqual(act(completed, { type: 'reveal' }), completed)
+  assert.equal(act(completed, { type: 'next' }).page, 'explain')
   app = act(completed, { type: 'back' })
   assert.equal(app.page, 'app')
   app = act(app, { type: 'app-status', complete: false })
@@ -198,9 +197,8 @@ test('both addition routes render all steps with matching progress, counter reus
       for (const route of ['physical', 'app']) {
         const pages = additionPages(route)
         for (const [index, page] of pages.entries()) {
-          // 答えのページは、保存から開き直すと答えを見る前に戻るので、下の AdditionAnswer で確かめる。
           // ひとりで解くページは開き直せない（最初からになる）ので、下の AdditionCheck で確かめる
-          if (page === 'answer' || page === 'check') continue
+          if (page === 'check') continue
           storage.set(
             `addition-flow:v1:${path}:${a}+${b}`,
             JSON.stringify({ route, page }),
@@ -242,10 +240,26 @@ test('both addition routes render all steps with matching progress, counter reus
             page === 'explain',
             `${route}/${page}: section label`,
           )
-          assert.ok(
-            !html.includes(`全部で<!-- -->${a + b}<!-- -->こになったね`),
-            'answer speech is not rendered before reveal',
-          )
+          // 答えのページは、前のページでお子さんが答えているので、聞き直さずに初めから答えを出す。
+          // 「？」も「答えを見る」ボタンも置かず、いつもの「次」の行と右端の矢印で、たしかめへ進む
+          if (page === 'answer') {
+            const next = active.indexOf('data-slide=', 1)
+            const current = active
+              .slice(0, next)
+              .replace(/<!-- -->/g, '')
+              .replace(/<[^>]*>/g, '')
+            assert.ok(current.includes(`${a} ＋ ${b} ＝ ${a + b}`))
+            assert.ok(
+              current.includes(
+                `そう！ ${a}こと${b}こを合わせると、全部で${a + b}こになったね！`,
+              ),
+            )
+            assert.ok(current.includes('ちがう数を答えたら'))
+            assert.ok(!current.includes('合わせて何こだった'))
+            assert.ok(!current.includes('答えを見る'))
+            assert.ok(current.includes(`次${titles.explain}`))
+            assert.equal(edge('次のページ'), 'false', `${route}: next edge`)
+          }
           if (page === 'prepare')
             assert.ok(
               active.includes(`おはじきが${a}こと${b}こ、別々に並んでいます`),
@@ -266,26 +280,17 @@ test('both addition routes render all steps with matching progress, counter reus
             )
         }
       }
-      // 式と答えを見る「？」はステージ（AdditionEquation）、声かけは AdditionAnswer に出す。
+      // 答えの式はステージ（AdditionEquation）、声かけは AdditionAnswer に出す。
       // 文字の確かめは、タグを取り除いた文で行う
-      const renderAnswer = (visible) =>
-        renderToString(
-          createElement(
-            'div',
-            null,
-            createElement(AdditionEquation, { a, b, visible }),
-            createElement(AdditionAnswer, { a, b, visible }),
-          ),
-        ).replace(/<!-- -->/g, '')
       const textOf = (html) => html.replace(/<[^>]*>/g, '')
-      const hiddenHtml = renderAnswer(false)
-      const hidden = textOf(hiddenHtml)
-      assert.ok(hidden.includes(`${a} ＋ ${b} ＝ ？`))
-      assert.ok(hiddenHtml.includes('aria-label="答えを見る"'))
-      // 答えを見る前は、お子さんに答えを聞くだけで、親は答えを言わない
-      assert.ok(hidden.includes(`${a}こと${b}こ、合わせて何こだった？`))
-      assert.ok(!hidden.includes(`全部で${a + b}こ`))
-      const shownHtml = renderAnswer(true)
+      const shownHtml = renderToString(
+        createElement(
+          'div',
+          null,
+          createElement(AdditionEquation, { a, b, visible: true }),
+          createElement(AdditionAnswer, { a, b }),
+        ),
+      ).replace(/<!-- -->/g, '')
       const shown = textOf(shownHtml)
       assert.ok(shown.includes(`${a} ＋ ${b} ＝ ${a + b}`))
       assert.ok(shown.includes(`「${a + b}」と答えたら`))
@@ -296,6 +301,10 @@ test('both addition routes render all steps with matching progress, counter reus
       )
       assert.ok(shown.includes('ちがう数を答えたら'))
       assert.ok(!shownHtml.includes('答えを見る'))
+      // お子さんには前のページで答えてもらっているので、同じことを聞き直さない
+      assert.ok(shown.includes('お子さんが前のページで答えた数に合わせて'))
+      assert.ok(!shown.includes('合わせて何こだった'))
+      assert.ok(!shown.includes('\\n') && !shown.includes('**'))
       // 答えのあとは、たしかめへ進む。「終わる」は、たしかめの最後に置く
       assert.ok(!shown.includes('終わる'))
 

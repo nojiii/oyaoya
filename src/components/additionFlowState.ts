@@ -16,6 +16,7 @@ export interface AdditionProgress {
   route: AdditionRoute | null
   page: AdditionPage
   appComplete: boolean
+  // たしかめのひとりで解くページで、「？」を押して答えを見たか（答えのページは、初めから答えを出す）
   answerVisible: boolean
 }
 
@@ -56,11 +57,11 @@ export type AdditionAction =
   | { type: 'choose'; route: AdditionRoute }
   | { type: 'app-status'; complete: boolean }
 
-// 方法を選ぶページは、選ぶまで進めない（選んだら、スワイプで進む）。答えのページは、答えを見てから進む。
+// 方法を選ぶページは、選ぶまで進めない（選んだら、スワイプで進む）。
+// 答えのページは、前のページでお子さんが答えているので、初めから答えを出して、そのまま進める。
 // たしかめの、ひとりで解くページが最後
 export function canAdvanceAddition(state: AdditionProgress) {
   if (state.page === 'choose') return state.route !== null
-  if (state.page === 'answer') return state.answerVisible
   return state.page !== 'check' && (state.page !== 'app' || state.appComplete)
 }
 
@@ -84,10 +85,9 @@ export function advanceAddition(
       if (state.page !== 'app' || state.appComplete === action.complete)
         return state
       return { ...state, appComplete: action.complete }
+    // 「？」で答えを見るのは、たしかめのひとりで解くページだけ
     case 'reveal':
-      return state.page === 'answer' || state.page === 'check'
-        ? { ...state, answerVisible: true }
-        : state
+      return state.page === 'check' ? { ...state, answerVisible: true } : state
     case 'next':
     case 'back': {
       if (action.type === 'next' && !canAdvanceAddition(state)) return state
