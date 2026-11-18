@@ -1,14 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useReducer, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
-import { LessonSlides, RevealHint, type LessonSlide } from './LessonSlides'
+import { LessonSlides, type LessonSlide } from './LessonSlides'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -63,51 +57,21 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
   )
 }
 
-// ステージに置く式。答えのページでは、初めから答えを出す（visible）。
-// たしかめのひとりで解くページでは、お子さんが答えたら「？」を押して、答えを見る
+// ステージに置く式。答えのページでは答え（visible）を、問題を出すページでは「？」を、橙の面に出す。
+// 答えは押して出すのではなく、ほかのページと同じくスワイプで答えのページへ進んで見る
 export function AdditionEquation({
   a,
   b,
   visible,
-  onReveal,
 }: {
   a: number
   b: number
   visible: boolean
-  onReveal?: () => void
 }) {
-  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
-  const equation = useRef<HTMLParagraphElement>(null)
-  const wasVisible = useRef(visible)
-  useEffect(() => {
-    if (visible && !wasVisible.current)
-      equation.current?.focus({ preventScroll: true })
-    wasVisible.current = visible
-  }, [visible])
   return (
-    <>
-      <p
-        className={styles.equation}
-        aria-live="polite"
-        ref={equation}
-        tabIndex={-1}
-      >
-        {a} ＋ {b} ＝{' '}
-        {visible ? (
-          <em>{a + b}</em>
-        ) : (
-          <button
-            className={styles.reveal}
-            type="button"
-            aria-label="答えを見る"
-            onClick={onReveal}
-          >
-            ？
-          </button>
-        )}
-      </p>
-      {!visible && <RevealHint />}
-    </>
+    <p className={styles.equation}>
+      {a} ＋ {b} ＝ <em>{visible ? a + b : '？'}</em>
+    </p>
   )
 }
 
@@ -132,66 +96,71 @@ export function AdditionAnswer({ a, b }: { a: number; b: number }) {
   )
 }
 
-// たしかめの、ちがう数の問題をひとりで解くページ。式と「？」はステージ（AdditionEquation）に出す。
-// 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く
+// たしかめの、ちがう数の問題をひとりで解くページ。式（答えは「？」）はステージ（AdditionEquation）に出す。
+// 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く。
+// お子さんが答えたら、スワイプで答えのページ（AdditionCheckAnswer）へ進む
 export function AdditionCheck({
   a,
   b,
-  visible,
-  onFinish,
   children,
 }: {
   a: number
   b: number
-  visible: boolean
-  onFinish: () => void
   children?: ReactNode
 }) {
   return (
+    <div className={styles.answer}>
+      <TeachingPoints
+        collapsible
+        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\n**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。`}
+      />
+      <SpokenWords>
+        こんどは、{a}たす{b}
+        だよ。さっきと同じように、ひとりでやってみよう。できたら、全部で何こか教えてね。
+      </SpokenWords>
+      {children}
+    </div>
+  )
+}
+
+// たしかめの最後のページ。前のページ（AdditionCheck）でお子さんが答えた数に合わせて声をかけ、「終わる」で準備の画面へ戻る。
+// 答えの式はステージ（AdditionEquation）に、初めから出す
+export function AdditionCheckAnswer({
+  a,
+  b,
+  onFinish,
+}: {
+  a: number
+  b: number
+  onFinish: () => void
+}) {
+  return (
     <>
-      <div aria-live="polite" className={styles.answer}>
-        {visible ? (
-          <>
-            <TeachingPoints
-              collapsible
-              note={
-                'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
-              }
-            />
-            <SpokenWords title={`「${a + b}」と答えたら`}>
-              ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
-            </SpokenWords>
-            <SpokenWords title="ちがう数を答えたら" minor>
-              おしい！
-              さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
-            </SpokenWords>
-          </>
-        ) : (
-          <>
-            <TeachingPoints
-              collapsible
-              note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\nお子さんが答えてから、「？」を押して確かめましょう。`}
-            />
-            <SpokenWords>
-              こんどは、{a}たす{b}
-              だよ。さっきと同じように、ひとりでやってみよう。
-            </SpokenWords>
-            {children}
-          </>
-        )}
+      <div className={styles.answer}>
+        <TeachingPoints
+          collapsible
+          note={
+            'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
+          }
+        />
+        <SpokenWords title={`「${a + b}」と答えたら`}>
+          ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
+        </SpokenWords>
+        <SpokenWords title="ちがう数を答えたら" minor>
+          おしい！
+          さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
+        </SpokenWords>
       </div>
-      {visible && (
-        <button className={styles.finish} type="button" onClick={onFinish}>
-          終わる
-        </button>
-      )}
+      <button className={styles.finish} type="button" onClick={onFinish}>
+        終わる
+      </button>
     </>
   )
 }
 
 // 数（a・b）は準備の画面で決める。台本の中では変えない
 export function AdditionFlow({ a, b }: { a: number; b: number }) {
-  // 答えのページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
+  // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
   const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
@@ -231,8 +200,6 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
   const count = Array.from({ length: a + b }, (_, i) => i + 1)
   // たしかめで、お子さんがひとりで解く問題
   const [c, d] = additionCheck(a, b)
-  // たしかめのひとりで解くページで「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
-  const checkShown = progress.page === 'check' && progress.answerVisible
   // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → 教え方のポイント → セリフ
   const slides: Record<AdditionPage, LessonSlide> = {
     read: {
@@ -404,16 +371,9 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       id: 'check',
       section: 'たしかめ',
       title: 'ひとりで解いてみましょう',
-      stage: (
-        <AdditionEquation
-          a={c}
-          b={d}
-          visible={checkShown}
-          onReveal={() => dispatch({ type: 'reveal' })}
-        />
-      ),
+      stage: <AdditionEquation a={c} b={d} visible={false} />,
       content: (
-        <AdditionCheck a={c} b={d} visible={checkShown} onFinish={finish}>
+        <AdditionCheck a={c} b={d}>
           {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
           {progress.route === 'app' && (
             <VisualPlayground
@@ -426,7 +386,14 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
           )}
         </AdditionCheck>
       ),
-      onReveal: checkShown ? undefined : () => dispatch({ type: 'reveal' }),
+    },
+    // たしかめの最後のページ。本編の答えのページと同じく、初めから答えを出す
+    checkAnswer: {
+      id: 'checkAnswer',
+      section: 'たしかめ',
+      title: '答えを確認しましょう！',
+      stage: <AdditionEquation a={c} b={d} visible />,
+      content: <AdditionCheckAnswer a={c} b={d} onFinish={finish} />,
     },
   }
   return (

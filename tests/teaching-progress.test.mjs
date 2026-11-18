@@ -107,7 +107,7 @@ test('flow lessons resume in the middle and start over from preparation after fi
         flowKey: '/problems/addition-within-10:3+4',
         prefix: 'addition-flow:v1:',
         middle: 'count',
-        last: 'check',
+        last: 'checkAnswer',
         progress: (page) =>
           JSON.stringify({ route: page === 'read' ? null : 'physical', page }),
       },
