@@ -12,8 +12,11 @@ import {
   additionStorageKey,
   advanceAddition,
   canAdvanceAddition,
+  carryCheck,
   restoreAdditionProgress,
+  type AdditionAction,
   type AdditionPage,
+  type AdditionProgress,
   type AdditionRoute,
 } from './additionFlowState'
 import styles from './AdditionFlow.module.css'
@@ -40,6 +43,34 @@ export function CounterGroups({ a, b }: { a: number; b: number }) {
   )
 }
 
+// 10のまとまりを作ったおはじき（繰り上がりの、全部でいくつか数えるページのステージ）。
+// 左は最初の数に右から移した分を足した10こ、右は残り
+function CounterTenAndRest({ a, b }: { a: number; b: number }) {
+  const rest = a + b - 10
+  const groups = [
+    { label: 10, pieces: Array.from({ length: 10 }, (_, i) => i >= a) },
+    { label: rest, pieces: Array.from({ length: rest }, () => true) },
+  ]
+  return (
+    <div
+      className={styles.counterGroups}
+      role="img"
+      aria-label={`おはじきが、左に10こ（${a}こと${10 - a}こ）、右に${rest}こ並んでいます`}
+    >
+      {groups.map((group, index) => (
+        <div className={styles.counterGroup} key={index} aria-hidden="true">
+          <div className={styles.pieces}>
+            {group.pieces.map((green, i) => (
+              <span key={i} data-green={green} />
+            ))}
+          </div>
+          <span>{group.label}こ</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // 両手で寄せて、1つにまとめたおはじき（数えるページのステージ）
 function CounterTogether({ a, b }: { a: number; b: number }) {
   return (
@@ -56,6 +87,11 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
     </div>
   )
 }
+
+// 答えを聞くページ（数える・10と残りを合わせる・ひとりで解く）の、教え方のポイントの最後に置く。
+// 次の答えのページには初めから答えが出ているので、お子さんが答えるまで送らない
+const BEFORE_ANSWER =
+  '**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。'
 
 // ステージに置く式。答えのページでは答え（visible）を、問題を出すページでは「？」を、橙の面に出す。
 // 答えは押して出すのではなく、ほかのページと同じくスワイプで答えのページへ進んで見る
@@ -76,21 +112,34 @@ export function AdditionEquation({
 }
 
 // 答えのページの声かけ。お子さんには、前のページ（数える・アプリのおはじき）で「全部で何こ？」と聞いて、もう答えてもらっている。
-// 同じことを聞き直さず、初めから答えを出して、お子さんの答えに合わせて声をかける。答えの式はステージ（AdditionEquation）に出す
-export function AdditionAnswer({ a, b }: { a: number; b: number }) {
+// 同じことを聞き直さず、初めから答えを出して、お子さんの答えに合わせて声をかける。答えの式はステージ（AdditionEquation）に出す。
+// carry は、繰り上がりのたし算（10をつくって、たし算する）。10のかたまりを作ってから、残りを数える
+export function AdditionAnswer({
+  a,
+  b,
+  carry = false,
+}: {
+  a: number
+  b: number
+  carry?: boolean
+}) {
   return (
     <div className={styles.answer}>
       <TeachingPoints
         collapsible
-        note={
-          'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。'
-        }
+        note={`お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\n${
+          carry
+            ? 'ちがう数を答えたときは、前のページに戻って数え直します。**10のかたまりを作った後に、残りの数を数え間違えていないか**見守りましょう。'
+            : 'ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。'
+        }`}
       />
       <SpokenWords title={`「${a + b}」と答えたら`}>
         そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
       </SpokenWords>
       <SpokenWords title="ちがう数を答えたら" minor>
-        おしい！ 指でさしながら、もう一回数えてみよう。
+        {carry
+          ? 'おしい！ 10のかたまりを作ってから、残りをもう一回数えてみよう。'
+          : 'おしい！ 指でさしながら、もう一回数えてみよう。'}
       </SpokenWords>
     </div>
   )
@@ -102,17 +151,19 @@ export function AdditionAnswer({ a, b }: { a: number; b: number }) {
 export function AdditionCheck({
   a,
   b,
+  carry = false,
   children,
 }: {
   a: number
   b: number
+  carry?: boolean
   children?: ReactNode
 }) {
   return (
     <div className={styles.answer}>
       <TeachingPoints
         collapsible
-        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → 合わせる → 1個ずつ数える**、が自分でできていれば、解けています。\n\n**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。`}
+        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → ${carry ? '10のまとまりを作る → 残りと合わせる' : '合わせる → 1個ずつ数える'}**、が自分でできていれば、解けています。\n\n${BEFORE_ANSWER}`}
       />
       <SpokenWords>
         こんどは、{a}たす{b}
@@ -129,19 +180,23 @@ export function AdditionCheckAnswer({
   a,
   b,
   onFinish,
+  carry = false,
 }: {
   a: number
   b: number
   onFinish: () => void
+  carry?: boolean
 }) {
   return (
     <>
       <div className={styles.answer}>
         <TeachingPoints
           collapsible
-          note={
-            'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
-          }
+          note={`お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\n${
+            carry
+              ? `ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。**10のかたまり**を意識できているかを確認し、${a}個に${10 - a}個を合わせて10を作ってから残りを数える流れを一緒に確かめましょう。`
+              : 'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。'
+          }\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。`}
         />
         <SpokenWords title={`「${a + b}」と答えたら`}>
           ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
@@ -158,20 +213,30 @@ export function AdditionCheckAnswer({
   )
 }
 
-// 数（a・b）は準備の画面で決める。台本の中では変えない
-export function AdditionFlow({ a, b }: { a: number; b: number }) {
+// 数（a・b）は準備の画面で決める。台本の中では変えない。
+// carry は、繰り上がりのたし算（10をつくって、たし算する）。合わせる前に10のまとまりを作り、10と残りで答えを出す
+export function AdditionFlow({
+  a,
+  b,
+  carry = false,
+}: {
+  a: number
+  b: number
+  carry?: boolean
+}) {
   // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
   const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
   const [progress, dispatch] = useReducer(
-    advanceAddition,
+    (state: AdditionProgress, action: AdditionAction) =>
+      advanceAddition(state, action, carry),
     storageKey,
     (key) => {
       try {
-        return restoreAdditionProgress(sessionStorage.getItem(key))
+        return restoreAdditionProgress(sessionStorage.getItem(key), carry)
       } catch {
-        return restoreAdditionProgress(null)
+        return restoreAdditionProgress(null, carry)
       }
     },
   )
@@ -199,7 +264,10 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
   ]
   const count = Array.from({ length: a + b }, (_, i) => i + 1)
   // たしかめで、お子さんがひとりで解く問題
-  const [c, d] = additionCheck(a, b)
+  const [c, d] = carry ? carryCheck(a, b) : additionCheck(a, b)
+  // 繰り上がりで、10を作るために右から移す数と、移したあとの右の残り
+  const need = 10 - a
+  const rest = a + b - 10
   // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → 教え方のポイント → セリフ
   const slides: Record<AdditionPage, LessonSlide> = {
     read: {
@@ -220,7 +288,11 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       title: 'どちらの方法で教えますか？',
       content: (
         <>
-          <p>おはじきを使って、2つの数を合わせる様子を一緒に確かめましょう。</p>
+          <p>
+            {carry
+              ? 'おはじきを使って、10のまとまりを作りながら合わせる様子を一緒に確かめましょう。'
+              : 'おはじきを使って、2つの数を合わせる様子を一緒に確かめましょう。'}
+          </p>
           <div className={styles.choices}>
             {choices.map((choice) => (
               <button
@@ -296,7 +368,7 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
         <>
           <TeachingPoints
             collapsible
-            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。\n\n**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。`}
+            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。\n\n${BEFORE_ANSWER}`}
           />
           <SpokenWords>
             1こずつ一緒に数えてみよう！{' '}
@@ -307,12 +379,46 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
         </>
       ),
     },
+    // 繰り上がりの実物のおはじき：いきなり全部を合わせず、まず10のまとまりを作る
+    makeTen: {
+      id: 'makeTen',
+      title: '10のまとまりを作りましょう',
+      stage: <CounterGroups a={a} b={b} />,
+      content: (
+        <>
+          <TeachingPoints
+            collapsible
+            note={`いきなり全部を1つにまとめず、まずは**「10のまとまり」**を作ります。\n\n**${a}個の方に、${b}個の中から${need}個移して10個にする**操作を、お子さんの手でやってもらいましょう。`}
+          />
+          <SpokenWords>
+            {a}このおはじきに、みぎから{need}
+            こあわせて、10このかたまりをつくってみよう。
+          </SpokenWords>
+        </>
+      ),
+    },
+    countTen: {
+      id: 'countTen',
+      title: '全部でいくつになったかな？',
+      stage: <CounterTenAndRest a={a} b={b} />,
+      content: (
+        <>
+          <TeachingPoints
+            collapsible
+            note={`10のまとまりを作ったので、1から全部を数え直す必要はありません。**「10と、あと何個かな？」**と残りの${rest}個を確かめさせ、**「10と${rest}で${a + b}」**と答えられるか見守りましょう。\n\n親が先に答えを言わず、お子さんが答えるのを待ちます。\n\n${BEFORE_ANSWER}`}
+          />
+          <SpokenWords>
+            ひだりに10こ、みぎには{rest}こ、あわせて何こかな？
+          </SpokenWords>
+        </>
+      ),
+    },
     app: {
       id: 'app',
       title: 'アプリのおはじきを使いましょう',
       stage: (
         <VisualPlayground
-          problem={{ mode: 'add', a, b }}
+          problem={{ mode: carry ? 'carry' : 'add', a, b }}
           step={1}
           showOpenHint={false}
           onCompleteChange={onCompleteChange}
@@ -327,7 +433,9 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
             note={`画面上の**${a}個と${b}個のおはじき**を動かして、一緒に確かめましょう。`}
           />
           <p className={styles.help}>
-            おはじきを合わせて、お子さんが何こか答えたら、「答えを確認する」へ進みます。
+            {carry
+              ? 'いきなり全部を1個ずつ数えず、まずは「10のまとまり」を作ります。お子さんが何こか答えたら、「答えを確認する」へ進みます。'
+              : 'おはじきを合わせて、お子さんが何こか答えたら、「答えを確認する」へ進みます。'}
           </p>
         </>
       ),
@@ -345,21 +453,20 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
           <AdditionEquation a={a} b={b} visible />
         </>
       ),
-      content: <AdditionAnswer a={a} b={b} />,
+      content: <AdditionAnswer a={a} b={b} carry={carry} />,
     },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
       id: 'explain',
       section: 'たしかめ',
       title: 'どうやって数えたか、聞いてみましょう',
-      stage: <CounterTogether a={a} b={b} />,
+      // 繰り上がりでは、ステージにキャラクターを置く（数え方はお子さんの言葉で聞く）
+      stage: carry ? undefined : <CounterTogether a={a} b={b} />,
       content: (
         <>
           <TeachingPoints
             collapsible
-            note={
-              '**2つに分けて → 合わせて → 1個ずつ数えた**ことを、お子さんが自分の言葉で話せるかを見ます。\n\n言葉にしにくければ、**おはじきを指さして**教えてもらっても大丈夫です。合っていても違っていても、最後まで聞いてから「そうやって数えたんだね」と受け止めましょう。'
-            }
+            note={`**${carry ? '10のまとまりを作って → 残りの数を合わせた' : '2つに分けて → 合わせて → 1個ずつ数えた'}**ことを、お子さんが自分の言葉で話せるかを見ます。\n\n言葉にしにくければ、**おはじきを指さして**教えてもらっても大丈夫です。合っていても違っていても、最後まで聞いてから「そうやって数えたんだね」と受け止めましょう。`}
           />
           <SpokenWords>
             どうやって答えを見つけたの？ おしえてくれる？
@@ -373,11 +480,11 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       title: 'ひとりで解いてみましょう',
       stage: <AdditionEquation a={c} b={d} visible={false} />,
       content: (
-        <AdditionCheck a={c} b={d}>
+        <AdditionCheck a={c} b={d} carry={carry}>
           {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
           {progress.route === 'app' && (
             <VisualPlayground
-              problem={{ mode: 'add', a: c, b: d }}
+              problem={{ mode: carry ? 'carry' : 'add', a: c, b: d }}
               step={1}
               showOpenHint={false}
             >
@@ -393,13 +500,15 @@ export function AdditionFlow({ a, b }: { a: number; b: number }) {
       section: 'たしかめ',
       title: '答えを確認しましょう！',
       stage: <AdditionEquation a={c} b={d} visible />,
-      content: <AdditionCheckAnswer a={c} b={d} onFinish={finish} />,
+      content: (
+        <AdditionCheckAnswer a={c} b={d} onFinish={finish} carry={carry} />
+      ),
     },
   }
   return (
     <LessonSlides
       label="足し算の台本"
-      slides={additionPages(progress.route).map((page) => slides[page])}
+      slides={additionPages(progress.route, carry).map((page) => slides[page])}
       currentId={progress.page}
       totalKnown={progress.route !== null}
       canNext={canAdvanceAddition(progress)}

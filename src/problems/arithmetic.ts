@@ -18,8 +18,9 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
   } else if (a < 1 || a > 9 || b < 1 || b > 9) {
     throw new Error('それぞれ1〜9の数を入力してください。')
   }
-  if (mode === 'carry' && a + b < 10)
-    throw new Error('合計が10以上になる2つの数を入力してください。')
+  // 合計がちょうど10のたし算は、10までのたし算（add）で扱う。繰り上がりは、10を作って残りが出るものだけ
+  if (mode === 'carry' && a + b < 11)
+    throw new Error('合計が11以上になる2つの数を入力してください。')
   const symbol =
     mode === 'sub' || mode === 'borrow' ? '−' : mode === 'times' ? '×' : '+'
   const answer = symbol === '−' ? a - b : symbol === '×' ? a * b : a + b

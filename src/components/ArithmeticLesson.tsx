@@ -192,9 +192,13 @@ export function ArithmeticLesson({
   const question = apples
     ? `あかいりんごが${a}こ、あおいりんごが${b}こ。あわせて何こかな？`
     : model.question
+  // 繰り上がりのたし算（10をつくって、たし算する）も、たし算と同じページを分けた台本で教える
+  const carry = mode === 'carry'
   return (
     <TeachingScript
-      flow={additionFlow ? <AdditionFlow a={a} b={b} /> : undefined}
+      flow={
+        additionFlow ? <AdditionFlow a={a} b={b} carry={carry} /> : undefined
+      }
       flowStatus={
         additionFlow
           ? () =>
@@ -202,6 +206,7 @@ export function ArithmeticLesson({
                 sessionStorage.getItem(
                   additionStorageKey(location.pathname, a, b),
                 ),
+                carry,
               )
           : undefined
       }
@@ -222,7 +227,7 @@ export function ArithmeticLesson({
         steps: additionFlow
           ? [
               '問題を読む',
-              'おはじきを合わせる',
+              carry ? '10のまとまりを作る' : 'おはじきを合わせる',
               '答えを確かめる',
               '考え方を話してもらう',
               'ひとりで解く',

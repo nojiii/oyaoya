@@ -4,6 +4,7 @@ import {
   counterGroups,
   counterProgress,
 } from '../src/components/counterModel.ts'
+import { counterPrompt } from '../src/components/counterPrompt.ts'
 
 test('carrying preserves every bead while splitting and making ten', () => {
   for (let a = 1; a <= 9; a++)
@@ -70,9 +71,19 @@ test('counter results appear only after completion and disappear on undo or rese
       }),
     )
     assert.equal(check(problem, initial).completed, false, mode + ': initial')
+    // 繰り上がりは、左のわくが10こになったらできあがり（右の残りは動かさない）
     const finished = initial.map((piece, index) => ({
       ...piece,
-      side: addition ? 'left' : index < 4 ? 'right' : 'left',
+      side:
+        mode === 'carry'
+          ? index < 10
+            ? 'left'
+            : 'right'
+          : addition
+            ? 'left'
+            : index < 4
+              ? 'right'
+              : 'left',
     }))
     const key = check(problem, finished).progressKey
     assert.equal(
@@ -109,4 +120,40 @@ test('counter results appear only after completion and disappear on undo or rese
       )
     }
   }
+})
+
+// 繰り上がりのたし算（10をつくって、たし算する）は、全部を1か所に集めるのではなく、
+// 左のわくを10こにした時点でできあがりにし、10と残りを合わせる問いに変える
+test('carrying completes when the left frame holds ten, not when everything is gathered', () => {
+  const problem = { mode: 'carry', a: 8, b: 5 }
+  const place = (leftGreens) =>
+    Array.from({ length: 13 }, (_, index) => ({
+      id: index,
+      green: index >= 8,
+      side: index < 8 + leftGreens ? 'left' : 'right',
+    }))
+  const completedWith = (leftGreens) => {
+    const pieces = place(leftGreens)
+    const { progressKey } = counterProgress(problem, pieces, [], '')
+    return counterProgress(problem, pieces, [], progressKey).completed
+  }
+  assert.equal(completedWith(1), false)
+  assert.equal(completedWith(2), true, 'left frame reaches ten')
+  assert.equal(completedWith(5), false, 'gathering everything overshoots ten')
+
+  assert.equal(
+    counterPrompt(problem, 0, 13, false),
+    'みぎの おはじきを うごかして 10この かたまりを つくってみよう。',
+  )
+  assert.equal(counterPrompt(problem, 1, 13, false), '1こ')
+  assert.equal(
+    counterPrompt(problem, 2, 13, true),
+    'ひだりに 10こ みぎには 3こ、あわせて なんこかな？',
+  )
+  assert.equal(counterPrompt(problem, 4, 13, false), '2こ、もどしてみよう。')
+  // 10までのたし算は、これまでどおり全部を左へ集める
+  assert.equal(
+    counterPrompt({ mode: 'add', a: 3, b: 4 }, 4, 7, true),
+    'あわせて おはじきは なんこかな？',
+  )
 })

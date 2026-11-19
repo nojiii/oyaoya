@@ -83,6 +83,7 @@ export function VisualPlayground({
   const [hasInteracted, setHasInteracted] = useState(false)
   const {
     addition,
+    carry,
     subtraction,
     split,
     orangeCount,
@@ -102,9 +103,11 @@ export function VisualPlayground({
     : addition
       ? 'みぎの おはじきを ひだりへ うごかしてみよう'
       : 'おはじきを さわって かぞえてみよう'
-  const readyToCount = addition && completed
-  // たし算では、合わせた後の左のわくの数が答えになる。お子さんが数える前に見えないよう、右から移し始めたら出さない
-  const hideLeftCount = addition && moved > 0
+  // 合わせたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
+  const readyToCount = addition && !carry && completed
+  // たし算では、合わせた後の左のわくの数が答えになる。お子さんが数える前に見えないよう、右から移し始めたら出さない。
+  // 繰り上がりでは、10を作るまでの数は見せる（答えになる、10を超えた数だけ隠す）
+  const hideLeftCount = addition && (carry ? orangeCount > 10 : moved > 0)
   useEffect(() => {
     onCompleteChange?.(completed)
   }, [completed, onCompleteChange])

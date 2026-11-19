@@ -73,6 +73,7 @@ export const curriculum: Group[] = [
             'たし算・ひき算',
             'addition-making-ten',
             '10をつくって、たし算する',
+            ['addition-making-ten'],
           ),
           unit(
             'たし算・ひき算',
