@@ -21,7 +21,9 @@ export function lesson(id: UnitId) {
       <ArithmeticLesson
         mode={mode}
         initial={initial}
-        additionFlow={id === 'addition-within-10'}
+        additionFlow={
+          id === 'addition-within-10' || id === 'addition-making-ten'
+        }
       />
     )
   }

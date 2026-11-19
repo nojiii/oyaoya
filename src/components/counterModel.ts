@@ -70,6 +70,8 @@ export function counterProgress(
   questionKey: string,
 ) {
   const addition = problem?.mode === 'add' || problem?.mode === 'carry'
+  // 繰り上がりのたし算は、全部を1か所に集めるのではなく、左のわくを10こにしたらできあがり
+  const carry = problem?.mode === 'carry'
   const subtraction = problem?.mode === 'sub' || problem?.mode === 'borrow'
   const split = addition || subtraction
   const orangeCount = pieces.filter((piece) => piece.side === 'left').length
@@ -79,7 +81,8 @@ export function counterProgress(
     : addition
       ? pieces.filter((piece) => piece.green && piece.side === 'left').length
       : countedIds.length
-  const targetCount = split ? problem.b : pieces.length
+  // 動かす数。繰り上がりでは、左のわくを10こにする分（10 − 最初の数）
+  const targetCount = carry ? 10 - problem.a : split ? problem.b : pieces.length
   const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${pieces.map((piece) => piece.side).join(',')}-${countedIds.join(',')}`
   const wrongSide =
     addition && pieces.some((piece) => !piece.green && piece.side === 'right')
@@ -87,6 +90,7 @@ export function counterProgress(
     split && !wrongSide && moved === targetCount && questionKey === progressKey
   return {
     addition,
+    carry,
     subtraction,
     split,
     orangeCount,

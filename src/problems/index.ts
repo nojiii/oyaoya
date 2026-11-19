@@ -10,6 +10,7 @@ interface ProblemModule {
 }
 
 export const problems = {
+  'addition-making-ten': lesson('addition-making-ten'),
   'addition-within-10': lesson('addition-within-10'),
   counting: lesson('counting'),
 

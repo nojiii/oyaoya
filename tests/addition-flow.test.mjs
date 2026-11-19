@@ -335,3 +335,181 @@ test('both addition routes render all steps with matching progress, counter reus
     else globalThis.sessionStorage = previousStorage
   }
 })
+
+// 10をつくって、たし算する（繰り上がり）。アプリは全6ページ、実物は全8ページで、
+// 実物では「合わせる → 数える」の代わりに「10のまとまりを作る → 10と残りを合わせる」を置く
+test('carrying addition follows the making-ten pages on each route', async () => {
+  const {
+    advanceAddition,
+    initialAdditionProgress: initial,
+    additionPages,
+    carryCheck,
+    restoreAdditionProgress,
+    additionFlowStatus,
+  } = await import('../src/components/additionFlowState.ts')
+  const { arithmetic } = await import('../src/problems/arithmetic.ts')
+  const act = (state, action) => advanceAddition(state, action, true)
+  assert.deepEqual(additionPages('app', true), [
+    'read',
+    'choose',
+    'app',
+    'answer',
+    'explain',
+    'check',
+  ])
+  assert.deepEqual(additionPages('physical', true), [
+    'read',
+    'choose',
+    'prepare',
+    'makeTen',
+    'countTen',
+    'answer',
+    'explain',
+    'check',
+  ])
+  let physical = act(act(initial, { type: 'next' }), {
+    type: 'choose',
+    route: 'physical',
+  })
+  for (const page of ['prepare', 'makeTen', 'countTen', 'answer']) {
+    physical = act(physical, { type: 'next' })
+    assert.equal(physical.page, page)
+  }
+  // 10までのたし算のページは、繰り上がりの保存からは開き直さない
+  assert.deepEqual(
+    restoreAdditionProgress(
+      JSON.stringify({ route: 'physical', page: 'combine' }),
+      true,
+    ),
+    initial,
+  )
+  assert.equal(
+    restoreAdditionProgress(
+      JSON.stringify({ route: 'physical', page: 'makeTen' }),
+      true,
+    ).page,
+    'makeTen',
+  )
+  assert.equal(
+    additionFlowStatus(
+      JSON.stringify({ route: 'physical', page: 'countTen' }),
+      true,
+    ),
+    'middle',
+  )
+
+  // たしかめの問題は、8 ＋ 5 なら 7 ＋ 5。どの問題でも、10を作って残りが出る繰り上がりの問題にする
+  assert.deepEqual(carryCheck(8, 5), [7, 5])
+  for (let a = 1; a <= 9; a++)
+    for (let b = 1; b <= 9; b++) {
+      if (a + b < 11) continue
+      const [c, d] = carryCheck(a, b)
+      assert.doesNotThrow(() => arithmetic('carry', c, d), `${a}+${b}`)
+      assert.ok(c !== a || d !== b, `${a}+${b}`)
+    }
+})
+
+test('carrying addition renders the making-ten pages and answers', async () => {
+  const previousStorage = globalThis.sessionStorage
+  const storage = new Map()
+  globalThis.sessionStorage = {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, String(value)),
+  }
+  try {
+    const { AdditionFlow, AdditionAnswer, AdditionCheck } =
+      await import('../src/components/AdditionFlow.tsx')
+    const path = '/problems/addition-making-ten'
+    const textOf = (html) =>
+      html.replace(/<!-- -->/g, '').replace(/<[^>]*>/g, '')
+    const render = (route, page) => {
+      storage.set(
+        `addition-flow:v1:${path}:8+5`,
+        JSON.stringify({ route, page }),
+      )
+      const router = createMemoryRouter(
+        [
+          {
+            path,
+            element: createElement(AdditionFlow, { a: 8, b: 5, carry: true }),
+          },
+        ],
+        { initialEntries: [path] },
+      )
+      try {
+        const html = renderToString(createElement(RouterProvider, { router }))
+        return textOf(
+          html.slice(html.indexOf(`data-slide="${page}" data-active="true"`)),
+        )
+      } finally {
+        router.dispose()
+      }
+    }
+    const choose = render(null, 'choose')
+    assert.ok(choose.includes('10のまとまりを作りながら合わせる'))
+    const makeTen = render('physical', 'makeTen')
+    assert.ok(makeTen.includes('10のまとまりを作りましょう'))
+    assert.ok(makeTen.includes('8個の方に、5個の中から2個移して10個にする'))
+    assert.ok(
+      makeTen.includes(
+        '8このおはじきに、みぎから2こあわせて、10このかたまりをつくってみよう。',
+      ),
+    )
+    assert.ok(makeTen.includes('次全部でいくつになったかな？'))
+    const countTen = render('physical', 'countTen')
+    // 図は、左に10こ（赤8こと青2こ）、右に青3こ
+    assert.ok(countTen.includes('10こ3こ'))
+    assert.ok(countTen.includes('「10と3で13」'))
+    assert.ok(
+      countTen.includes('ひだりに10こ、みぎには3こ、あわせて何こかな？'),
+    )
+    assert.ok(countTen.includes('次答えを確認しましょう！'))
+    const app = render('app', 'app')
+    assert.ok(app.includes('画面上の8個と5個のおはじき'))
+    assert.ok(app.includes('まずは「10のまとまり」を作ります'))
+    const explain = render('app', 'explain')
+    assert.ok(explain.includes('10のまとまりを作って → 残りの数を合わせた'))
+    assert.ok(explain.includes('次ひとりで解いてみましょう'))
+
+    const answer = textOf(
+      renderToString(
+        createElement(AdditionAnswer, {
+          a: 8,
+          b: 5,
+          visible: true,
+          carry: true,
+        }),
+      ),
+    )
+    assert.ok(
+      answer.includes('そう！ 8こと5こを合わせると、全部で13こになったね！'),
+    )
+    assert.ok(
+      answer.includes(
+        'おしい！ 10のかたまりを作ってから、残りをもう一回数えてみよう。',
+      ),
+    )
+    const check = (visible) =>
+      textOf(
+        renderToString(
+          createElement(AdditionCheck, {
+            a: 7,
+            b: 5,
+            visible,
+            carry: true,
+            onFinish() {},
+          }),
+        ),
+      )
+    assert.ok(
+      check(false).includes(
+        '7個と5個に分けて並べる → 10のまとまりを作る → 残りと合わせる',
+      ),
+    )
+    assert.ok(check(true).includes('7個に3個を合わせて10を作ってから'))
+    assert.ok(check(true).includes('全部で12こだね'))
+  } finally {
+    if (previousStorage === undefined) delete globalThis.sessionStorage
+    else globalThis.sessionStorage = previousStorage
+  }
+})

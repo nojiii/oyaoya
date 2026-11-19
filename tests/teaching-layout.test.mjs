@@ -105,7 +105,7 @@ test('every published script has teaching points, reading labels and only suppor
             assert.ok(!slide.includes('\\n'), `${id}/${name}: no literal \\n`)
           }
         }
-        if (id === 'addition-within-10') {
+        if (id === 'addition-within-10' || id === 'addition-making-ten') {
           assert.match(html, /data-slide="read" data-active="true"/)
           assert.ok(html.includes('まずは問題を読んでみましょう'))
           assert.ok(html.includes('実物のおはじきを使う'))

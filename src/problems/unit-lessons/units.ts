@@ -27,6 +27,11 @@ export const units = [
     title: '10までのたし算',
     arithmetic: { mode: 'add', initial: [3, 4] },
   },
+  {
+    id: 'addition-making-ten',
+    title: '10をつくって、たし算する',
+    arithmetic: { mode: 'carry', initial: [8, 5] },
+  },
 ] as const satisfies readonly Unit[]
 
 export type UnitId = (typeof units)[number]['id']
