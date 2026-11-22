@@ -6,6 +6,7 @@ import { Oyajii } from './Oyajii'
 import { ScriptGuideSlide } from './ScriptGuide'
 import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
 import { NextPageButton, PageEdges } from './ScriptPaging'
+import { StageFullscreen } from './StageFullscreen'
 
 export interface LessonSlide {
   id: string
@@ -14,8 +15,15 @@ export interface LessonSlide {
   section?: string
   // ページの上のステージに置く「見るもの」（図・問題・式など）。なければキャラクターを置く
   stage?: ReactNode
+  // ステージの右上に「全画面」のボタンを置くか（stage があるときだけ。書かなければ置く）。
+  // お子さんに図を見せるときは、このボタンで図だけを出す。ステージの中身がボタン（おはじき画面を開く など）のときは false にする
+  stageFullscreen?: boolean
   content: ReactNode
 }
+
+// ステージの右上に「全画面」のボタンを置くか
+const fullscreen = (slide: LessonSlide) =>
+  slide.stage != null && slide.stageFullscreen !== false
 
 // 使い方のページ（ScriptGuide）を、台本の最初のページの前に置くときの id
 const GUIDE_ID = 'scriptGuide'
@@ -350,7 +358,13 @@ export function LessonSlides({
                 ) : (
                   <>
                     {/* ステージ：お子さんと一緒に見るもの */}
-                    <div className={flowStyles.stage}>
+                    <div
+                      className={flowStyles.stage}
+                      data-fullscreen={fullscreen(slide) || undefined}
+                    >
+                      {fullscreen(slide) && (
+                        <StageFullscreen>{slide.stage}</StageFullscreen>
+                      )}
                       {slide.stage ?? (
                         <Oyajii className={flowStyles.stageMascot} />
                       )}

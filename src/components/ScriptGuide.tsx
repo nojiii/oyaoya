@@ -29,7 +29,10 @@ export function ScriptGuideSlide({ onStart }: { onStart: () => void }) {
           <span className={styles.icon} aria-hidden="true">
             <i className={styles.stageIcon} />
           </span>
-          <span>白い面の図は、お子さんと一緒に見ます</span>
+          <span>
+            白い面の図は、お子さんに見せるときだけ「全画面」を押します
+            <small>図だけが大きく出て、セリフは見えません</small>
+          </span>
         </li>
         <li>
           <span className={styles.icon} aria-hidden="true">

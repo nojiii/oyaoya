@@ -33,6 +33,11 @@
   color: var(--color-text);
 }
 
+/* 右上に「全画面」のボタンを置くステージは、ボタンの下から図を並べる（図とボタンを重ねない） */
+.stage[data-fullscreen] {
+  padding-top: 3.5rem;
+}
+
 .answerMascot {
   display: block;
   width: 96px;
@@ -299,17 +304,82 @@
   touch-action: manipulation;
 }
 
-/* アプリのおはじきを開くボタン（ステージの中） */
+/* アプリのおはじき画面を開くボタン。左におはじきの絵、まん中に名前と説明、右に矢印。
+   ステージ（白い面）の中では橙の面、台本の橙の上では白い面にして、どちらでもボタンだと分かるようにする */
 .openCounters {
-  display: block;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
   width: 100%;
-  padding: 1rem 1.5rem;
-  border-radius: 999px;
+  min-height: 72px;
+  padding: 0.75rem 1rem;
+  border-radius: 20px;
   background: var(--color-accent);
   color: #fff;
+  text-align: left;
+}
+
+.openCounters[data-tone='page'] {
+  background: var(--teach-stage);
+  color: var(--color-accent);
+}
+
+/* おはじきの絵：3つの丸を、丸い面に並べる */
+.openCountersIcon {
+  display: grid;
+  grid-template-columns: repeat(2, 12px);
+  place-content: center;
+  gap: 3px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.openCounters[data-tone='page'] .openCountersIcon {
+  background: var(--color-accent);
+}
+
+.openCountersIcon i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.openCounters[data-tone='page'] .openCountersIcon i {
+  background: #fff;
+}
+
+.openCountersIcon i:first-child {
+  grid-column: span 2;
+  justify-self: center;
+}
+
+.openCountersText strong {
+  display: block;
   font-size: 17px;
   font-weight: 700;
-  text-align: center;
+  line-height: 1.4;
+}
+
+.openCountersText small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.openCounters[data-tone='page'] .openCountersText small {
+  color: var(--color-text);
+  opacity: 0.7;
+}
+
+/* 台本の橙の上に置くおはじき画面のボタン。押したときの枠は、橙の上で見える白にする */
+.pageCounters > [role='button']:focus-visible {
+  outline-color: var(--teach-text);
 }
 
 .help {
