@@ -1,17 +1,14 @@
 // 台本とデザインの見本。新しい問題を作るときは、このフォルダを丸ごとコピーして書き換える。
 // 一覧（curriculum.ts）には置かないので、/problems/sample を直接開いたときだけ見られる。
 // 題材（あめのひき算）は書き方を見せるための例で、本番の単元の教え方ではない
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import {
   TeachingScript,
   type FlowStatus,
 } from '../../components/TeachingScript'
-import {
-  LessonSlides,
-  RevealHint,
-  type LessonSlide,
-} from '../../components/LessonSlides'
+import { LessonSlides, type LessonSlide } from '../../components/LessonSlides'
+import { Oyajii } from '../../components/Oyajii'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { useScriptControls } from '../../components/scriptControls'
@@ -33,19 +30,38 @@ const words = {
     `あめが${TOTAL}こ あるよ。${eat}こ 食べると、残りは何こかな？`,
   physical: (eat: number) => `${eat}こ、食べるまねをして、よけてみよう。`,
   picture: (eat: number) => `絵のあめを${eat}こ、指でかくしてみよう。`,
-  ask: '残りは何こになった？',
-  // 答えを見たあとは、お子さんの答えごとに言うセリフを分ける
+  ask: '残っているあめを、1こずつ数えてみよう。残りは何こかな？',
+  // 答えのページでは、お子さんの答えごとに言うセリフを分ける
   right: (eat: number) =>
     `そう！ ${TOTAL}こから${eat}こ食べると、残りは${TOTAL - eat}こだね！`,
   wrong: 'おしい！ 残っているあめを、1こずつ指でさして数えてみよう。',
   explain: 'どうやって答えを見つけたの？ おしえてくれる？',
   check: (eat: number) =>
     `こんどは、あめが${TOTAL + 1}こ。${eat}こ食べると、残りは何こ？ ひとりでやってみよう。`,
-  alone: 'ひとりでできたね！',
+  alone: (eat: number) =>
+    `ひとりでできたね！ ${TOTAL + 1}こから${eat}こ食べると、残りは${TOTAL + 1 - eat}こだね。`,
+  aloneWrong:
+    'おしい！ さっきと同じように、食べた分をよけて、残りを数えてみよう。',
 }
 
-// 台本のページ。左へスワイプで次、右へで前。explain・check が「たしかめ」
-const pages = ['read', 'choose', 'take', 'answer', 'explain', 'check'] as const
+// 答えを聞くページ（count・check）の、教え方のポイントの最後に置く。
+// 答えは「？」を押して出すのではなく、スワイプで次の答えのページへ進んで見る。
+// 答えのページには初めから答えが出ているので、お子さんが答えるまで送らない
+const BEFORE_ANSWER =
+  '**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。'
+
+// 台本のページ。左へスワイプで次、右へで前。explain・check・checkAnswer が「たしかめ」。
+// 答えを聞くページ（count・check）と、答えを出すページ（answer・checkAnswer）は分ける
+const pages = [
+  'read',
+  'choose',
+  'take',
+  'count',
+  'answer',
+  'explain',
+  'check',
+  'checkAnswer',
+] as const
 type Page = (typeof pages)[number]
 type Route = 'physical' | 'picture'
 
@@ -76,7 +92,7 @@ function readProgress(raw: string | null, eat: number): Progress | null {
 function flowStatus(raw: string | null, eat: number): FlowStatus {
   const saved = readProgress(raw, eat)
   if (!saved || saved.page === 'read') return 'start'
-  return saved.page === 'check' ? 'finished' : 'middle'
+  return saved.page === 'checkAnswer' ? 'finished' : 'middle'
 }
 
 // ステージに置く絵。eaten こを薄くして、食べたことを示す
@@ -100,50 +116,20 @@ function Candies({ total, eaten = 0 }: { total: number; eaten?: number }) {
   )
 }
 
-// ステージに置く式。お子さんが答えてから「？」を押して、答えを見る
+// ステージに置く式。答えを聞くページでは「？」を、答えのページでは答え（visible）を出す
 function Equation({
   a,
   b,
   visible,
-  onReveal,
 }: {
   a: number
   b: number
   visible: boolean
-  onReveal: () => void
 }) {
-  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
-  const equation = useRef<HTMLParagraphElement>(null)
-  const wasVisible = useRef(visible)
-  useEffect(() => {
-    if (visible && !wasVisible.current)
-      equation.current?.focus({ preventScroll: true })
-    wasVisible.current = visible
-  }, [visible])
   return (
-    <>
-      <p
-        className={flowStyles.equation}
-        aria-live="polite"
-        ref={equation}
-        tabIndex={-1}
-      >
-        {a} − {b} ＝{' '}
-        {visible ? (
-          <em>{a - b}</em>
-        ) : (
-          <button
-            className={flowStyles.reveal}
-            type="button"
-            aria-label="答えを見る"
-            onClick={onReveal}
-          >
-            ？
-          </button>
-        )}
-      </p>
-      {!visible && <RevealHint />}
-    </>
+    <p className={flowStyles.equation}>
+      {a} − {b} ＝ <em>{visible ? a - b : '？'}</em>
+    </p>
   )
 }
 
@@ -155,7 +141,7 @@ function SampleFlow({ eat }: { eat: number }) {
     try {
       const saved = readProgress(sessionStorage.getItem(key), eat)
       // 最後のページまで終えたあとは、最初から
-      if (saved && saved.page !== 'check') return saved
+      if (saved && saved.page !== 'checkAnswer') return saved
     } catch {
       // 読めないときは、最初から
     }
@@ -168,22 +154,13 @@ function SampleFlow({ eat }: { eat: number }) {
       // 保存できなくても、この画面で学習を続けられる
     }
   }, [key, progress])
-  // 「？」で答えを見たか。ページを送ると、見る前に戻す
-  const [revealed, setRevealed] = useState(false)
   const { route, page } = progress
   const index = pages.indexOf(page)
   const go = (next: Page | undefined) => {
-    if (!next) return
-    setProgress({ ...progress, page: next })
-    setRevealed(false)
+    if (next) setProgress({ ...progress, page: next })
   }
-  // 選ぶまで・答えを見るまでは進めない。最後のページから先はない
-  const canNext =
-    page === 'choose'
-      ? route !== null
-      : page === 'answer'
-        ? revealed
-        : page !== 'check'
+  // 選ぶまでは進めない。最後のページから先はない。それ以外のページは、いつでもスワイプで進む
+  const canNext = page === 'choose' ? route !== null : page !== 'checkAnswer'
 
   const choices: { route: Route; title: string; text: string }[] = [
     {
@@ -274,49 +251,53 @@ function SampleFlow({ eat }: { eat: number }) {
         </>
       ),
     },
-    // 答えのページ：答えは先に言わず、お子さんが答えてから「？」で見る。
-    // 見たあとは、答えごとのセリフを出す（主のセリフの代わりに言うものは minor で小さく）
+    // 答えを聞くページ：答えは先に言わず、お子さんに答えてもらう。
+    // 教え方のポイントの最後に、答えてから次の答えのページへ進むことを書く（BEFORE_ANSWER）
+    count: {
+      id: 'count',
+      title: '残りはいくつかな？',
+      stage: <Candies total={TOTAL} eaten={eat} />,
+      content: (
+        <>
+          <TeachingPoints
+            collapsible
+            note={`よけたあめは数えずに、**残りだけを1個ずつ指さしながら**数えます。親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。\n\n${BEFORE_ANSWER}`}
+          />
+          <SpokenWords>{words.ask}</SpokenWords>
+        </>
+      ),
+    },
+    // 答えのページ：前のページで答えてもらっているので、聞き直さず、初めから答えを出す（押して出さない）。
+    // お子さんの答えごとのセリフを出す（主のセリフの代わりに言うものは minor で小さく）。
+    // ステージのおやじいは、答えのページに来たときに喜ぶ（motion の correct）
     answer: {
       id: 'answer',
       title: '残りを確認しましょう！',
       stage: (
-        <Equation
-          a={TOTAL}
-          b={eat}
-          visible={revealed}
-          onReveal={() => setRevealed(true)}
-        />
+        <>
+          <Oyajii
+            className={flowStyles.answerMascot}
+            motion={page === 'answer' ? 'correct' : null}
+          />
+          <Equation a={TOTAL} b={eat} visible />
+        </>
       ),
       content: (
-        <div className={flowStyles.answer} aria-live="polite">
-          {revealed ? (
-            <>
-              <TeachingPoints
-                collapsible
-                note={
-                  'ちがう数を答えたときは、前のページに戻って、よけたあめと残りを分け直します。\n\n親は数えずに、**残りだけを数えているか**を見守りましょう。'
-                }
-              />
-              <SpokenWords title={`「${TOTAL - eat}」と答えたら`}>
-                {words.right(eat)}
-              </SpokenWords>
-              <SpokenWords title="ちがう数を答えたら" minor>
-                {words.wrong}
-              </SpokenWords>
-            </>
-          ) : (
-            <>
-              <TeachingPoints
-                collapsible
-                note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
-              />
-              <SpokenWords>{words.ask}</SpokenWords>
-            </>
-          )}
+        <div className={flowStyles.answer}>
+          <TeachingPoints
+            collapsible
+            note={
+              'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、**残りだけを数えているか**を見守りましょう。'
+            }
+          />
+          <SpokenWords title={`「${TOTAL - eat}」と答えたら`}>
+            {words.right(eat)}
+          </SpokenWords>
+          <SpokenWords title="ちがう数を答えたら" minor>
+            {words.wrong}
+          </SpokenWords>
         </div>
       ),
-      // 答えを見る前は、「次」の行の代わりに「答えを見る」ボタンを置く（LessonSlides）
-      onReveal: revealed ? undefined : () => setRevealed(true),
     },
     // ここから「たしかめ」。答えが合ったかだけでなく、解き方が身についたかを確かめる。
     // 教え方のポイントには、できているかを見分けるところ（親が見るところ）を書く
@@ -337,46 +318,49 @@ function SampleFlow({ eat }: { eat: number }) {
         </>
       ),
     },
-    // 最後のページ：「終わる」で準備の画面へ戻る
+    // ちがう数の問題を、ひとりで解いてもらう（答えを聞くページ）。元の問題をまねるだけでは解けない数にする
     check: {
       id: 'check',
       section: 'たしかめ',
       title: 'ひとりで解いてみましょう',
-      stage: (
-        <Equation
-          a={TOTAL + 1}
-          b={eat}
-          visible={revealed}
-          onReveal={() => setRevealed(true)}
-        />
+      stage: <Equation a={TOTAL + 1} b={eat} visible={false} />,
+      content: (
+        <div className={flowStyles.answer}>
+          <TeachingPoints
+            collapsible
+            note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。\n\n${BEFORE_ANSWER}`}
+          />
+          <SpokenWords>{words.check(eat)}</SpokenWords>
+        </div>
       ),
+    },
+    // 最後のページ：本編の答えのページと同じく、初めから答えを出す。「終わる」で準備の画面へ戻る
+    checkAnswer: {
+      id: 'checkAnswer',
+      section: 'たしかめ',
+      title: '答えを確認しましょう！',
+      stage: <Equation a={TOTAL + 1} b={eat} visible />,
       content: (
         <>
-          <div className={flowStyles.answer} aria-live="polite">
+          <div className={flowStyles.answer}>
             <TeachingPoints
               collapsible
-              note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。`}
+              note={
+                'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、**どこでつまずいたか**を見ましょう。食べた分をよけずに数えていたら、よけるところから一緒にやり直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
+              }
             />
-            {revealed ? (
-              <SpokenWords title={`「${TOTAL + 1 - eat}」と答えたら`}>
-                {words.alone}
-              </SpokenWords>
-            ) : (
-              <SpokenWords>{words.check(eat)}</SpokenWords>
-            )}
+            <SpokenWords title={`「${TOTAL + 1 - eat}」と答えたら`}>
+              {words.alone(eat)}
+            </SpokenWords>
+            <SpokenWords title="ちがう数を答えたら" minor>
+              {words.aloneWrong}
+            </SpokenWords>
           </div>
-          {revealed && (
-            <button
-              className={flowStyles.finish}
-              type="button"
-              onClick={finish}
-            >
-              終わる
-            </button>
-          )}
+          <button className={flowStyles.finish} type="button" onClick={finish}>
+            終わる
+          </button>
         </>
       ),
-      onReveal: revealed ? undefined : () => setRevealed(true),
     },
   }
 

@@ -14,23 +14,23 @@ export type AdditionPage =
   | 'answer'
   | 'explain'
   | 'check'
+  | 'checkAnswer'
 
 export interface AdditionProgress {
   route: AdditionRoute | null
   page: AdditionPage
   appComplete: boolean
-  answerVisible: boolean
 }
 
 export const initialAdditionProgress: AdditionProgress = {
   route: null,
   page: 'read',
   appComplete: false,
-  answerVisible: false,
 }
 
-// 答えのあとの「たしかめ」。どう考えたかを話してもらい、ちがう数の問題をひとりで解いてもらう
-const checkPages: AdditionPage[] = ['explain', 'check']
+// 答えのあとの「たしかめ」。どう考えたかを話してもらい、ちがう数の問題をひとりで解いてもらって、答えを確かめる。
+// 本編と同じく、答えを聞くページ（check）と答えを出すページ（checkAnswer）を分け、スワイプで進む
+const checkPages: AdditionPage[] = ['explain', 'check', 'checkAnswer']
 
 // carry は、繰り上がりのたし算（10をつくって、たし算する）の台本。実物のおはじきで、10のまとまりを作ってから合わせる
 export function additionPages(
@@ -67,16 +67,18 @@ export function carryCheck(a: number, b: number): [number, number] {
 }
 
 export type AdditionAction =
-  | { type: 'next' | 'back' | 'reveal' | 'restart' }
+  | { type: 'next' | 'back' | 'restart' }
   | { type: 'choose'; route: AdditionRoute }
   | { type: 'app-status'; complete: boolean }
 
-// 方法を選ぶページは、選ぶまで進めない（選んだら、スワイプで進む）。答えのページは、答えを見てから進む。
-// たしかめの、ひとりで解くページが最後
+// 方法を選ぶページは、選ぶまで進めない（選んだら、スワイプで進む）。
+// 答えのページは、前のページでお子さんが答えているので、初めから答えを出す（押して答えを出すページはない）。
+// たしかめの、答えを確かめるページが最後
 export function canAdvanceAddition(state: AdditionProgress) {
   if (state.page === 'choose') return state.route !== null
-  if (state.page === 'answer') return state.answerVisible
-  return state.page !== 'check' && (state.page !== 'app' || state.appComplete)
+  return (
+    state.page !== 'checkAnswer' && (state.page !== 'app' || state.appComplete)
+  )
 }
 
 export function advanceAddition(
@@ -90,27 +92,18 @@ export function advanceAddition(
     // 方法を選ぶだけで、ページは進めない。進むのは、選んだあとのスワイプ（next）
     case 'choose':
       if (state.page !== 'choose') return state
-      return {
-        route: action.route,
-        page: 'choose',
-        appComplete: false,
-        answerVisible: false,
-      }
+      return { route: action.route, page: 'choose', appComplete: false }
     case 'app-status':
       if (state.page !== 'app' || state.appComplete === action.complete)
         return state
       return { ...state, appComplete: action.complete }
-    case 'reveal':
-      return state.page === 'answer' || state.page === 'check'
-        ? { ...state, answerVisible: true }
-        : state
     case 'next':
     case 'back': {
       if (action.type === 'next' && !canAdvanceAddition(state)) return state
       const pages = additionPages(state.route, carry)
       const index = pages.indexOf(state.page)
       const page = pages[index + (action.type === 'next' ? 1 : -1)]
-      return page ? { ...state, page, answerVisible: false } : state
+      return page ? { ...state, page } : state
     }
   }
 }
@@ -119,14 +112,14 @@ export function additionStorageKey(pathname: string, a: number, b: number) {
   return `addition-flow:v1:${pathname}:${a}+${b}`
 }
 
-// 準備の画面で、台本の続きがあるかを決める。最後のページ（たしかめ）まで進んだら、終えたものとして扱う
+// 準備の画面で、台本の続きがあるかを決める。最後のページ（たしかめの、答えを確かめるページ）まで進んだら、終えたものとして扱う
 export function additionFlowStatus(
   raw: string | null,
   carry = false,
 ): FlowStatus {
   const saved = parseAdditionProgress(raw, carry)
   if (!saved) return 'start'
-  if (saved.page === 'check') return 'finished'
+  if (saved.page === 'checkAnswer') return 'finished'
   return saved.page === 'read' ? 'start' : 'middle'
 }
 
@@ -153,13 +146,13 @@ export function restoreAdditionProgress(
   carry = false,
 ): AdditionProgress {
   const saved = parseAdditionProgress(raw, carry)
-  // 最後のページ（たしかめ）まで終えたあとは、最初から
-  if (!saved || saved.page === 'check') return { ...initialAdditionProgress }
+  // 最後のページ（たしかめの、答えを確かめるページ）まで終えたあとは、最初から
+  if (!saved || saved.page === 'checkAnswer')
+    return { ...initialAdditionProgress }
   return {
     route: saved.route,
     page: saved.page,
     // おはじきの盤面は開き直すので、途中の完了状態は引き継がない。
     appComplete: false,
-    answerVisible: false,
   }
 }

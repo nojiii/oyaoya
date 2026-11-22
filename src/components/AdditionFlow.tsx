@@ -1,14 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useReducer, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
-import { LessonSlides, RevealHint, type LessonSlide } from './LessonSlides'
+import { LessonSlides, type LessonSlide } from './LessonSlides'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -94,162 +88,127 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
   )
 }
 
-// 答えのページのステージに置く式。お子さんが答えたら「？」を押して、答えを見る
+// 答えを聞くページ（数える・10と残りを合わせる・ひとりで解く）の、教え方のポイントの最後に置く。
+// 次の答えのページには初めから答えが出ているので、お子さんが答えるまで送らない
+const BEFORE_ANSWER =
+  '**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。'
+
+// ステージに置く式。答えのページでは答え（visible）を、問題を出すページでは「？」を、橙の面に出す。
+// 答えは押して出すのではなく、ほかのページと同じくスワイプで答えのページへ進んで見る
 export function AdditionEquation({
   a,
   b,
   visible,
-  onReveal,
 }: {
   a: number
   b: number
   visible: boolean
-  onReveal?: () => void
 }) {
-  // 「？」を押すとボタンが消えるので、答えの出た式へフォーカスを移す
-  const equation = useRef<HTMLParagraphElement>(null)
-  const wasVisible = useRef(visible)
-  useEffect(() => {
-    if (visible && !wasVisible.current)
-      equation.current?.focus({ preventScroll: true })
-    wasVisible.current = visible
-  }, [visible])
   return (
-    <>
-      <p
-        className={styles.equation}
-        aria-live="polite"
-        ref={equation}
-        tabIndex={-1}
-      >
-        {a} ＋ {b} ＝{' '}
-        {visible ? (
-          <em>{a + b}</em>
-        ) : (
-          <button
-            className={styles.reveal}
-            type="button"
-            aria-label="答えを見る"
-            onClick={onReveal}
-          >
-            ？
-          </button>
-        )}
-      </p>
-      {!visible && <RevealHint />}
-    </>
+    <p className={styles.equation}>
+      {a} ＋ {b} ＝ <em>{visible ? a + b : '？'}</em>
+    </p>
   )
 }
 
+// 答えのページの声かけ。お子さんには、前のページ（数える・アプリのおはじき）で「全部で何こ？」と聞いて、もう答えてもらっている。
+// 同じことを聞き直さず、初めから答えを出して、お子さんの答えに合わせて声をかける。答えの式はステージ（AdditionEquation）に出す。
 // carry は、繰り上がりのたし算（10をつくって、たし算する）。10のかたまりを作ってから、残りを数える
 export function AdditionAnswer({
   a,
   b,
-  visible,
   carry = false,
 }: {
   a: number
   b: number
-  visible: boolean
   carry?: boolean
 }) {
-  // 親が答えを言う前に、お子さんに答えてもらう。答えを見たら、お子さんの答えに合わせて声をかける。
-  // 式と「？」はステージ（AdditionEquation）に出す
   return (
-    <>
-      <div aria-live="polite" className={styles.answer}>
-        {visible ? (
-          <>
-            <TeachingPoints
-              collapsible
-              note={
-                carry
-                  ? 'ちがう数を答えたときは、前のページに戻って数え直します。**10のかたまりを作った後に、残りの数を数え間違えていないか**見守りましょう。'
-                  : 'ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。'
-              }
-            />
-            <SpokenWords title={`「${a + b}」と答えたら`}>
-              そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
-            </SpokenWords>
-            <SpokenWords title="ちがう数を答えたら" minor>
-              {carry
-                ? 'おしい！ 10のかたまりを作ってから、残りをもう一回数えてみよう。'
-                : 'おしい！ 指でさしながら、もう一回数えてみよう。'}
-            </SpokenWords>
-          </>
-        ) : (
-          <>
-            <TeachingPoints
-              collapsible
-              note="お子さんが答えてから、「？」を押して確かめましょう。**答えを先に言わない**ようにします。"
-            />
-            <SpokenWords>
-              {a}こと{b}こ、合わせて何こだった？
-            </SpokenWords>
-          </>
-        )}
-      </div>
-    </>
+    <div className={styles.answer}>
+      <TeachingPoints
+        collapsible
+        note={`お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\n${
+          carry
+            ? 'ちがう数を答えたときは、前のページに戻って数え直します。**10のかたまりを作った後に、残りの数を数え間違えていないか**見守りましょう。'
+            : 'ちがう数を答えたときは、前のページに戻って数え直します。親は数えずに、同じおはじきを**2回数えていないか、飛ばしていないか**を見守りましょう。'
+        }`}
+      />
+      <SpokenWords title={`「${a + b}」と答えたら`}>
+        そう！ {a}こと{b}こを合わせると、全部で{a + b}こになったね！
+      </SpokenWords>
+      <SpokenWords title="ちがう数を答えたら" minor>
+        {carry
+          ? 'おしい！ 10のかたまりを作ってから、残りをもう一回数えてみよう。'
+          : 'おしい！ 指でさしながら、もう一回数えてみよう。'}
+      </SpokenWords>
+    </div>
   )
 }
 
-// たしかめの、ちがう数の問題をひとりで解くページ。式と「？」はステージ（AdditionEquation）に出す。
-// 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く
+// たしかめの、ちがう数の問題をひとりで解くページ。式（答えは「？」）はステージ（AdditionEquation）に出す。
+// 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く。
+// お子さんが答えたら、スワイプで答えのページ（AdditionCheckAnswer）へ進む
 export function AdditionCheck({
   a,
   b,
-  visible,
-  onFinish,
   carry = false,
   children,
 }: {
   a: number
   b: number
-  visible: boolean
-  onFinish: () => void
   carry?: boolean
   children?: ReactNode
 }) {
   return (
+    <div className={styles.answer}>
+      <TeachingPoints
+        collapsible
+        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → ${carry ? '10のまとまりを作る → 残りと合わせる' : '合わせる → 1個ずつ数える'}**、が自分でできていれば、解けています。\n\n${BEFORE_ANSWER}`}
+      />
+      <SpokenWords>
+        こんどは、{a}たす{b}
+        だよ。さっきと同じように、ひとりでやってみよう。できたら、全部で何こか教えてね。
+      </SpokenWords>
+      {children}
+    </div>
+  )
+}
+
+// たしかめの最後のページ。前のページ（AdditionCheck）でお子さんが答えた数に合わせて声をかけ、「終わる」で準備の画面へ戻る。
+// 答えの式はステージ（AdditionEquation）に、初めから出す
+export function AdditionCheckAnswer({
+  a,
+  b,
+  onFinish,
+  carry = false,
+}: {
+  a: number
+  b: number
+  onFinish: () => void
+  carry?: boolean
+}) {
+  return (
     <>
-      <div aria-live="polite" className={styles.answer}>
-        {visible ? (
-          <>
-            <TeachingPoints
-              collapsible
-              note={
-                carry
-                  ? `ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。**10のかたまり**を意識できているかを確認し、${a}個に${10 - a}個を合わせて10を作ってから残りを数える流れを一緒に確かめましょう。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。`
-                  : 'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
-              }
-            />
-            <SpokenWords title={`「${a + b}」と答えたら`}>
-              ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
-            </SpokenWords>
-            <SpokenWords title="ちがう数を答えたら" minor>
-              おしい！
-              さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
-            </SpokenWords>
-          </>
-        ) : (
-          <>
-            <TeachingPoints
-              collapsible
-              note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → ${carry ? '10のまとまりを作る → 残りと合わせる' : '合わせる → 1個ずつ数える'}**、が自分でできていれば、解けています。\n\nお子さんが答えてから、「？」を押して確かめましょう。`}
-            />
-            <SpokenWords>
-              こんどは、{a}たす{b}
-              だよ。さっきと同じように、ひとりでやってみよう。
-            </SpokenWords>
-            {children}
-          </>
-        )}
+      <div className={styles.answer}>
+        <TeachingPoints
+          collapsible
+          note={`お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\n${
+            carry
+              ? `ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。**10のかたまり**を意識できているかを確認し、${a}個に${10 - a}個を合わせて10を作ってから残りを数える流れを一緒に確かめましょう。`
+              : 'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。'
+          }\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。`}
+        />
+        <SpokenWords title={`「${a + b}」と答えたら`}>
+          ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
+        </SpokenWords>
+        <SpokenWords title="ちがう数を答えたら" minor>
+          おしい！
+          さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
+        </SpokenWords>
       </div>
-      {visible && (
-        <button className={styles.finish} type="button" onClick={onFinish}>
-          終わる
-        </button>
-      )}
+      <button className={styles.finish} type="button" onClick={onFinish}>
+        終わる
+      </button>
     </>
   )
 }
@@ -265,7 +224,7 @@ export function AdditionFlow({
   b: number
   carry?: boolean
 }) {
-  // 答えのページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
+  // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
   const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
@@ -309,9 +268,6 @@ export function AdditionFlow({
   // 繰り上がりで、10を作るために右から移す数と、移したあとの右の残り
   const need = 10 - a
   const rest = a + b - 10
-  // 「？」で見た答えは、見たページの式にだけ出す（隣のページは、送る途中に少し見えるため）
-  const answerShown = progress.page === 'answer' && progress.answerVisible
-  const checkShown = progress.page === 'check' && progress.answerVisible
   // 各ページ：上のステージに見るもの（おはじき・式）、下に見出し → 教え方のポイント → セリフ
   const slides: Record<AdditionPage, LessonSlide> = {
     read: {
@@ -412,7 +368,7 @@ export function AdditionFlow({
         <>
           <TeachingPoints
             collapsible
-            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。`}
+            note={`合わせたおはじきを、**1個ずつ指さしながら**数えましょう。\n\n${count.length ? `「${count.join('、')}」と、1個ずつ対応させます。` : ''}親が先に答えを言わず、お子さんが最後まで数えるのを待ちましょう。\n\n${BEFORE_ANSWER}`}
           />
           <SpokenWords>
             1こずつ一緒に数えてみよう！{' '}
@@ -449,7 +405,7 @@ export function AdditionFlow({
         <>
           <TeachingPoints
             collapsible
-            note={`10のまとまりを作ったので、1から全部を数え直す必要はありません。**「10と、あと何個かな？」**と残りの${rest}個を確かめさせ、**「10と${rest}で${a + b}」**と答えられるか見守りましょう。\n\n親が先に答えを言わず、お子さんが答えるのを待ちます。`}
+            note={`10のまとまりを作ったので、1から全部を数え直す必要はありません。**「10と、あと何個かな？」**と残りの${rest}個を確かめさせ、**「10と${rest}で${a + b}」**と答えられるか見守りましょう。\n\n親が先に答えを言わず、お子さんが答えるのを待ちます。\n\n${BEFORE_ANSWER}`}
           />
           <SpokenWords>
             ひだりに10こ、みぎには{rest}こ、あわせて何こかな？
@@ -478,8 +434,8 @@ export function AdditionFlow({
           />
           <p className={styles.help}>
             {carry
-              ? 'いきなり全部を1個ずつ数えず、まずは「10のまとまり」を作ります。'
-              : 'おはじきを合わせたら、「答えを確認する」へ進みます。'}
+              ? 'いきなり全部を1個ずつ数えず、まずは「10のまとまり」を作ります。お子さんが何こか答えたら、「答えを確認する」へ進みます。'
+              : 'おはじきを合わせて、お子さんが何こか答えたら、「答えを確認する」へ進みます。'}
           </p>
         </>
       ),
@@ -489,23 +445,15 @@ export function AdditionFlow({
       title: '答えを確認しましょう！',
       stage: (
         <>
-          {/* 「？」で答えを見たら、おやじいが喜ぶ（ページを移ると、答えはまた隠れる） */}
+          {/* 答えのページに来たら、おやじいが喜ぶ */}
           <Oyajii
             className={styles.answerMascot}
-            motion={answerShown ? 'correct' : null}
+            motion={progress.page === 'answer' ? 'correct' : null}
           />
-          <AdditionEquation
-            a={a}
-            b={b}
-            visible={answerShown}
-            onReveal={() => dispatch({ type: 'reveal' })}
-          />
+          <AdditionEquation a={a} b={b} visible />
         </>
       ),
-      content: (
-        <AdditionAnswer a={a} b={b} visible={answerShown} carry={carry} />
-      ),
-      onReveal: answerShown ? undefined : () => dispatch({ type: 'reveal' }),
+      content: <AdditionAnswer a={a} b={b} carry={carry} />,
     },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
@@ -530,22 +478,9 @@ export function AdditionFlow({
       id: 'check',
       section: 'たしかめ',
       title: 'ひとりで解いてみましょう',
-      stage: (
-        <AdditionEquation
-          a={c}
-          b={d}
-          visible={checkShown}
-          onReveal={() => dispatch({ type: 'reveal' })}
-        />
-      ),
+      stage: <AdditionEquation a={c} b={d} visible={false} />,
       content: (
-        <AdditionCheck
-          a={c}
-          b={d}
-          visible={checkShown}
-          onFinish={finish}
-          carry={carry}
-        >
+        <AdditionCheck a={c} b={d} carry={carry}>
           {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
           {progress.route === 'app' && (
             <VisualPlayground
@@ -558,7 +493,16 @@ export function AdditionFlow({
           )}
         </AdditionCheck>
       ),
-      onReveal: checkShown ? undefined : () => dispatch({ type: 'reveal' }),
+    },
+    // たしかめの最後のページ。本編の答えのページと同じく、初めから答えを出す
+    checkAnswer: {
+      id: 'checkAnswer',
+      section: 'たしかめ',
+      title: '答えを確認しましょう！',
+      stage: <AdditionEquation a={c} b={d} visible />,
+      content: (
+        <AdditionCheckAnswer a={c} b={d} onFinish={finish} carry={carry} />
+      ),
     },
   }
   return (
