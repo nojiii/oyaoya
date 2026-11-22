@@ -79,6 +79,11 @@ test('every published script has teaching points, reading labels and only suppor
           /aria-roledescription="カルーセル"[^>]*tabindex="0"/,
           id + ': the script can be moved with the keyboard',
         )
+        // 答えは押して出さず、ほかのページと同じくスワイプで答えのページへ進んで見る
+        assert.ok(
+          !html.includes('答えを見る') && !html.includes('押して答えを見'),
+          id + ': no page asks to press to see the answer',
+        )
         // ページを分けた台本の各ページ：セリフがあれば、その上に教え方のポイントを置く。
         // 最初は開いておき、見出しを押すとたためる。
         // 教え方のポイントは、** や \n の文字のまま出ない
@@ -137,6 +142,12 @@ test('every published script has teaching points, reading labels and only suppor
           assert.ok(html.includes('台本の進み具合'))
           // 「たしかめ」のページを見本に含める
           assert.ok(html.includes('たしかめ'))
+          // 答えを聞くページのあとの答えのページには、初めから答えを出す（5 − 2 ＝ 3、たしかめは 6 − 2 ＝ 4）
+          const text = html.replace(/<!-- -->/g, '').replace(/<[^>]*>/g, '')
+          assert.ok(text.includes('5 − 2 ＝ 3'))
+          assert.ok(text.includes('6 − 2 ＝ ？'))
+          assert.ok(text.includes('6 − 2 ＝ 4'))
+          assert.ok(text.includes('終わる'))
           continue
         }
         // ページを分けない台本でも、数字は準備の画面で変える。台本の中には数字の欄を出さない
