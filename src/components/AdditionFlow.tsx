@@ -88,6 +88,46 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
   )
 }
 
+// アプリのおはじき画面を開くボタンの中身（押せるのは、まわりの VisualPlayground）。
+// tone は置く場所の色：stage は白いステージの中（橙の面）、page は台本の橙の上（白い面）。
+// 橙の上に橙のボタンを置くと、ボタンに見えず文字だけに見えるので、置く場所で色を変える
+function OpenCounters({
+  tone,
+  children,
+}: {
+  tone: 'stage' | 'page'
+  children: ReactNode
+}) {
+  return (
+    <span className={styles.openCounters} data-tone={tone}>
+      {/* おはじきの絵 */}
+      <span className={styles.openCountersIcon} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className={styles.openCountersText}>
+        <strong>おはじき画面を開く</strong>
+        <small>{children}</small>
+      </span>
+      <svg
+        className={styles.openCountersArrow}
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m9 6 6 6-6 6" />
+      </svg>
+    </span>
+  )
+}
+
 // 答えを聞くページ（数える・10と残りを合わせる・ひとりで解く）の、教え方のポイントの最後に置く。
 // 次の答えのページには初めから答えが出ているので、お子さんが答えるまで送らない
 const BEFORE_ANSWER =
@@ -416,6 +456,8 @@ export function AdditionFlow({
     app: {
       id: 'app',
       title: 'アプリのおはじきを使いましょう',
+      // ステージの中身がボタン（おはじき画面を開く）なので、全画面のボタンは置かない
+      stageFullscreen: false,
       stage: (
         <VisualPlayground
           problem={{ mode: carry ? 'carry' : 'add', a, b }}
@@ -424,7 +466,9 @@ export function AdditionFlow({
           onCompleteChange={onCompleteChange}
           onReviewAnswer={() => dispatch({ type: 'next' })}
         >
-          <span className={styles.openCounters}>おはじき画面を開く</span>
+          <OpenCounters tone="stage">
+            {a}個と{b}個のおはじきを、一緒に動かします
+          </OpenCounters>
         </VisualPlayground>
       ),
       content: (
@@ -483,13 +527,17 @@ export function AdditionFlow({
         <AdditionCheck a={c} b={d} carry={carry}>
           {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
           {progress.route === 'app' && (
-            <VisualPlayground
-              problem={{ mode: carry ? 'carry' : 'add', a: c, b: d }}
-              step={1}
-              showOpenHint={false}
-            >
-              <span className={styles.openCounters}>おはじき画面を開く</span>
-            </VisualPlayground>
+            <div className={styles.pageCounters}>
+              <VisualPlayground
+                problem={{ mode: carry ? 'carry' : 'add', a: c, b: d }}
+                step={1}
+                showOpenHint={false}
+              >
+                <OpenCounters tone="page">
+                  {c}個と{d}個のおはじきを、ひとりで動かしてもらいます
+                </OpenCounters>
+              </VisualPlayground>
+            </div>
           )}
         </AdditionCheck>
       ),
