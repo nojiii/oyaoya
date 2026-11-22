@@ -237,6 +237,13 @@
   background: var(--color-accent);
   color: #fff;
 }
+/* まだ台本へ進めないとき（範囲外の数を入れたまま）の「台本をはじめる」。押せない見た目にする */
+.actions .blocked {
+  background: var(--color-soft);
+  color: var(--color-danger);
+  font-size: 15px;
+  cursor: not-allowed;
+}
 .actions :is(button, a):active {
   transform: scale(0.98);
 }
@@ -600,8 +607,11 @@
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
+/* 範囲外の数を入れた欄は、枠・面・文字を警告の赤にする */
 .equation input[aria-invalid='true'] {
-  outline: 3px solid #b42318;
+  outline: 3px solid var(--color-danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 .editorHelp {
   margin: 0.75rem 0 0;
@@ -610,12 +620,57 @@
   text-align: center;
   color: var(--color-muted);
 }
+/* 範囲外の数を入れたときの警告。説明の文（.editorHelp）と見分けられるよう、
+   赤い面に、左の印と太い見出しを付ける。出たときに一度だけ小さく揺らす */
 .editorError {
-  margin: 0.5rem 0 0;
-  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+  animation: editorErrorShake 0.36s ease-out;
+}
+.editorError svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.editorError p {
+  margin: 0;
+}
+.editorError .editorErrorTitle {
+  margin-bottom: 0.15rem;
+  font-size: 16px;
+  font-weight: 900;
+}
+.editorError .editorErrorKeep {
+  margin-top: 0.35rem;
   font-weight: 700;
-  text-align: center;
-  color: #b42318;
+}
+@keyframes editorErrorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorError {
+    animation: none;
+  }
 }
 
 /* 数字キーボード（マウスで操作する画面だけに出す） */

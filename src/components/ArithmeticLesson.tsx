@@ -23,6 +23,8 @@ export function ArithmeticLesson({
   const [values, setValues] = useState(initial)
   const [draft, setDraft] = useState(initial.map(String))
   const [error, setError] = useState('')
+  // 範囲外の数のまま「台本をはじめる」を押した回数。警告を出し直して揺らすために使う
+  const [blockedTries, setBlockedTries] = useState(0)
   const [activeNumber, setActiveNumber] = useState<number | null>(null)
   const [replaceNumber, setReplaceNumber] = useState(true)
   const id = useId()
@@ -182,10 +184,37 @@ export function ArithmeticLesson({
           </button>
         </div>
       )}
+      {/* 範囲外の数を入れたときの警告。読み落とさないよう、赤い面に印と見出しを付けて出す。
+          直すまで台本へは進めない。key で、別の警告に変わったときと、進もうとしたときに出し直す（揺らす） */}
       {error && (
-        <p id={id + '-error'} className={styles.editorError} role="alert">
-          {error}
-        </p>
+        <div
+          key={`${error}:${blockedTries}`}
+          id={id + '-error'}
+          className={styles.editorError}
+          role="alert"
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3 2 20h20L12 3z" />
+            <path d="M12 10v4M12 17.5v.01" />
+          </svg>
+          <div>
+            <p className={styles.editorErrorTitle}>この数には変えられません</p>
+            <p>{error}</p>
+            <p className={styles.editorErrorKeep}>
+              数を直すと、台本をはじめられます。
+            </p>
+          </div>
+        </div>
       )}
     </form>
   )
@@ -211,6 +240,14 @@ export function ArithmeticLesson({
           : undefined
       }
       editor={renderEditor()}
+      // 範囲外の数を入れたままでは、台本へ進まない。押されたら、警告まで画面を動かして見せ直す
+      startBlocked={error !== ''}
+      onStartBlocked={() => {
+        setBlockedTries((tries) => tries + 1)
+        document
+          .getElementById(id + '-error')
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }}
       picture={additionFlow ? <CounterGroups a={a} b={b} /> : undefined}
       counters={{ mode, a, b }}
       renderVisual={(step) => (

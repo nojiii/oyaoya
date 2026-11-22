@@ -10,6 +10,9 @@
   --color-faint: #a9a299;
   --color-accent: #c2410c;
   --color-accent-soft: #fdeadf;
+  /* 警告（範囲外の数を入れたとき など）。白い地で 4.5:1 以上 */
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
   /* 図の中で目立たせる明るい橙 */
   --color-accent-bright: #ffb48a;
   --color-border: #e9e4dd;
