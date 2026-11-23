@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { anotherProblemSlide } from './AnotherProblem'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -518,6 +519,18 @@ export function AdditionFlow({
         </>
       ),
     },
+    // 【試し】ほめてから、もう1問やるかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
+    more: anotherProblemSlide({
+      say: 'よく解けたね！ 別の問題も解いてみようか！',
+      onFinish: () =>
+        finish(() => {
+          try {
+            sessionStorage.removeItem(storageKey)
+          } catch {
+            // 消せなくても、準備の画面へは戻れる
+          }
+        }),
+    }),
     check: {
       id: 'check',
       section: 'たしかめ',
@@ -549,7 +562,12 @@ export function AdditionFlow({
       title: '答えを確認しましょう！',
       stage: <AdditionEquation a={c} b={d} visible />,
       content: (
-        <AdditionCheckAnswer a={c} b={d} onFinish={finish} carry={carry} />
+        <AdditionCheckAnswer
+          a={c}
+          b={d}
+          onFinish={() => finish()}
+          carry={carry}
+        />
       ),
     },
   }

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { anotherProblemSlide } from './AnotherProblem'
 import { useScriptControls } from './scriptControls'
 import styles from './AdditionFlow.module.css'
 import countingStyles from './CountingLesson.module.css'
@@ -140,6 +141,18 @@ export function CountingFlow({ n }: { n: number }) {
         </div>
       ),
     },
+    // 【試し】ほめてから、もう1つやるかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
+    more: anotherProblemSlide({
+      say: countingWords.more,
+      onFinish: () =>
+        finish(() => {
+          try {
+            sessionStorage.removeItem(storageKey)
+          } catch {
+            // 消せなくても、準備の画面へは戻れる
+          }
+        }),
+    }),
     give: {
       id: 'give',
       section: 'たしかめ',
@@ -156,7 +169,11 @@ export function CountingFlow({ n }: { n: number }) {
             {countingWords.given}
           </SpokenWords>
           {/* 終わると準備の画面へ戻る。次に台本を開くと、最初のページから */}
-          <button className={styles.finish} type="button" onClick={finish}>
+          <button
+            className={styles.finish}
+            type="button"
+            onClick={() => finish()}
+          >
             終わる
           </button>
         </div>

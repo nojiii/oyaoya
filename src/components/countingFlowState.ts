@@ -1,12 +1,14 @@
 import type { FlowStatus } from './TeachingScript'
 
-// answer のあとの recount・give が「たしかめ」
+// answer のあとの recount・more・give が「たしかめ」。
+// more（【試し】）は、ほめてから、もう1つ（give）やるか、ここで終わるかを決めるページ
 export const countingPages = [
   'read',
   'line',
   'count',
   'answer',
   'recount',
+  'more',
   'give',
 ] as const
 export type CountingPage = (typeof countingPages)[number]
@@ -63,6 +65,8 @@ export const countingWords = {
   recount: 'こんどは、反対のはしから数えてみよう。何こになるかな？',
   recountSame: 'どこから数えても、全部の数は同じだね！',
   recountDifferent: 'あれ？ 1こずつ指でさしながら、もう一回数えてみよう。',
+  // 【試し】ほめてから、もう1つに誘う
+  more: 'よく数えられたね！ 別の問題もやってみようか！',
   // たしかめ：言われた数だけ取れるか
   give: (m: number) => `この中から、${m}こちょうだい。`,
   given: '1こずつ一緒に数えて、たしかめてみよう。',

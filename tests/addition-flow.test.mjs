@@ -26,7 +26,7 @@ test('addition routes meet at the answer, go back along their own route and move
   assert.equal(physical.page, 'choose')
   assert.equal(canAdvanceAddition(physical), true)
   physical = act(physical, { type: 'next' })
-  assert.equal(additionPages(physical.route).length, 9)
+  assert.equal(additionPages(physical.route).length, 10)
   // 答えのページは、前のページでお子さんが答えているので、初めから答えを出す。
   // たしかめも、ひとりで解く → 答えを確かめる、とページを分ける。押して答えを出すページはなく、どれもスワイプ（next）で進む
   for (const page of [
@@ -35,6 +35,7 @@ test('addition routes meet at the answer, go back along their own route and move
     'count',
     'answer',
     'explain',
+    'more',
     'check',
   ]) {
     assert.equal(physical.page, page)
@@ -47,6 +48,7 @@ test('addition routes meet at the answer, go back along their own route and move
   assert.equal(act(physical, { type: 'next' }).page, 'checkAnswer')
   for (const page of [
     'check',
+    'more',
     'explain',
     'answer',
     'count',
@@ -67,9 +69,10 @@ test('addition routes meet at the answer, go back along their own route and move
   assert.equal(app.page, 'choose')
   app = act(app, { type: 'next' })
   assert.equal(app.page, 'app')
-  assert.equal(additionPages(app.route).length, 7)
-  assert.deepEqual(additionPages(app.route).slice(-3), [
+  assert.equal(additionPages(app.route).length, 8)
+  assert.deepEqual(additionPages(app.route).slice(-4), [
     'explain',
+    'more',
     'check',
     'checkAnswer',
   ])
@@ -190,6 +193,7 @@ test('both addition routes render all steps with matching progress, counter reus
       app: 'アプリのおはじきを使いましょう',
       answer: '答えを確認しましょう！',
       explain: 'どうやって数えたか、聞いてみましょう',
+      more: 'もう1問、解いてみましょうか？',
       check: 'ひとりで解いてみましょう',
       checkAnswer: '答えを確認しましょう！',
     }
@@ -259,7 +263,7 @@ test('both addition routes render all steps with matching progress, counter reus
           // たしかめのページだけ、見出しの上に区切りの札を出す
           assert.equal(
             active.slice(0, active.indexOf('</h2>')).includes('たしかめ'),
-            page === 'explain' || page === 'check',
+            ['explain', 'more', 'check'].includes(page),
             `${route}/${page}: section label`,
           )
           // 答えのページは、前のページでお子さんが答えているので、聞き直さずに初めから答えを出す。
@@ -274,6 +278,18 @@ test('both addition routes render all steps with matching progress, counter reus
             assert.ok(current.includes('ちがう数を答えたら'))
             assert.ok(!current.includes('合わせて何こだった'))
             assert.ok(current.includes(`次${titles.explain}`))
+            assert.equal(edge('次のページ'), 'false', `${route}: next edge`)
+          }
+          // 【試し】ひとりで解く前に、ほめてから、もう1問やるかを決める。
+          // 続けるときはスワイプでひとりで解くページへ進み、やめるときは「ここで終わる」
+          if (page === 'explain')
+            assert.ok(current.includes(`次${titles.more}`))
+          if (page === 'more') {
+            assert.ok(
+              current.includes('よく解けたね！ 別の問題も解いてみようか！'),
+            )
+            assert.ok(current.includes('ここで終わる'))
+            assert.ok(current.includes(`次${titles.check}`))
             assert.equal(edge('次のページ'), 'false', `${route}: next edge`)
           }
           // ひとりで解くページは、ちがう数の問題を出すだけで、親は答えを言わない。
@@ -367,7 +383,7 @@ test('both addition routes render all steps with matching progress, counter reus
   }
 })
 
-// 10をつくって、たし算する（繰り上がり）。アプリは全7ページ、実物は全9ページで、
+// 10をつくって、たし算する（繰り上がり）。アプリは全8ページ、実物は全10ページで、
 // 実物では「合わせる → 数える」の代わりに「10のまとまりを作る → 10と残りを合わせる」を置く
 test('carrying addition follows the making-ten pages on each route', async () => {
   const {
@@ -387,6 +403,7 @@ test('carrying addition follows the making-ten pages on each route', async () =>
     'app',
     'answer',
     'explain',
+    'more',
     'check',
     'checkAnswer',
   ])
@@ -398,6 +415,7 @@ test('carrying addition follows the making-ten pages on each route', async () =>
     'countTen',
     'answer',
     'explain',
+    'more',
     'check',
     'checkAnswer',
   ])
@@ -412,6 +430,7 @@ test('carrying addition follows the making-ten pages on each route', async () =>
     'countTen',
     'answer',
     'explain',
+    'more',
     'check',
     'checkAnswer',
   ]) {
@@ -556,7 +575,11 @@ test('carrying addition renders the making-ten pages and answers', async () => {
     }
     const explain = render('app', 'explain')
     assert.ok(explain.includes('10のまとまりを作って → 残りの数を合わせた'))
-    assert.ok(explain.includes('次ひとりで解いてみましょう'))
+    assert.ok(explain.includes('次もう1問、解いてみましょうか？'))
+    const more = render('app', 'more')
+    assert.ok(more.includes('よく解けたね！ 別の問題も解いてみようか！'))
+    assert.ok(more.includes('ここで終わる'))
+    assert.ok(more.includes('次ひとりで解いてみましょう'))
 
     // たしかめ：ひとりで解く（7 ＋ 5 ＝ ？）→ スワイプで答えを確かめる（7 ＋ 5 ＝ 12）
     for (const route of ['physical', 'app']) {
