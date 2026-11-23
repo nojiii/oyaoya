@@ -282,11 +282,13 @@ test('both addition routes render all steps with matching progress, counter reus
             assert.ok(current.includes(`次${titles.more}`))
             assert.equal(edge('次のページ'), 'false', `${route}: next edge`)
           }
-          // 【試し】答えのあと、ほめてから、たしかめに進むかを決める（たしかめの前なので、札は付けない）。
+          // 答えのあと、ほめてから、たしかめに進むかを決める（たしかめの前なので、札は付けない）。
           // 進むときはスワイプでたしかめの最初のページへ、やめるときは「ここで終わる」
           if (page === 'more') {
             assert.ok(
-              current.includes('よく解けたね！ 別の問題も解いてみようか！'),
+              current.includes(
+                'よくがんばったね！ もうちょっとだけ、やってみようか？',
+              ),
             )
             assert.ok(current.includes('ここで終わる'))
             assert.ok(current.includes(`次${titles.explain}`))
@@ -573,7 +575,9 @@ test('carrying addition renders the making-ten pages and answers', async () => {
       assert.ok(!answer.includes('合わせて何こだった'))
       assert.ok(answer.includes('次たしかめに進みますか？'))
       const more = render(route, 'more')
-      assert.ok(more.includes('よく解けたね！ 別の問題も解いてみようか！'))
+      assert.ok(
+        more.includes('よくがんばったね！ もうちょっとだけ、やってみようか？'),
+      )
       assert.ok(more.includes('ここで終わる'))
       assert.ok(more.includes('次どうやって数えたか、聞いてみましょう'))
     }

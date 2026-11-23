@@ -12,7 +12,11 @@ import { Oyajii } from '../../components/Oyajii'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { useScriptControls } from '../../components/scriptControls'
-import { anotherProblemSlide } from '../../components/AnotherProblem'
+import { ContinueToCheck } from '../../components/ContinueToCheck'
+import {
+  CONTINUE_TO_CHECK_TITLE,
+  CONTINUE_TO_CHECK_WORDS,
+} from '../../components/continueToCheckWords'
 // 台本の部品（セリフ・式・方法の選択・終わる など）は、ほかの台本と同じ見た目を使う
 import flowStyles from '../../components/AdditionFlow.module.css'
 import choiceStyles from '../../components/CountingLesson.module.css'
@@ -37,7 +41,8 @@ const words = {
     `そう！ ${TOTAL}こから${eat}こ食べると、残りは${TOTAL - eat}こだね！`,
   wrong: 'おしい！ 残っているあめを、1こずつ指でさして数えてみよう。',
   explain: 'どうやって答えを見つけたの？ おしえてくれる？',
-  more: 'よく解けたね！ 別の問題も解いてみようか！',
+  // たしかめに進むかを聞く。全問共通のセリフ（ContinueToCheck）
+  more: CONTINUE_TO_CHECK_WORDS,
   check: (eat: number) =>
     `こんどは、あめが${TOTAL + 1}こ。${eat}こ食べると、残りは何こ？ ひとりでやってみよう。`,
   alone: (eat: number) =>
@@ -53,7 +58,7 @@ const BEFORE_ANSWER =
   '**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。'
 
 // 台本のページ。左へスワイプで次、右へで前。explain・check・checkAnswer が「たしかめ」。
-// その前の more（【試し】）は、答えのあと、たしかめに進むか、ここで終わるかを決めるページ。
+// その前の more は、答えのあと、たしかめに進むか、ここで終わるかを決めるページ。
 // 答えを聞くページ（count・check）と、答えを出すページ（answer・checkAnswer）は分ける
 const pages = [
   'read',
@@ -303,19 +308,13 @@ function SampleFlow({ eat }: { eat: number }) {
         </div>
       ),
     },
-    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める（部品は AnotherProblem）。たしかめの前なので、札は付けない。
+    // 答えのあと、ほめてから、たしかめに進むかを決める（部品は ContinueToCheck。全問共通）。たしかめの前なので、札は付かない。
     // 進むときはスワイプで進み、やめるときは「ここで終わる」。保存した進み具合を消すので、次は最初のページから
-    more: anotherProblemSlide({
-      say: words.more,
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(key)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
+    more: {
+      id: 'more',
+      title: CONTINUE_TO_CHECK_TITLE,
+      content: <ContinueToCheck storageKey={key} />,
+    },
     // ここから「たしかめ」。答えが合ったかだけでなく、解き方が身についたかを確かめる。
     // 教え方のポイントには、できているかを見分けるところ（親が見るところ）を書く
     explain: {
@@ -459,7 +458,7 @@ export default function Sample() {
         { say: words.physical(eat) },
         { say: words.ask },
         { say: `（答えたら）${words.right(eat)}` },
-        { say: words.more },
+        { say: `（たしかめの前に）${words.more}` },
         { say: `（たしかめ）${words.explain}` },
         { say: `（たしかめ）${words.check(eat)}` },
       ]}

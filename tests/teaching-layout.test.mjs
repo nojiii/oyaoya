@@ -140,8 +140,8 @@ test('every published script has teaching points, reading labels and only suppor
           // 食べる数は準備の画面で選ぶ。台本の中では変えられない
           assert.ok(!html.includes('<legend>食べる数</legend>'))
           assert.ok(html.includes('台本の進み具合'))
-          // 「たしかめ」のページを見本に含める
-          assert.ok(html.includes('たしかめ'))
+          // 「たしかめ」のページを見本に含める（見出しの上の札）
+          assert.match(html, /<h2[^>]*><span[^>]*>たしかめ<\/span>/)
           // 答えを聞くページのあとの答えのページには、初めから答えを出す（5 − 2 ＝ 3、たしかめは 6 − 2 ＝ 4）
           const text = html.replace(/<!-- -->/g, '').replace(/<[^>]*>/g, '')
           assert.ok(text.includes('5 − 2 ＝ 3'))

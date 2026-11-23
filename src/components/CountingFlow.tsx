@@ -3,7 +3,8 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
-import { anotherProblemSlide } from './AnotherProblem'
+import { ContinueToCheck } from './ContinueToCheck'
+import { CONTINUE_TO_CHECK_TITLE } from './continueToCheckWords'
 import { useScriptControls } from './scriptControls'
 import styles from './AdditionFlow.module.css'
 import countingStyles from './CountingLesson.module.css'
@@ -117,18 +118,12 @@ export function CountingFlow({ n }: { n: number }) {
         </div>
       ),
     },
-    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
-    more: anotherProblemSlide({
-      say: countingWords.more,
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(storageKey)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
+    // 答えのあと、たしかめに進むか、ここで終わるかを決める（「ここで終わる」は、最後まで終えたときと同じく、次は最初のページから）
+    more: {
+      id: 'more',
+      title: CONTINUE_TO_CHECK_TITLE,
+      content: <ContinueToCheck storageKey={storageKey} />,
+    },
     // ここから「たしかめ」。数え方が身についたかを、向きを変えて数える・言われた数だけ取る、で確かめる
     recount: {
       id: 'recount',

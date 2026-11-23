@@ -3,7 +3,8 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
-import { anotherProblemSlide } from './AnotherProblem'
+import { ContinueToCheck } from './ContinueToCheck'
+import { CONTINUE_TO_CHECK_TITLE } from './continueToCheckWords'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -265,7 +266,8 @@ export function AdditionFlow({
   b: number
   carry?: boolean
 }) {
-  // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）
+  // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）。
+  // たしかめの前の「ここで終わる」は、ContinueToCheck が受け持つ
   const { finish } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
@@ -500,18 +502,12 @@ export function AdditionFlow({
       ),
       content: <AdditionAnswer a={a} b={b} carry={carry} />,
     },
-    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
-    more: anotherProblemSlide({
-      say: 'よく解けたね！ 別の問題も解いてみようか！',
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(storageKey)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
+    // 答えのあと、たしかめに進むか、ここで終わるかを決める（「ここで終わる」は、最後まで終えたときと同じく、次は最初のページから）
+    more: {
+      id: 'more',
+      title: CONTINUE_TO_CHECK_TITLE,
+      content: <ContinueToCheck storageKey={storageKey} />,
+    },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
       id: 'explain',
