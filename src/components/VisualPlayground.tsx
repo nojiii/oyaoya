@@ -11,7 +11,9 @@ import {
   counterGroups,
   counterProgress,
   type CounterProblem,
+  type CounterSide,
 } from './counterModel'
+import { CounterGather } from './CounterGather'
 import styles from './VisualPlayground.module.css'
 import { visualSlots, nearestEmptySlot } from './visualSlots'
 import { counterPrompt } from './counterPrompt'
@@ -79,11 +81,15 @@ export function VisualPlayground({
   const [selected, setSelected] = useState<number | null>(null)
   const [countedIds, setCountedIds] = useState<number[]>([])
   const [questionKey, setQuestionKey] = useState('')
-  const [hasPointed, setHasPointed] = useState(false)
+  // 10までのたし算で、まん中へ寄せ終えたおさら
+  const [gathered, setGathered] = useState<CounterSide[]>([])
+  // もとにもどすたびに増やし、寄せる広場を作り直す（動かしている途中の位置を残さない）
+  const [round, setRound] = useState(0)
   const [hasInteracted, setHasInteracted] = useState(false)
   const {
     addition,
     carry,
+    gather,
     subtraction,
     split,
     orangeCount,
@@ -93,21 +99,22 @@ export function VisualPlayground({
     progressKey,
     wrongSide,
     completed,
-  } = counterProgress(problem, pieces, countedIds, questionKey)
+  } = counterProgress(problem, pieces, countedIds, questionKey, gathered)
   const interactive = !!problem || apples
   const invitationPiece = addition
     ? pieces.find((piece) => piece.green)
     : pieces[0]
   const operationHint = subtraction
     ? 'おはじきを みぎへ うごかしてみよう'
-    : addition
-      ? 'みぎの おはじきを ひだりへ うごかしてみよう'
-      : 'おはじきを さわって かぞえてみよう'
-  // 合わせたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
-  const readyToCount = addition && !carry && completed
-  // たし算では、合わせた後の左のわくの数が答えになる。お子さんが数える前に見えないよう、右から移し始めたら出さない。
+    : gather
+      ? 'おさらを ゆびで まん中へ うごかしてみよう'
+      : addition
+        ? 'みぎの おはじきを ひだりへ うごかしてみよう'
+        : 'おはじきを さわって かぞえてみよう'
+  // 寄せて1つにまとめたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
+  const readyToCount = gather && completed
   // 繰り上がりでは、10を作るまでの数は見せる（答えになる、10を超えた数だけ隠す）
-  const hideLeftCount = addition && (carry ? orangeCount > 10 : moved > 0)
+  const hideLeftCount = carry && orangeCount > 10
   useEffect(() => {
     onCompleteChange?.(completed)
   }, [completed, onCompleteChange])
@@ -119,6 +126,7 @@ export function VisualPlayground({
         pieces.length,
         questionKey === progressKey,
         apples,
+        gathered,
       )
   useEffect(() => {
     if (!interactive || moved !== targetCount) return
@@ -153,7 +161,8 @@ export function VisualPlayground({
   )
   const reset = () => {
     setCountedIds([])
-    setHasPointed(false)
+    setGathered([])
+    setRound((value) => value + 1)
     setQuestionKey('')
     const groups =
       addition && problem
@@ -449,202 +458,211 @@ export function VisualPlayground({
                 </svg>
               </button>
             </div>
-            <div
-              ref={board}
-              className={styles.board}
-              style={{
-                minHeight: addition
-                  ? Math.max(
-                      280,
-                      Math.ceil(((slots.length / 4 - 1) * 44) / 0.64),
-                    )
-                  : Math.max(
-                      360,
-                      (Math.max(...slots.map((slot) => slot.y)) > 0
-                        ? Math.ceil(slots.length / (split ? 4 : 5))
-                        : 5) * 76,
-                    ),
-              }}
-              aria-label={
-                apples ? 'りんごを動かす広場' : 'おはじきを動かす広場'
-              }
-            >
-              {split && (
-                <div className={styles.mats}>
-                  <div className={styles.orangeMat}>
-                    <output
-                      aria-live="polite"
-                      aria-label={
-                        hideLeftCount
-                          ? '左のわく'
-                          : `${subtraction ? 'のこり' : '左のわく'} ${orangeCount}こ`
-                      }
-                    >
-                      <strong
-                        key={hideLeftCount ? 'hidden' : orangeCount}
-                        className={styles.count}
-                      >
-                        {hideLeftCount ? '？' : orangeCount}
-                      </strong>
-                    </output>
-                  </div>
-                  <span aria-hidden="true" />
-                  <div
-                    className={subtraction ? styles.takenMat : styles.greenMat}
-                  >
-                    {subtraction ? (
-                      <span className={styles.takenLabel}>とったぶん</span>
-                    ) : (
+            {gather && problem ? (
+              <CounterGather
+                key={round}
+                a={problem.a}
+                b={problem.b}
+                apples={apples}
+                gathered={gathered}
+                countedIds={countedIds}
+                describedBy={hint}
+                onInteract={() => setHasInteracted(true)}
+                onArrive={(side) =>
+                  setGathered((sides) =>
+                    sides.includes(side) ? sides : [...sides, side],
+                  )
+                }
+                onCount={(id) =>
+                  setCountedIds((ids) =>
+                    ids.includes(id) ? ids : [...ids, id],
+                  )
+                }
+              />
+            ) : (
+              <div
+                ref={board}
+                className={styles.board}
+                style={{
+                  minHeight: addition
+                    ? Math.max(
+                        280,
+                        Math.ceil(((slots.length / 4 - 1) * 44) / 0.64),
+                      )
+                    : Math.max(
+                        360,
+                        (Math.max(...slots.map((slot) => slot.y)) > 0
+                          ? Math.ceil(slots.length / (split ? 4 : 5))
+                          : 5) * 76,
+                      ),
+                }}
+                aria-label={
+                  apples ? 'りんごを動かす広場' : 'おはじきを動かす広場'
+                }
+              >
+                {split && (
+                  <div className={styles.mats}>
+                    <div className={styles.orangeMat}>
                       <output
                         aria-live="polite"
-                        aria-label={`右のわく ${greenCount}こ`}
+                        aria-label={
+                          hideLeftCount
+                            ? '左のわく'
+                            : `${subtraction ? 'のこり' : '左のわく'} ${orangeCount}こ`
+                        }
                       >
-                        <strong key={greenCount} className={styles.count}>
-                          {greenCount}
+                        <strong
+                          key={hideLeftCount ? 'hidden' : orangeCount}
+                          className={styles.count}
+                        >
+                          {hideLeftCount ? '？' : orangeCount}
                         </strong>
                       </output>
-                    )}
+                    </div>
+                    <span aria-hidden="true" />
+                    <div
+                      className={
+                        subtraction ? styles.takenMat : styles.greenMat
+                      }
+                    >
+                      {subtraction ? (
+                        <span className={styles.takenLabel}>とったぶん</span>
+                      ) : (
+                        <output
+                          aria-live="polite"
+                          aria-label={`右のわく ${greenCount}こ`}
+                        >
+                          <strong key={greenCount} className={styles.count}>
+                            {greenCount}
+                          </strong>
+                        </output>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              {slots.map((slot, i) => (
-                <span
-                  key={i}
-                  className={styles.slot}
-                  aria-hidden="true"
-                  style={{ left: slot.x + '%', top: slot.y + '%' }}
-                />
-              ))}
-              {pieces.map((piece, i) => (
-                <button
-                  type="button"
-                  key={piece.id}
-                  className={`${styles.piece} ${apples ? styles.apple : ''} ${piece.green ? styles.green : ''} ${piece.removed ? styles.removed : ''}`}
-                  style={{ left: `${piece.x}%`, top: `${piece.y}%` }}
-                  aria-label={`${i + 1}こめの${apples ? 'りんご' : 'おはじき'}${piece.removed ? '（とったぶん）' : ''}`}
-                  data-invitation={
-                    !hasInteracted && piece.id === invitationPiece?.id
-                  }
-                  aria-pressed={selected === piece.id}
-                  onClick={() => setHasInteracted(true)}
-                  aria-describedby={hint}
-                  onFocus={() => setSelected(piece.id)}
-                  onPointerDown={(event) => {
-                    if (drag.current || event.button !== 0) return
-                    setHasInteracted(true)
-                    if (readyToCount) setHasPointed(true)
-                    if (!split)
-                      setCountedIds((ids) =>
-                        ids.includes(piece.id) ? ids : [...ids, piece.id],
-                      )
-                    event.currentTarget
-                      .getAnimations()
-                      .forEach((animation) => animation.cancel())
-                    drag.current = {
-                      id: piece.id,
-                      pointer: event.pointerId,
-                      startX: event.clientX,
-                      startY: event.clientY,
-                      dx: 0,
-                      dy: 0,
-                      rect: board.current!.getBoundingClientRect(),
-                      node: event.currentTarget,
-                      frame: null,
-                    }
-                    event.currentTarget.dataset.dragging = 'true'
-                    setSelected(piece.id)
-                    event.currentTarget.setPointerCapture(event.pointerId)
-                  }}
-                  onPointerMove={(event) => {
-                    const active = drag.current
-                    if (
-                      !active ||
-                      active.id !== piece.id ||
-                      active.pointer !== event.pointerId
-                    )
-                      return
-                    active.dx = event.clientX - active.startX
-                    active.dy = event.clientY - active.startY
-                    if (active.frame !== null) return
-                    active.frame = requestAnimationFrame(() => {
-                      active.node.style.transform =
-                        'translate(-50%, -50%) translate3d(' +
-                        active.dx +
-                        'px, ' +
-                        active.dy +
-                        'px, 0)'
-                      active.frame = null
-                    })
-                  }}
-                  onPointerUp={(event) => {
-                    const active = drag.current
-                    if (!active || active.pointer !== event.pointerId) return
-                    const x =
-                      piece.x +
-                      ((event.clientX - active.startX) / active.rect.width) *
-                        100
-                    const y =
-                      piece.y +
-                      ((event.clientY - active.startY) / active.rect.height) *
-                        100
-                    const slot = nearestEmptySlot(
-                      slots,
-                      pieces.filter((item) => item.id !== piece.id),
-                      x,
-                      y,
-                      active.rect.width,
-                      active.rect.height,
-                    )
-                    move(piece.id, x, y, active.rect.width, active.rect.height)
-                    cancelDrag()
-                    if (
-                      slot &&
-                      !window.matchMedia('(prefers-reduced-motion: reduce)')
-                        .matches
-                    ) {
-                      active.node.animate(
-                        [
-                          {
-                            transform: `translate(-50%, -50%) translate3d(${((x - slot.x) * active.rect.width) / 100}px, ${((y - slot.y) * active.rect.height) / 100}px, 0)`,
-                          },
-                          {
-                            transform:
-                              'translate(-50%, -50%) translate3d(0, 0, 0)',
-                          },
-                        ],
-                        { duration: 110, easing: 'ease-out' },
-                      )
-                    }
-                  }}
-                  onPointerCancel={cancelDrag}
-                  onLostPointerCapture={cancelDrag}
-                >
-                  {apples ? '🍎' : ''}
-                </button>
-              ))}
-              {readyToCount && !hasPointed && pieces[0] && (
-                <svg
-                  className={styles.pointingHand}
-                  viewBox="0 0 40 48"
-                  fill="none"
-                  aria-hidden="true"
-                  style={{
-                    left: 'calc(' + pieces[0].x + '% + 5px)',
-                    top: 'calc(' + pieces[0].y + '% + 5px)',
-                  }}
-                >
-                  <path
-                    d="M14 24V10a4 4 0 0 1 8 0v11l2-1c2-1 5 0 5 3 4-1 6 1 6 4v8c0 6-4 10-10 10h-3c-4 0-7-2-9-5L5 29c-2-4 3-7 6-4l3 3"
-                    fill="#fffdf8"
-                    stroke="#80522f"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                )}
+                {slots.map((slot, i) => (
+                  <span
+                    key={i}
+                    className={styles.slot}
+                    aria-hidden="true"
+                    style={{ left: slot.x + '%', top: slot.y + '%' }}
                   />
-                </svg>
-              )}
-              {!pieces.length && <p className={styles.empty}>0こ</p>}
-            </div>
+                ))}
+                {pieces.map((piece, i) => (
+                  <button
+                    type="button"
+                    key={piece.id}
+                    className={`${styles.piece} ${apples ? styles.apple : ''} ${piece.green ? styles.green : ''} ${piece.removed ? styles.removed : ''}`}
+                    style={{ left: `${piece.x}%`, top: `${piece.y}%` }}
+                    aria-label={`${i + 1}こめの${apples ? 'りんご' : 'おはじき'}${piece.removed ? '（とったぶん）' : ''}`}
+                    data-invitation={
+                      !hasInteracted && piece.id === invitationPiece?.id
+                    }
+                    aria-pressed={selected === piece.id}
+                    onClick={() => setHasInteracted(true)}
+                    aria-describedby={hint}
+                    onFocus={() => setSelected(piece.id)}
+                    onPointerDown={(event) => {
+                      if (drag.current || event.button !== 0) return
+                      setHasInteracted(true)
+                      if (!split)
+                        setCountedIds((ids) =>
+                          ids.includes(piece.id) ? ids : [...ids, piece.id],
+                        )
+                      event.currentTarget
+                        .getAnimations()
+                        .forEach((animation) => animation.cancel())
+                      drag.current = {
+                        id: piece.id,
+                        pointer: event.pointerId,
+                        startX: event.clientX,
+                        startY: event.clientY,
+                        dx: 0,
+                        dy: 0,
+                        rect: board.current!.getBoundingClientRect(),
+                        node: event.currentTarget,
+                        frame: null,
+                      }
+                      event.currentTarget.dataset.dragging = 'true'
+                      setSelected(piece.id)
+                      event.currentTarget.setPointerCapture(event.pointerId)
+                    }}
+                    onPointerMove={(event) => {
+                      const active = drag.current
+                      if (
+                        !active ||
+                        active.id !== piece.id ||
+                        active.pointer !== event.pointerId
+                      )
+                        return
+                      active.dx = event.clientX - active.startX
+                      active.dy = event.clientY - active.startY
+                      if (active.frame !== null) return
+                      active.frame = requestAnimationFrame(() => {
+                        active.node.style.transform =
+                          'translate(-50%, -50%) translate3d(' +
+                          active.dx +
+                          'px, ' +
+                          active.dy +
+                          'px, 0)'
+                        active.frame = null
+                      })
+                    }}
+                    onPointerUp={(event) => {
+                      const active = drag.current
+                      if (!active || active.pointer !== event.pointerId) return
+                      const x =
+                        piece.x +
+                        ((event.clientX - active.startX) / active.rect.width) *
+                          100
+                      const y =
+                        piece.y +
+                        ((event.clientY - active.startY) / active.rect.height) *
+                          100
+                      const slot = nearestEmptySlot(
+                        slots,
+                        pieces.filter((item) => item.id !== piece.id),
+                        x,
+                        y,
+                        active.rect.width,
+                        active.rect.height,
+                      )
+                      move(
+                        piece.id,
+                        x,
+                        y,
+                        active.rect.width,
+                        active.rect.height,
+                      )
+                      cancelDrag()
+                      if (
+                        slot &&
+                        !window.matchMedia('(prefers-reduced-motion: reduce)')
+                          .matches
+                      ) {
+                        active.node.animate(
+                          [
+                            {
+                              transform: `translate(-50%, -50%) translate3d(${((x - slot.x) * active.rect.width) / 100}px, ${((y - slot.y) * active.rect.height) / 100}px, 0)`,
+                            },
+                            {
+                              transform:
+                                'translate(-50%, -50%) translate3d(0, 0, 0)',
+                            },
+                          ],
+                          { duration: 110, easing: 'ease-out' },
+                        )
+                      }
+                    }}
+                    onPointerCancel={cancelDrag}
+                    onLostPointerCapture={cancelDrag}
+                  >
+                    {apples ? '🍎' : ''}
+                  </button>
+                ))}
+                {!pieces.length && <p className={styles.empty}>0こ</p>}
+              </div>
+            )}
             {completed && (
               <section
                 className={styles.countingFinish}

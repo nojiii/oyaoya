@@ -61,36 +61,53 @@ export function counterGroups({ mode, a, b }: CounterProblem, step: number) {
     : [{ label: 'あわせたかず', count: a + b }]
 }
 
+// 10までのたし算で、まん中へ寄せたおさら
+export type CounterSide = 'left' | 'right'
+
 // おはじきの画面で、どこまで動かしたか。completed（できた）は、動かし終えてから少し待ち、
-// その並びを questionKey に覚えてから true にする（VisualPlayground が progressKey を渡す）
+// その並びを questionKey に覚えてから true にする（VisualPlayground が progressKey を渡す）。
+// gathered は、10までのたし算で、まん中へ寄せ終えたおさら
 export function counterProgress(
   problem: CounterProblem | undefined,
   pieces: { green: boolean; side: 'left' | 'right' }[],
   countedIds: number[],
   questionKey: string,
+  gathered: CounterSide[] = [],
 ) {
   const addition = problem?.mode === 'add' || problem?.mode === 'carry'
   // 繰り上がりのたし算は、全部を1か所に集めるのではなく、左のわくを10こにしたらできあがり
   const carry = problem?.mode === 'carry'
+  // 10までのたし算は、片方にもう片方を足さず、2つのおさらを両方まん中へ寄せて1つにまとめる（台本と同じ）
+  const gather = problem?.mode === 'add'
   const subtraction = problem?.mode === 'sub' || problem?.mode === 'borrow'
   const split = addition || subtraction
   const orangeCount = pieces.filter((piece) => piece.side === 'left').length
   const greenCount = pieces.length - orangeCount
-  const moved = subtraction
-    ? greenCount
-    : addition
-      ? pieces.filter((piece) => piece.green && piece.side === 'left').length
-      : countedIds.length
-  // 動かす数。繰り上がりでは、左のわくを10こにする分（10 − 最初の数）
-  const targetCount = carry ? 10 - problem.a : split ? problem.b : pieces.length
-  const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${pieces.map((piece) => piece.side).join(',')}-${countedIds.join(',')}`
+  const moved = gather
+    ? gathered.length
+    : subtraction
+      ? greenCount
+      : carry
+        ? pieces.filter((piece) => piece.green && piece.side === 'left').length
+        : countedIds.length
+  // 動かす数。寄せるときは、おさら2つ。繰り上がりでは、左のわくを10こにする分（10 − 最初の数）
+  const targetCount = gather
+    ? 2
+    : carry
+      ? 10 - problem.a
+      : split
+        ? problem.b
+        : pieces.length
+  // 寄せたあとに1こずつ数えても、できあがりのままにする（数えた跡は、2つに分ける画面では並びに入れない）
+  const progressKey = `${problem?.mode}-${problem?.a}-${problem?.b}-${moved}-${[...gathered].sort().join(',')}-${pieces.map((piece) => piece.side).join(',')}-${split ? '' : countedIds.join(',')}`
   const wrongSide =
-    addition && pieces.some((piece) => !piece.green && piece.side === 'right')
+    carry && pieces.some((piece) => !piece.green && piece.side === 'right')
   const completed =
     split && !wrongSide && moved === targetCount && questionKey === progressKey
   return {
     addition,
     carry,
+    gather,
     subtraction,
     split,
     orangeCount,

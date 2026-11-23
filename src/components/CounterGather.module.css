@@ -1,0 +1,220 @@
+/* 10までのたし算の広場（CounterGather）。台本のステージと同じく、枠線や影は使わず、
+   淡い面（おさら）と平たい丸（おはじき）だけで組む。
+   左右の列に1つずつおさらを置き、まん中に着いたら列の内側へ寄せる（data-arrived） */
+
+.board {
+  --piece: clamp(26px, 7vw, 40px);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+  align-items: center;
+  min-height: 260px;
+  padding: 2rem 0 0.5rem;
+}
+
+.board[data-merged] {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+/* まん中の線。おさらを寄せる先 */
+.middle {
+  position: absolute;
+  top: 2rem;
+  bottom: 0.5rem;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--color-border);
+}
+
+.middle span {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 0.35rem;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--color-faint);
+}
+
+.plate {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1rem 10px 0.6rem;
+  border-radius: 18px;
+  background: var(--color-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.plate[data-side='left'] {
+  justify-self: start;
+}
+
+.plate[data-side='right'] {
+  justify-self: end;
+}
+
+/* まん中に着いたおさらは、列のまん中側に寄せる */
+.plate[data-side='left'][data-arrived] {
+  justify-self: end;
+}
+
+.plate[data-side='right'][data-arrived] {
+  justify-self: start;
+}
+
+.plate[data-dragging] {
+  z-index: 2;
+  cursor: grabbing;
+}
+
+.plate[data-arrived],
+.together {
+  cursor: default;
+}
+
+.plate:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.pieces {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  /* 左右のおさらは3こずつ、1つにまとめたおさらは5こずつ並べる（5のまとまりが見えて数えやすい） */
+  width: calc(var(--piece) * 3 + 12px);
+  min-height: var(--piece);
+}
+
+.together {
+  padding: 1.25rem 1rem 0.6rem;
+}
+
+.together .pieces {
+  width: calc(var(--piece) * 5 + 24px);
+}
+
+.count {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* まん中へ動かせることを示す、小さな矢印 */
+.chevron {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  color: var(--color-faint);
+}
+
+.plate[data-side='left'] .chevron {
+  right: -20px;
+}
+
+.plate[data-side='right'] .chevron {
+  left: -20px;
+  transform: scaleX(-1);
+}
+
+/* おはじき：縁取り・影のない平たい丸。台本の図と同じ赤と青 */
+.piece {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--piece);
+  height: var(--piece);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-bead-a);
+  color: #fff;
+  font: inherit;
+  font-size: calc(var(--piece) * 0.45);
+  font-weight: 900;
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.second {
+  background: var(--color-bead-b);
+}
+
+.apple {
+  background: transparent;
+  font-size: calc(var(--piece) * 0.8);
+}
+
+button.piece {
+  cursor: pointer;
+}
+
+/* 数えるときは、まわりも押せるようにする（となりと重ならない大きさ） */
+button.piece::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+}
+
+button.piece:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* りんごは数字を、りんごの上に重ねて読めるようにする */
+.apple[data-counted] {
+  background: var(--color-text);
+  font-size: calc(var(--piece) * 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .plate:not([data-arrived]) .chevron {
+    animation: nudge 1.4s ease-in-out infinite;
+  }
+
+  .piece[data-counted] {
+    animation: counted 220ms ease-out;
+  }
+
+  @keyframes nudge {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 3px 0;
+    }
+  }
+
+  @keyframes counted {
+    0% {
+      scale: 0.85;
+    }
+    60% {
+      scale: 1.12;
+    }
+    100% {
+      scale: 1;
+    }
+  }
+}
