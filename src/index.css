@@ -13,6 +13,9 @@
   /* 警告（範囲外の数を入れたとき など）。白い地で 4.5:1 以上 */
   --color-danger: #b42318;
   --color-danger-soft: #fef3f2;
+  /* おはじきの色。たし算の2つのまとまり（台本の図・おはじき画面・行の絵で同じ色にする） */
+  --color-bead-a: #e2553a;
+  --color-bead-b: #2f62d8;
   /* 図の中で目立たせる明るい橙 */
   --color-accent-bright: #ffb48a;
   --color-border: #e9e4dd;
@@ -438,10 +441,10 @@ a.row:active {
   background: var(--color-accent);
 }
 .row-picture i[data-piece='a'] {
-  background: #e2553a;
+  background: var(--color-bead-a);
 }
 .row-picture i[data-piece='b'] {
-  background: #2f62d8;
+  background: var(--color-bead-b);
 }
 .row-picture i[data-piece='square'] {
   border-radius: 2px;

@@ -12,7 +12,7 @@
   padding: 0.5rem;
   text-align: center;
   font-size: 0.8rem;
-  color: #333333;
+  color: var(--color-muted);
 }
 .dialog .iconButton {
   display: inline-grid;
@@ -45,13 +45,13 @@
     max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
     max(1rem, env(safe-area-inset-left));
   border: 0;
-  background: #fffdf8;
-  color: #333333;
+  background: var(--color-bg);
+  color: var(--color-text);
   overflow: auto;
   overscroll-behavior: contain;
 }
 .dialog::backdrop {
-  background: #4a3b2a80;
+  background: rgb(26 23 20 / 50%);
 }
 .header {
   display: flex;
@@ -59,27 +59,37 @@
   justify-content: space-between;
   gap: 1rem;
 }
+/* 見出しは小さな札にして、問いかけ（.prompt）を主役にする */
 .header h2 {
   margin: 0;
-  font-size: clamp(1rem, 3vw, 1.5rem);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
 }
-.dialog button {
+/* 開いたときにフォーカスを置く先なので、枠は出さない */
+.header h2:focus {
+  outline: none;
+}
+/* ボタンの土台。枠線や影は使わず、淡い面だけにする。
+   ほかの部品（おはじきなど）の形を上書きしないよう、:where で強さを 0 にする */
+:where(.dialog) :where(button) {
   min-height: 44px;
   padding: 0.5rem 0.8rem;
-  border: 1px solid #c5b39c;
-  border-radius: 12px;
-  background: white;
-  color: #333333;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-soft);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
   touch-action: manipulation;
 }
-.dialog button:disabled {
+:where(.dialog) :where(button):disabled {
   opacity: 0.4;
   cursor: default;
 }
-.dialog button:focus-visible {
-  outline: 3px solid #658274;
+:where(.dialog) :where(button):focus-visible {
+  outline: 3px solid var(--color-accent);
   outline-offset: 3px;
 }
 .hint {
@@ -92,12 +102,12 @@
   min-height: 5.5rem;
   margin: 0.75rem 0;
   padding: 0.75rem 1rem;
-  border-radius: 18px;
-  background: #f4ede1;
+  border-radius: 20px;
+  background: var(--color-soft);
   text-align: center;
   font-size: clamp(1.25rem, 4vw, 1.375rem);
-  color: #333333;
-  font-weight: 700;
+  color: var(--color-text);
+  font-weight: 900;
   line-height: 1.6;
   text-wrap: pretty;
 }
@@ -117,9 +127,7 @@
   position: relative;
   width: 100%;
   height: max(300px, calc(100dvh - 220px));
-  border: 2px dashed #d9cbbb;
   border-radius: 20px;
-  background: radial-gradient(#e7dfd6 1px, transparent 1px) 0 0 / 24px 24px;
   overflow: hidden;
 }
 .dialog .piece {
@@ -129,32 +137,26 @@
   min-height: 44px;
   padding: 0;
   transform: translate(-50%, -50%);
+  border: 0;
   border-radius: 50%;
-  border: 2px solid #a1663c;
-  background: #dca477;
-  box-shadow:
-    inset 0 3px 6px #ffffff60,
-    0 3px 5px #4a3b2a20;
+  /* 台本の図と同じ、縁取り・影のない平たい丸 */
+  background: var(--color-bead-a);
   touch-action: none;
   user-select: none;
   cursor: grab;
 }
 .dialog .green {
-  background: #8bb5a1;
-  border-color: #4c7162;
+  background: var(--color-bead-b);
 }
 .dialog .removed {
-  opacity: 0.45;
-  border-style: dashed;
+  opacity: 0.3;
 }
 .dialog .apple {
   font-size: clamp(32px, 5vw, 48px);
   background: transparent;
-  border-color: transparent;
-  box-shadow: none;
 }
 .dialog .piece[aria-pressed='true'] {
-  outline: 3px solid #658274;
+  outline: 3px solid var(--color-accent);
   outline-offset: 3px;
   z-index: 1;
 }
@@ -166,9 +168,9 @@
   width: clamp(44px, 6vw, 64px);
   height: clamp(44px, 6vw, 64px);
   transform: translate(-50%, -50%);
-  border: 2px dashed #b9b1a3;
   border-radius: 50%;
-  background: #fffdf8b0;
+  /* 置き場所は、地より少し暗い丸（淡い面の上でも、白い地の上でも見える） */
+  background: rgb(26 23 20 / 6%);
   pointer-events: none;
 }
 .dialog .piece[data-dragging='true'] {
@@ -181,7 +183,7 @@
   position: absolute;
   inset: 40% 0 auto;
   text-align: center;
-  color: #333333;
+  color: var(--color-text);
 }
 .largeDiagram {
   display: grid;
@@ -199,38 +201,35 @@
   grid-template-columns: 1fr 12% 1fr;
   pointer-events: none;
 }
+/* 左右のわく。台本のおさらと同じ淡い面にする */
 .orangeMat,
 .greenMat {
-  border: 2px solid #e6c09f;
   border-radius: 24px;
-  background: #fff0e1b8;
+  background: var(--color-soft);
   text-align: center;
   padding-top: 0.5rem;
 }
+/* ひき算の、とったぶんを置くところ。左のわくより薄くする */
 .takenMat {
-  border: 2px dashed #d1c7b8;
   border-radius: 24px;
   text-align: center;
   padding-top: 1rem;
-  background: #f5f2eb80;
+  background: rgb(26 23 20 / 3%);
 }
 .takenLabel {
   font-size: 0.85rem;
-  color: #333333;
-}
-.greenMat {
-  border-color: #a8c9b6;
-  background: #e7f4ecb8;
+  font-weight: 700;
+  color: var(--color-muted);
 }
 .count {
   display: inline-block;
   font-size: clamp(2.5rem, 9vw, 4.5rem);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.2;
-  color: #333333;
+  color: var(--color-text);
 }
 .greenMat .count {
-  color: #333333;
+  color: var(--color-text);
 }
 @keyframes count-pop {
   0% {
@@ -257,14 +256,13 @@
   max-height: calc(100dvh - 2rem);
   margin: auto;
   padding: 1.5rem;
-  border: 1px solid #e0cdb9;
-  border-radius: 1.25rem;
-  background: #fffaf3;
-  color: #333333;
-  box-shadow: 0 12px 32px rgba(74, 59, 42, 0.16);
+  border: 0;
+  border-radius: 24px;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 .introduction::backdrop {
-  background: rgba(74, 59, 42, 0.35);
+  background: rgb(26 23 20 / 35%);
 }
 .introduction h2 {
   margin: 0 0 1rem;
@@ -284,21 +282,20 @@
 .introductionActions button {
   min-height: 48px;
   padding: 0.65rem 1rem;
-  border: 1px solid #d8c2aa;
-  border-radius: 0.75rem;
-  background: #fffdf8;
-  color: #333333;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-soft);
+  color: var(--color-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 .introductionActions .introductionPrimary {
-  background: #a36235;
-  border-color: #a36235;
+  background: var(--color-accent);
   color: #fff;
 }
 .introductionActions button:focus-visible {
-  outline: 2px solid #80522f;
+  outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
@@ -321,10 +318,10 @@
   }
   @keyframes introduction-backdrop {
     from {
-      background: rgba(74, 59, 42, 0);
+      background: rgb(26 23 20 / 0%);
     }
     to {
-      background: rgba(74, 59, 42, 0.35);
+      background: rgb(26 23 20 / 35%);
     }
   }
 }
@@ -332,8 +329,8 @@
 .countingHint {
   display: block;
   font-size: 1rem;
-  font-weight: 400;
-  color: #333333;
+  font-weight: 700;
+  color: var(--color-accent);
   line-height: 1.6;
 }
 .dialog[data-addition='true'] .prompt {
@@ -351,11 +348,10 @@
 .countingFinish {
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5d7c8;
 }
 .countingWords {
   margin: 0 0 1rem;
-  color: #333333;
+  color: var(--color-text);
   text-align: center;
   line-height: 1.6;
   font-size: 1rem;
@@ -367,13 +363,13 @@
 .countingWords .countingWait {
   margin-bottom: 0.5rem;
   font-size: 1rem;
-  color: #333333;
+  color: var(--color-text);
   font-weight: 400;
 }
 .countingWords strong {
   font-size: 2.25rem;
   line-height: 1.3;
-  color: #333333;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
 .countingWords strong small {
@@ -386,7 +382,7 @@
   gap: 0.65rem;
   margin: 0 auto;
   max-width: 24rem;
-  color: #333333;
+  color: var(--color-text);
   line-height: 1.6;
 }
 .continueGuide p {
@@ -402,18 +398,18 @@
   justify-content: center;
   gap: 0.65rem;
   width: 100%;
-  min-height: 50px;
+  min-height: 54px;
   padding: 0.75rem 1rem;
-  border: 1px solid #a36235;
-  border-radius: 0.85rem;
-  background: #a36235;
-  color: #fffdf8;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
   font-size: 1rem;
   line-height: 1.5;
   font-weight: 600;
 }
 .dialog .continueGuide button:hover {
-  background: #8e522b;
+  background: #9a3412;
 }
 
 /* Keep the activity and its follow-up within a phone-sized viewport. */
@@ -456,35 +452,12 @@
   }
 }
 
-.pointingHand {
-  position: absolute;
-  width: 36px;
-  height: 44px;
-  z-index: 3;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 2px rgba(74, 59, 42, 0.15));
-}
-@media (prefers-reduced-motion: no-preference) {
-  .pointingHand {
-    animation: point-to-bead 1.2s ease-in-out 3;
-  }
-  @keyframes point-to-bead {
-    0%,
-    100% {
-      transform: translate(2px, 4px);
-    }
-    50% {
-      transform: translate(0, 0);
-    }
-  }
-}
-
 .operationHint {
   flex: 1;
   min-width: 0;
   margin: 0;
   padding: 0.3rem 0;
-  color: #333333;
+  color: var(--color-muted);
   font-size: 1rem;
   line-height: 1.6;
   transition: opacity 160ms ease-out;

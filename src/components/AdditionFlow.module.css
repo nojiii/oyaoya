@@ -236,12 +236,16 @@
   letter-spacing: 0;
 }
 
-/* 1つにまとめたおはじき */
+/* 1つにまとめたおはじき。おはじき画面と同じく、5こずつ並べる */
 .counterTogether {
   max-width: 260px;
   padding: 1.5rem 1rem;
   border-radius: 18px;
   background: var(--color-soft);
+}
+
+.counterTogether .pieces {
+  width: calc(var(--piece-size, 24px) * 5 + 24px);
 }
 
 .counterGroups {
@@ -276,11 +280,11 @@
   width: var(--piece-size, 24px);
   height: var(--piece-size, 24px);
   border-radius: 50%;
-  background: #e2553a;
+  background: var(--color-bead-a);
 }
 
 .pieces span[data-green='true'] {
-  background: #2f62d8;
+  background: var(--color-bead-b);
 }
 
 .answer {

@@ -48,13 +48,11 @@
 .bead {
   width: 22px;
   height: 22px;
-  border: 1px solid #a1663c;
   border-radius: 50%;
-  background: #c8895a;
+  background: var(--color-bead-a);
 }
 .green {
-  border-color: #4c7162;
-  background: #739486;
+  background: var(--color-bead-b);
 }
 .hand {
   position: absolute;
