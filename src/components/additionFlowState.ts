@@ -12,9 +12,9 @@ export type AdditionPage =
   | 'countTen'
   | 'app'
   | 'answer'
-  | 'explain'
-  // 【試し】ほめてから、もう1問（check）やるか、ここで終わるかを決める
+  // 【試し】答えのあと、ほめてから、たしかめ（explain から）に進むか、ここで終わるかを決める
   | 'more'
+  | 'explain'
   | 'check'
   | 'checkAnswer'
 
@@ -31,9 +31,9 @@ export const initialAdditionProgress: AdditionProgress = {
 }
 
 // 答えのあとの「たしかめ」。どう考えたかを話してもらい、ちがう数の問題をひとりで解いてもらって、答えを確かめる。
-// ひとりで解く前に、もう1問やるかを決めるページ（more）を置く（【試し】。やめるときは、そこで終わる）。
-// 本編と同じく、答えを聞くページ（check）と答えを出すページ（checkAnswer）を分け、スワイプで進む
-const checkPages: AdditionPage[] = ['explain', 'more', 'check', 'checkAnswer']
+// 本編と同じく、答えを聞くページ（check）と答えを出すページ（checkAnswer）を分け、スワイプで進む。
+// たしかめの前には、たしかめに進むか、ここで終わるかを決めるページ（more）を置く（【試し】）
+const checkPages: AdditionPage[] = ['more', 'explain', 'check', 'checkAnswer']
 
 // carry は、繰り上がりのたし算（10をつくって、たし算する）の台本。実物のおはじきで、10のまとまりを作ってから合わせる
 export function additionPages(

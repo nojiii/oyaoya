@@ -37,7 +37,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       count: '1こずつ指さして数えましょう',
       answer: '全部で何こだったかな？',
       recount: '反対のはしから数えてみましょう',
-      more: 'もう1問、解いてみましょうか？',
+      more: 'たしかめに進みますか？',
     }
     const key = `counting-flow:v2:${path}`
     const renderFlow = (n) => render(createElement(CountingFlow, { n }))
@@ -84,9 +84,8 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
         const recount = slide('recount')
         assert.ok(recount.includes('たしかめ'))
         assert.ok(recount.includes('反対のはしから数えてみよう'))
-        // 【試し】言われた数だけ取る前に、ほめてから、もう1つやるかを決める（やめるときは「ここで終わる」）
+        // 【試し】答えのあと、ほめてから、たしかめに進むかを決める（やめるときは「ここで終わる」）
         const more = slide('more')
-        assert.ok(more.includes('たしかめ'))
         assert.ok(
           more.includes('よく数えられたね！ 別の問題もやってみようか！'),
         )

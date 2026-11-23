@@ -52,8 +52,8 @@ const words = {
 const BEFORE_ANSWER =
   '**お子さんが答えてから**、次のページへ進みます。次のページには、初めから答えが出ています。'
 
-// 台本のページ。左へスワイプで次、右へで前。explain・more・check・checkAnswer が「たしかめ」。
-// more（【試し】）は、ひとりで解く前に、もう1問やるか、ここで終わるかを決めるページ。
+// 台本のページ。左へスワイプで次、右へで前。explain・check・checkAnswer が「たしかめ」。
+// その前の more（【試し】）は、答えのあと、たしかめに進むか、ここで終わるかを決めるページ。
 // 答えを聞くページ（count・check）と、答えを出すページ（answer・checkAnswer）は分ける
 const pages = [
   'read',
@@ -61,8 +61,8 @@ const pages = [
   'take',
   'count',
   'answer',
-  'explain',
   'more',
+  'explain',
   'check',
   'checkAnswer',
 ] as const
@@ -303,6 +303,19 @@ function SampleFlow({ eat }: { eat: number }) {
         </div>
       ),
     },
+    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める（部品は AnotherProblem）。たしかめの前なので、札は付けない。
+    // 進むときはスワイプで進み、やめるときは「ここで終わる」。保存した進み具合を消すので、次は最初のページから
+    more: anotherProblemSlide({
+      say: words.more,
+      onFinish: () =>
+        finish(() => {
+          try {
+            sessionStorage.removeItem(key)
+          } catch {
+            // 消せなくても、準備の画面へは戻れる
+          }
+        }),
+    }),
     // ここから「たしかめ」。答えが合ったかだけでなく、解き方が身についたかを確かめる。
     // 教え方のポイントには、できているかを見分けるところ（親が見るところ）を書く
     explain: {
@@ -322,19 +335,6 @@ function SampleFlow({ eat }: { eat: number }) {
         </>
       ),
     },
-    // 【試し】ひとりで解く前に、ほめてから、もう1問やるかを決める（部品は AnotherProblem）。
-    // 続けるときはスワイプで進み、やめるときは「ここで終わる」。保存した進み具合を消すので、次は最初のページから
-    more: anotherProblemSlide({
-      say: words.more,
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(key)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
     // ちがう数の問題を、ひとりで解いてもらう（答えを聞くページ）。元の問題をまねるだけでは解けない数にする
     check: {
       id: 'check',
@@ -459,8 +459,8 @@ export default function Sample() {
         { say: words.physical(eat) },
         { say: words.ask },
         { say: `（答えたら）${words.right(eat)}` },
+        { say: words.more },
         { say: `（たしかめ）${words.explain}` },
-        { say: `（たしかめ）${words.more}` },
         { say: `（たしかめ）${words.check(eat)}` },
       ]}
     />

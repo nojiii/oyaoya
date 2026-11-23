@@ -117,6 +117,18 @@ export function CountingFlow({ n }: { n: number }) {
         </div>
       ),
     },
+    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
+    more: anotherProblemSlide({
+      say: countingWords.more,
+      onFinish: () =>
+        finish(() => {
+          try {
+            sessionStorage.removeItem(storageKey)
+          } catch {
+            // 消せなくても、準備の画面へは戻れる
+          }
+        }),
+    }),
     // ここから「たしかめ」。数え方が身についたかを、向きを変えて数える・言われた数だけ取る、で確かめる
     recount: {
       id: 'recount',
@@ -141,18 +153,6 @@ export function CountingFlow({ n }: { n: number }) {
         </div>
       ),
     },
-    // 【試し】ほめてから、もう1つやるかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
-    more: anotherProblemSlide({
-      say: countingWords.more,
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(storageKey)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
     give: {
       id: 'give',
       section: 'たしかめ',

@@ -500,6 +500,18 @@ export function AdditionFlow({
       ),
       content: <AdditionAnswer a={a} b={b} carry={carry} />,
     },
+    // 【試し】答えのあと、ほめてから、たしかめに進むかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
+    more: anotherProblemSlide({
+      say: 'よく解けたね！ 別の問題も解いてみようか！',
+      onFinish: () =>
+        finish(() => {
+          try {
+            sessionStorage.removeItem(storageKey)
+          } catch {
+            // 消せなくても、準備の画面へは戻れる
+          }
+        }),
+    }),
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
       id: 'explain',
@@ -519,18 +531,6 @@ export function AdditionFlow({
         </>
       ),
     },
-    // 【試し】ほめてから、もう1問やるかを決める。「ここで終わる」は最後まで終えたときと同じく、次は最初のページから
-    more: anotherProblemSlide({
-      say: 'よく解けたね！ 別の問題も解いてみようか！',
-      onFinish: () =>
-        finish(() => {
-          try {
-            sessionStorage.removeItem(storageKey)
-          } catch {
-            // 消せなくても、準備の画面へは戻れる
-          }
-        }),
-    }),
     check: {
       id: 'check',
       section: 'たしかめ',
