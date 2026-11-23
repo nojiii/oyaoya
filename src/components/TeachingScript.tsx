@@ -67,6 +67,10 @@ interface Props {
   turns: Turn[]
   // 台本の右上の「困ったら」で出す答えのうち、この問題に合わせて書き換えるもの（ScriptHelp）
   help?: ScriptHelpContent
+  // 準備の画面で、まだ台本へ進めないとき（範囲外の数を入れたまま など）。
+  // 「台本をはじめる」を押せない見た目にして、押されたら onStartBlocked を呼ぶ（警告を見せ直す）
+  startBlocked?: boolean
+  onStartBlocked?: () => void
 }
 
 type Section = 'question' | 'guide' | 'finish'
@@ -152,6 +156,8 @@ function PrepareView({
   onStart,
   resume,
   startButton,
+  startBlocked = false,
+  onStartBlocked,
 }: Props & {
   onStart: (button: HTMLButtonElement) => void
   resume?: boolean
@@ -230,13 +236,22 @@ function PrepareView({
 
       <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
       <div className={styles.actions}>
+        {/* 進めない間は、押せない見た目にし、何をすれば進めるかをボタンの文字で伝える
+            （ボタンは画面の下に貼りついているので、どこまで読んでいても目に入る） */}
         <button
-          className={styles.primary}
+          className={startBlocked ? styles.blocked : styles.primary}
           type="button"
           ref={startButton}
-          onClick={(event) => onStart(event.currentTarget)}
+          aria-disabled={startBlocked || undefined}
+          onClick={(event) =>
+            startBlocked ? onStartBlocked?.() : onStart(event.currentTarget)
+          }
         >
-          {resume ? '途中から台本にもどる' : '台本をはじめる'}
+          {startBlocked
+            ? '数を直すと、台本をはじめられます'
+            : resume
+              ? '途中から台本にもどる'
+              : '台本をはじめる'}
         </button>
       </div>
     </div>
@@ -347,6 +362,8 @@ export function TeachingScript({
   flow,
   flowStatus,
   help,
+  startBlocked,
+  onStartBlocked,
 }: Props) {
   const location = useLocation()
   // flow の進み具合。保存が読めないときは、はじめから
@@ -601,6 +618,8 @@ export function TeachingScript({
           question={question}
           turns={turns}
           startButton={startButton}
+          startBlocked={startBlocked}
+          onStartBlocked={onStartBlocked}
           onStart={(button) =>
             play({
               kind: 'start',
