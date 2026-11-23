@@ -41,6 +41,14 @@ test('the counter dialog closes only through close(), which runs the follow-up o
     // おはじきの画面を開き、1こを右（とったぶん）へ動かす
     fireEvent.click(container.querySelector('[aria-haspopup="dialog"]'))
     assert.equal(dialog.open, true)
+    // 開いたら、もどるボタンではなく見出しにフォーカスを置く（もどるに枠が出ないように）
+    assert.equal(
+      document.activeElement,
+      screen.getByRole('heading', {
+        name: 'うごかして かんがえよう',
+        hidden: true,
+      }),
+    )
     const piece = screen.getByRole('button', {
       name: '1こめのおはじき',
       hidden: true,

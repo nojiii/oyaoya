@@ -76,6 +76,7 @@ export function VisualPlayground({
   } | null>(null)
   const nextId = useRef(0)
   const title = useId()
+  const heading = useRef<HTMLHeadingElement>(null)
   const hint = useId()
   const [pieces, setPieces] = useState<Piece[]>([])
   const [selected, setSelected] = useState<number | null>(null)
@@ -211,6 +212,9 @@ export function VisualPlayground({
     reset()
     setHasInteracted(false)
     target.showModal()
+    // 開くと、ブラウザは最初のボタン（もどる）へフォーカスを移し、枠が出てしまう。
+    // 「困ったら」のシートと同じく、見出しへ移す（読み上げは見出しから。Tab で、もどるへ進める）
+    heading.current?.focus({ preventScroll: true })
     if (
       !origin ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -388,7 +392,7 @@ export function VisualPlayground({
         onKeyDown={(event) => event.stopPropagation()}
       >
         <header className={styles.header}>
-          <h2 id={title}>
+          <h2 id={title} ref={heading} tabIndex={-1}>
             {interactive ? 'うごかして かんがえよう' : 'いっしょに みてみよう'}
           </h2>
           <button

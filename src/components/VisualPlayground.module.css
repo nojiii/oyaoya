@@ -67,6 +67,10 @@
   letter-spacing: 0.06em;
   color: var(--color-muted);
 }
+/* 開いたときにフォーカスを置く先なので、枠は出さない */
+.header h2:focus {
+  outline: none;
+}
 /* ボタンの土台。枠線や影は使わず、淡い面だけにする。
    ほかの部品（おはじきなど）の形を上書きしないよう、:where で強さを 0 にする */
 :where(.dialog) :where(button) {
