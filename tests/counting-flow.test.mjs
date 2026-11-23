@@ -16,7 +16,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     const { loadProblem } = await import('../src/pages/loaders.ts')
     const { default: ProblemDetail } =
       await import('../src/pages/ProblemDetail.tsx')
-    const { countingPages, restoreCountingPage } =
+    const { countingPages, restoreCountingPage, countingFlowStatus } =
       await import('../src/components/countingFlowState.ts')
     const path = '/problems/counting'
     const render = (element) => {
@@ -37,6 +37,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       count: '1こずつ指さして数えましょう',
       answer: '全部で何こだったかな？',
       recount: '反対のはしから数えてみましょう',
+      more: 'たしかめに進みますか？',
     }
     const key = `counting-flow:v2:${path}`
     const renderFlow = (n) => render(createElement(CountingFlow, { n }))
@@ -83,6 +84,16 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
         const recount = slide('recount')
         assert.ok(recount.includes('たしかめ'))
         assert.ok(recount.includes('反対のはしから数えてみよう'))
+        // 答えのあと、ほめてから、たしかめに進むかを決める（やめるときは「ここで終わる」）。たしかめの前なので、札は付けない
+        const more = slide('more')
+        assert.ok(
+          more.includes(
+            'よくがんばったね！ もうちょっとだけ、やってみようか？',
+          ),
+        )
+        assert.ok(more.includes('ここで終わる'))
+        assert.ok(!/<h2[^>]*><span[^>]*>たしかめ<\/span>/.test(more))
+        assert.ok(/<h2[^>]*><span[^>]*>たしかめ<\/span>/.test(recount))
         const give = html.slice(html.indexOf('data-slide="give"'))
         const m = Math.ceil(n / 2)
         assert.ok(give.includes('たしかめ'))
@@ -92,6 +103,22 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
         assert.ok(give.includes('終わる'))
       }
     }
+    // 答え → たしかめに進むか → たしかめ（反対のはしから数え直す → 言われた数だけ取る）
+    assert.deepEqual(countingPages.slice(-4), [
+      'answer',
+      'more',
+      'recount',
+      'give',
+    ])
+    // たしかめに進むかを決めるページで抜けたら、準備の画面から「途中から」で戻れる
+    assert.equal(
+      countingFlowStatus(JSON.stringify({ n: 5, page: 'more' }), 5),
+      'middle',
+    )
+    assert.equal(
+      restoreCountingPage(JSON.stringify({ n: 5, page: 'more' }), 5),
+      'more',
+    )
     // 保存したときと違う数なら、最初のページから
     storage.set(key, JSON.stringify({ n: 5, page: 'count' }))
     assert.equal(activeSlide(renderFlow(3)), 'read')

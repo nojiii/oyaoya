@@ -304,6 +304,21 @@
   touch-action: manipulation;
 }
 
+/* たしかめに進むかを決めるページの「ここで終わる」。たしかめへ進む「次」より目立たせないよう、枠だけにする */
+.endHere {
+  min-height: 52px;
+  padding: 0 1.5rem;
+  border: 2px solid var(--teach-text);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--teach-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 /* アプリのおはじき画面を開くボタン。左におはじきの絵、まん中に名前と説明、右に矢印。
    ステージ（白い面）の中では橙の面、台本の橙の上では白い面にして、どちらでもボタンだと分かるようにする */
 .openCounters {
@@ -388,7 +403,8 @@
 }
 
 .choices button:focus-visible,
-.finish:focus-visible {
+.finish:focus-visible,
+.endHere:focus-visible {
   outline: 3px solid var(--teach-text);
   outline-offset: 3px;
 }

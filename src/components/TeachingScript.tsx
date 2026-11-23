@@ -644,7 +644,9 @@ export function TeachingScript({
         {curtainView}
         {close}
         {helpButton}
-        <ScriptControls.Provider value={{ finish: () => finish() }}>
+        <ScriptControls.Provider
+          value={{ finish: (options) => finish(options?.reset) }}
+        >
           {flow}
         </ScriptControls.Provider>
       </div>
