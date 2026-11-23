@@ -20,23 +20,37 @@ export interface AdditionProgress {
   route: AdditionRoute | null
   page: AdditionPage
   appComplete: boolean
+  // 準備の画面の「わかる」で、解説をとばして、たしかめの問題（ひとりで解く）から始めたか
+  checkOnly: boolean
 }
 
 export const initialAdditionProgress: AdditionProgress = {
   route: null,
   page: 'read',
   appComplete: false,
+  checkOnly: false,
+}
+
+// 準備の画面の「わかる」で始めるときの進み具合。方法は選ばずに、ひとりで解くページから
+export const checkOnlyAdditionProgress: AdditionProgress = {
+  route: null,
+  page: 'check',
+  appComplete: false,
+  checkOnly: true,
 }
 
 // 答えのあとの「たしかめ」。どう考えたかを話してもらい、ちがう数の問題をひとりで解いてもらって、答えを確かめる。
 // 本編と同じく、答えを聞くページ（check）と答えを出すページ（checkAnswer）を分け、スワイプで進む
 const checkPages: AdditionPage[] = ['explain', 'check', 'checkAnswer']
 
-// carry は、繰り上がりのたし算（10をつくって、たし算する）の台本。実物のおはじきで、10のまとまりを作ってから合わせる
+// carry は、繰り上がりのたし算（10をつくって、たし算する）の台本。実物のおはじきで、10のまとまりを作ってから合わせる。
+// checkOnly は、準備の画面の「わかる」で始めたとき。解説をとばして、ひとりで解く → 答えを確かめる、だけにする
 export function additionPages(
   route: AdditionRoute | null,
   carry = false,
+  checkOnly = false,
 ): AdditionPage[] {
+  if (checkOnly) return ['check', 'checkAnswer']
   if (route === 'physical')
     return [
       'read',
@@ -67,7 +81,8 @@ export function carryCheck(a: number, b: number): [number, number] {
 }
 
 export type AdditionAction =
-  | { type: 'next' | 'back' | 'restart' }
+  // review は、たしかめの問題が解けなかったときに、解説（問題を読むページ）へ戻る
+  | { type: 'next' | 'back' | 'restart' | 'review' }
   | { type: 'choose'; route: AdditionRoute }
   | { type: 'app-status'; complete: boolean }
 
@@ -92,7 +107,22 @@ export function advanceAddition(
     // 方法を選ぶだけで、ページは進めない。進むのは、選んだあとのスワイプ（next）
     case 'choose':
       if (state.page !== 'choose') return state
-      return { route: action.route, page: 'choose', appComplete: false }
+      return {
+        route: action.route,
+        page: 'choose',
+        appComplete: false,
+        checkOnly: false,
+      }
+    // たしかめのページからだけ戻る。選んだ方法は残すので、方法を選ぶページは選んだ状態で出る
+    // （「わかる」で始めたときは、まだ選んでいないので、選ぶところから）
+    case 'review':
+      if (state.page !== 'check' && state.page !== 'checkAnswer') return state
+      return {
+        route: state.route,
+        page: 'read',
+        appComplete: false,
+        checkOnly: false,
+      }
     case 'app-status':
       if (state.page !== 'app' || state.appComplete === action.complete)
         return state
@@ -100,7 +130,7 @@ export function advanceAddition(
     case 'next':
     case 'back': {
       if (action.type === 'next' && !canAdvanceAddition(state)) return state
-      const pages = additionPages(state.route, carry)
+      const pages = additionPages(state.route, carry, state.checkOnly)
       const index = pages.indexOf(state.page)
       const page = pages[index + (action.type === 'next' ? 1 : -1)]
       return page ? { ...state, page } : state
@@ -126,15 +156,17 @@ export function additionFlowStatus(
 function parseAdditionProgress(raw: string | null, carry: boolean) {
   try {
     const saved = JSON.parse(raw ?? 'null') as Partial<AdditionProgress> | null
+    // 「わかる」を足す前に保存したもの（checkOnly がない）は、解説から始めたものとして読む
+    const checkOnly = saved?.checkOnly === true
     if (
       saved &&
       (saved.route === null ||
         saved.route === 'physical' ||
         saved.route === 'app') &&
       saved.page &&
-      additionPages(saved.route, carry).includes(saved.page)
+      additionPages(saved.route, carry, checkOnly).includes(saved.page)
     )
-      return { route: saved.route, page: saved.page }
+      return { route: saved.route, page: saved.page, checkOnly }
   } catch {
     // 古い形式や壊れた保存内容は使わない。
   }
@@ -152,6 +184,7 @@ export function restoreAdditionProgress(
   return {
     route: saved.route,
     page: saved.page,
+    checkOnly: saved.checkOnly,
     // おはじきの盤面は開き直すので、途中の完了状態は引き継がない。
     appComplete: false,
   }
