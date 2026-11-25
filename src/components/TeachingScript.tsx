@@ -71,6 +71,9 @@ interface Props {
   // 「台本をはじめる」を押せない見た目にして、押されたら onStartBlocked を呼ぶ（警告を見せ直す）
   startBlocked?: boolean
   onStartBlocked?: () => void
+  // 準備の画面に「わかる」を出すか（flow を渡したときだけ）。押すと、解説をとばして、たしかめの問題から台本を始める。
+  // どこから始めるかは、flow が ScriptControls の startAtCheck を読んで決める
+  skipToCheck?: boolean
 }
 
 type Section = 'question' | 'guide' | 'finish'
@@ -158,8 +161,11 @@ function PrepareView({
   startButton,
   startBlocked = false,
   onStartBlocked,
+  onSkip,
 }: Props & {
   onStart: (button: HTMLButtonElement) => void
+  // 「わかる」を押したとき。なければ「わかる」を出さない
+  onSkip?: (button: HTMLButtonElement) => void
   resume?: boolean
   // 「終わる」の幕が縮んでいく先
   startButton?: Ref<HTMLButtonElement>
@@ -234,8 +240,28 @@ function PrepareView({
         </details>
       )}
 
-      <p className={styles.startHelp}>台本を見ながら、そのまま教えられます。</p>
+      <p className={styles.startHelp}>
+        台本を見ながら、そのまま教えられます。
+        {onSkip && (
+          <>
+            <br />
+            お子さんがもうわかるときは「わかる」で、たしかめの問題から始めます。
+          </>
+        )}
+      </p>
       <div className={styles.actions}>
+        {/* 数を直すまでは、台本の「はじめる」側だけを出す（直し方をボタンの文字で伝えるため） */}
+        {onSkip && !startBlocked && (
+          <button
+            className={styles.skip}
+            type="button"
+            aria-label="わかる（たしかめ問題へ）"
+            onClick={(event) => onSkip(event.currentTarget)}
+          >
+            わかる
+            <small>たしかめ問題へ</small>
+          </button>
+        )}
         {/* 進めない間は、押せない見た目にし、何をすれば進めるかをボタンの文字で伝える
             （ボタンは画面の下に貼りついているので、どこまで読んでいても目に入る） */}
         <button
@@ -364,6 +390,7 @@ export function TeachingScript({
   help,
   startBlocked,
   onStartBlocked,
+  skipToCheck = false,
 }: Props) {
   const location = useLocation()
   // flow の進み具合。保存が読めないときは、はじめから
@@ -386,6 +413,8 @@ export function TeachingScript({
   )
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
+  // 準備の画面の「わかる」で台本を開いたか。開き直すたびに、押したボタンで決め直す
+  const [startAtCheck, setStartAtCheck] = useState(false)
   // 準備の画面で問題の数字を変えたら、その問題の進み具合を読み直す。
   // 部品ごと作り直すと、準備の画面で開いていた折りたたみの欄が閉じてしまうため
   const [historyKey, setHistoryKey] = useState(keys.history)
@@ -606,6 +635,18 @@ export function TeachingScript({
     <ScriptHelp help={help} point={prepare.point} onStop={() => finish()} />
   )
 
+  // 準備の画面から台本を開く。atCheck は「わかる」で、たしかめの問題から始めるとき
+  const start = (button: HTMLButtonElement, atCheck: boolean) =>
+    play({
+      kind: 'start',
+      from: button,
+      swap: () => {
+        setStartAtCheck(atCheck)
+        setStarted(true)
+        window.scrollTo(0, 0)
+      },
+    })
+
   if (!started)
     return (
       <div className={styles.lessonPage}>
@@ -620,15 +661,9 @@ export function TeachingScript({
           startButton={startButton}
           startBlocked={startBlocked}
           onStartBlocked={onStartBlocked}
-          onStart={(button) =>
-            play({
-              kind: 'start',
-              from: button,
-              swap: () => {
-                setStarted(true)
-                window.scrollTo(0, 0)
-              },
-            })
+          onStart={(button) => start(button, false)}
+          onSkip={
+            flow && skipToCheck ? (button) => start(button, true) : undefined
           }
           resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
@@ -645,7 +680,10 @@ export function TeachingScript({
         {close}
         {helpButton}
         <ScriptControls.Provider
-          value={{ finish: (options) => finish(options?.reset) }}
+          value={{
+            finish: (options) => finish(options?.reset),
+            startAtCheck,
+          }}
         >
           {flow}
         </ScriptControls.Provider>

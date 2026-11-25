@@ -244,6 +244,19 @@
   font-size: 15px;
   cursor: not-allowed;
 }
+/* 準備の画面の「わかる」。「台本をはじめる」より控えめにし、左に細く置く。下に、どこへ進むかを小さく添える */
+.actions .skip {
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 1.25rem;
+  line-height: 1.2;
+}
+.actions .skip small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
 .actions :is(button, a):active {
   transform: scale(0.98);
 }

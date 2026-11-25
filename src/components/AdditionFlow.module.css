@@ -406,7 +406,25 @@
   color: var(--teach-muted);
 }
 
+/* 解説にもどる。たしかめの問題が解けなかったときに、問題を読むページへ戻る。
+   「終わる」より控えめにするため、台本の下のボタン（.script .actions）と同じ淡い面にする */
+.review {
+  justify-self: start;
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--teach-soft);
+  color: var(--teach-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .choices button:focus-visible,
+.review:focus-visible,
 .finish:focus-visible,
 .endHere:focus-visible {
   outline: 3px solid var(--teach-text);

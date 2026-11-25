@@ -15,6 +15,7 @@ import {
   advanceAddition,
   canAdvanceAddition,
   carryCheck,
+  checkOnlyAdditionProgress,
   restoreAdditionProgress,
   type AdditionAction,
   type AdditionPage,
@@ -189,45 +190,70 @@ export function AdditionAnswer({
 
 // たしかめの、ちがう数の問題をひとりで解くページ。式（答えは「？」）はステージ（AdditionEquation）に出す。
 // 教え方のポイントはセリフの上に置き、アプリのおはじきで解くときは、おはじき画面（children）をセリフの下に置く。
-// お子さんが答えたら、スワイプで答えのページ（AdditionCheckAnswer）へ進む
+// お子さんが答えたら、スワイプで答えのページ（AdditionCheckAnswer）へ進む。
+// 解き方が分からないときは、「解説にもどる」（onReview）で、問題を読むページから一緒に解く。
+// checkOnly は、準備の画面の「わかる」で、解説をとばしてこのページから始めたとき（「さっきと同じように」とは言わない）
 export function AdditionCheck({
   a,
   b,
   carry = false,
+  checkOnly = false,
+  onReview,
   children,
 }: {
   a: number
   b: number
   carry?: boolean
+  checkOnly?: boolean
+  onReview: () => void
   children?: ReactNode
 }) {
   return (
     <div className={styles.answer}>
       <TeachingPoints
         collapsible
-        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → ${carry ? '10のまとまりを作る → 残りと合わせる' : '合わせる → 1個ずつ数える'}**、が自分でできていれば、解けています。\n\n${BEFORE_ANSWER}`}
+        note={`親は手を出さず、**見守りましょう**。おはじきを**${a}個と${b}個に分けて並べる → ${carry ? '10のまとまりを作る → 残りと合わせる' : '合わせる → 1個ずつ数える'}**、が自分でできていれば、解けています。\n\n解き方が分からず手が止まったら、**「解説にもどる」**で、問題を読むところから一緒に解きましょう。\n\n${BEFORE_ANSWER}`}
       />
       <SpokenWords>
-        こんどは、{a}たす{b}
-        だよ。さっきと同じように、ひとりでやってみよう。できたら、全部で何こか教えてね。
+        {checkOnly
+          ? `${a}たす${b}は、いくつかな？ ひとりでやってみよう。できたら、全部で何こか教えてね。`
+          : `こんどは、${a}たす${b}だよ。さっきと同じように、ひとりでやってみよう。できたら、全部で何こか教えてね。`}
       </SpokenWords>
       {children}
+      <SpokenWords title="わからなかったら" minor>
+        だいじょうぶ。いっしょに、はじめから考えてみよう。
+      </SpokenWords>
+      <ReviewButton onClick={onReview} />
     </div>
   )
 }
 
+// たしかめの問題が解けなかったときに、解説（問題を読むページ）へ戻るボタン
+function ReviewButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button className={styles.review} type="button" onClick={onClick}>
+      解説にもどる
+    </button>
+  )
+}
+
 // たしかめの最後のページ。前のページ（AdditionCheck）でお子さんが答えた数に合わせて声をかけ、「終わる」で準備の画面へ戻る。
+// 解けなかったときは、「解説にもどる」（onReview）で、問題を読むページから一緒に解き直す。
 // 答えの式はステージ（AdditionEquation）に、初めから出す
 export function AdditionCheckAnswer({
   a,
   b,
   onFinish,
+  onReview,
   carry = false,
+  checkOnly = false,
 }: {
   a: number
   b: number
   onFinish: () => void
+  onReview: () => void
   carry?: boolean
+  checkOnly?: boolean
 }) {
   return (
     <>
@@ -238,15 +264,21 @@ export function AdditionCheckAnswer({
             carry
               ? `ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。**10のかたまり**を意識できているかを確認し、${a}個に${10 - a}個を合わせて10を作ってから残りを数える流れを一緒に確かめましょう。`
               : 'ちがう数を答えたときは、**どこでつまずいたか**を見ましょう。並べた数がちがうときは、問題を一緒に読み直します。数えまちがいのときは、1個ずつ指さして数え直します。'
-          }\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。`}
+          }\n\n${
+            checkOnly
+              ? 'ひとりでできなくても大丈夫です。**「解説にもどる」**で、問題を読むところから一緒に解きましょう。'
+              : 'ひとりでできなくても大丈夫です。**「解説にもどる」**で問題を読むところから一緒に解き直すか、今日は**一緒にできたこと**をほめて終わりましょう。'
+          }`}
         />
         <SpokenWords title={`「${a + b}」と答えたら`}>
           ひとりでできたね！ {a}こと{b}こを合わせると、全部で{a + b}こだね。
         </SpokenWords>
         <SpokenWords title="ちがう数を答えたら" minor>
-          おしい！
-          さっきと同じように、おはじきを合わせて、もう一回数えてみよう。
+          {checkOnly
+            ? 'おしい！ いっしょに、はじめから考えてみよう。'
+            : 'おしい！ さっきと同じように、おはじきを合わせて、もう一回数えてみよう。'}
         </SpokenWords>
+        <ReviewButton onClick={onReview} />
       </div>
       <button className={styles.finish} type="button" onClick={onFinish}>
         終わる
@@ -267,8 +299,9 @@ export function AdditionFlow({
   carry?: boolean
 }) {
   // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）。
-  // たしかめの前の「ここで終わる」は、ContinueToCheck が受け持つ
-  const { finish } = useScriptControls()
+  // たしかめの前の「ここで終わる」は、ContinueToCheck が受け持つ。
+  // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめの問題から始める
+  const { finish, startAtCheck } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
   const [progress, dispatch] = useReducer(
@@ -276,6 +309,7 @@ export function AdditionFlow({
       advanceAddition(state, action, carry),
     storageKey,
     (key) => {
+      if (startAtCheck) return { ...checkOnlyAdditionProgress }
       try {
         return restoreAdditionProgress(sessionStorage.getItem(key), carry)
       } catch {
@@ -293,6 +327,11 @@ export function AdditionFlow({
   const onCompleteChange = useCallback((complete: boolean) => {
     dispatch({ type: 'app-status', complete })
   }, [])
+  // たしかめの問題が解けなかったら、問題を読むページへ戻る。ページの下のほうで押すので、画面を上へ戻す
+  const review = () => {
+    dispatch({ type: 'review' })
+    window.scrollTo(0, 0)
+  }
   const choices: { route: AdditionRoute; title: string; text: string }[] = [
     {
       route: 'physical',
@@ -533,9 +572,16 @@ export function AdditionFlow({
       title: 'ひとりで解いてみましょう',
       stage: <AdditionEquation a={c} b={d} visible={false} />,
       content: (
-        <AdditionCheck a={c} b={d} carry={carry}>
-          {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く */}
-          {progress.route === 'app' && (
+        <AdditionCheck
+          a={c}
+          b={d}
+          carry={carry}
+          checkOnly={progress.checkOnly}
+          onReview={review}
+        >
+          {/* アプリのおはじきで解くときは、ちがう数のおはじき画面を開く。答えはお子さんから聞く。
+              「わかる」で始めたときは方法を選んでいないので、使いたいときに開けるよう置いておく */}
+          {(progress.route === 'app' || progress.checkOnly) && (
             <div className={styles.pageCounters}>
               <VisualPlayground
                 problem={{ mode: carry ? 'carry' : 'add', a: c, b: d }}
@@ -562,7 +608,9 @@ export function AdditionFlow({
           a={c}
           b={d}
           onFinish={() => finish()}
+          onReview={review}
           carry={carry}
+          checkOnly={progress.checkOnly}
         />
       ),
     },
@@ -570,9 +618,11 @@ export function AdditionFlow({
   return (
     <LessonSlides
       label="足し算の台本"
-      slides={additionPages(progress.route, carry).map((page) => slides[page])}
+      slides={additionPages(progress.route, carry, progress.checkOnly).map(
+        (page) => slides[page],
+      )}
       currentId={progress.page}
-      totalKnown={progress.route !== null}
+      totalKnown={progress.route !== null || progress.checkOnly}
       canNext={canAdvanceAddition(progress)}
       onNext={() => dispatch({ type: 'next' })}
       onBack={() => dispatch({ type: 'back' })}

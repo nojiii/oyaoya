@@ -123,7 +123,9 @@ test('addition routes meet at the answer, go back along their own route and move
       const finished = page === 'checkAnswer'
       assert.deepEqual(
         restored,
-        finished ? initial : { route, page, appComplete: false },
+        finished
+          ? initial
+          : { route, page, appComplete: false, checkOnly: false },
       )
       assert.equal(
         additionFlowStatus(JSON.stringify({ route, page })),
@@ -636,5 +638,86 @@ test('carrying addition renders the making-ten pages and answers', async () => {
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage
+  }
+})
+
+// 準備の画面の「わかる」で、解説をとばして、たしかめの問題（ひとりで解く）から始める。
+// 解けなかったら「解説にもどる」で、問題を読むページへ戻る
+test('the check-only start skips to the check problem and can go back to the explanation', async () => {
+  const {
+    advanceAddition,
+    initialAdditionProgress: initial,
+    checkOnlyAdditionProgress: checkOnly,
+    additionPages,
+    canAdvanceAddition,
+    restoreAdditionProgress,
+    additionFlowStatus,
+  } = await import('../src/components/additionFlowState.ts')
+  for (const carry of [false, true]) {
+    const act = (state, action) => advanceAddition(state, action, carry)
+    assert.deepEqual(additionPages(null, carry, true), ['check', 'checkAnswer'])
+    // ひとりで解く → 答えを確かめる、だけを行き来する（ひとりで解くページより前へは戻らない）
+    let state = { ...checkOnly }
+    assert.equal(canAdvanceAddition(state), true)
+    assert.deepEqual(act(state, { type: 'back' }), state)
+    state = act(state, { type: 'next' })
+    assert.equal(state.page, 'checkAnswer')
+    assert.equal(state.checkOnly, true)
+    assert.equal(canAdvanceAddition(state), false)
+    assert.equal(act(state, { type: 'back' }).page, 'check')
+    // 解説にもどると、方法を選ぶところから（まだ選んでいないので）
+    for (const from of [checkOnly, state]) {
+      const reviewed = act(from, { type: 'review' })
+      assert.deepEqual(reviewed, initial)
+      assert.deepEqual(act(reviewed, { type: 'next' }).page, 'choose')
+    }
+    // 保存して開き直しても、たしかめの問題から。答えを確かめるページまで終えたら、最初から
+    assert.deepEqual(
+      restoreAdditionProgress(JSON.stringify(checkOnly), carry),
+      checkOnly,
+    )
+    assert.equal(additionFlowStatus(JSON.stringify(checkOnly), carry), 'middle')
+    assert.deepEqual(
+      restoreAdditionProgress(JSON.stringify(state), carry),
+      initial,
+    )
+    assert.equal(additionFlowStatus(JSON.stringify(state), carry), 'finished')
+    // 「わかる」で始めたものに、解説のページは保存されていない
+    assert.deepEqual(
+      restoreAdditionProgress(
+        JSON.stringify({ ...checkOnly, page: 'read' }),
+        carry,
+      ),
+      initial,
+    )
+  }
+
+  // 解説から進めてきたときは、選んだ方法を残して、問題を読むページへ戻る
+  let physical = advanceAddition(advanceAddition(initial, { type: 'next' }), {
+    type: 'choose',
+    route: 'physical',
+  })
+  while (physical.page !== 'checkAnswer')
+    physical = advanceAddition(physical, { type: 'next' })
+  for (const page of ['check', 'checkAnswer']) {
+    const reviewed = advanceAddition({ ...physical, page }, { type: 'review' })
+    assert.deepEqual(reviewed, {
+      route: 'physical',
+      page: 'read',
+      appComplete: false,
+      checkOnly: false,
+    })
+  }
+  // たしかめ以外のページからは戻らない
+  for (const page of [
+    'read',
+    'choose',
+    'prepare',
+    'answer',
+    'more',
+    'explain',
+  ]) {
+    const state = { ...physical, page }
+    assert.deepEqual(advanceAddition(state, { type: 'review' }), state)
   }
 })

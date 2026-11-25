@@ -258,6 +258,8 @@ export function ArithmeticLesson({
           : undefined
       }
       editor={renderEditor()}
+      // たし算（ページを分けた台本）では、「わかる」で、たしかめの問題から始められる
+      skipToCheck={additionFlow}
       // 範囲外の数を入れたままでは、台本へ進まない。押されたら、警告まで画面を動かして見せ直す
       startBlocked={error !== ''}
       onStartBlocked={() => {
