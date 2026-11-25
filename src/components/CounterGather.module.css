@@ -1,73 +1,111 @@
-/* 10までのたし算の広場（CounterJoin）。台本のステージと同じく、枠線や影は使わず、
+/* 10までのたし算の広場（CounterGather）。台本のステージと同じく、枠線や影は使わず、
    淡い面（おさら）と平たい丸（おはじき）だけで組む。
-   左のおさらは動かさず、右のおさらを左へ動かして足す。足すと、左のおさらが右へのびて1まいになる */
+   左右の列に1つずつおさらを置き、まん中に着いたら列の内側へ寄せる（data-arrived） */
 
 .board {
   --piece: clamp(26px, 7vw, 40px);
-  --gap: 6px;
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
   align-items: center;
-  /* 広い画面でも、左右のおさらが離れすぎないようにする */
-  width: min(100%, 30rem);
-  min-height: 220px;
-  margin-inline: auto;
-  padding: 1.5rem 0 0.5rem;
+  min-height: 260px;
+  padding: 2rem 0 0.5rem;
+}
+
+.board[data-merged] {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+/* まん中の線。おさらを寄せる先 */
+.middle {
+  position: absolute;
+  top: 2rem;
+  bottom: 0.5rem;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--color-border);
+}
+
+.middle span {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 0.35rem;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--color-faint);
 }
 
 .plate {
   position: relative;
+  z-index: 1;
   display: grid;
   justify-items: center;
   gap: 0.6rem;
   padding: 1rem 10px 0.6rem;
   border-radius: 18px;
   background: var(--color-soft);
-}
-
-.plate[data-side='left'] {
-  justify-self: start;
-}
-
-/* 足したあとの1まいのおさらは、右の列にもはみ出してよい */
-.board[data-joined] .plate[data-side='left'] {
-  grid-column: 1 / -1;
-}
-
-/* 動かす右のおさら。淡い橙にして、これを動かすと分かるようにする */
-.mover {
-  justify-self: end;
-  background: var(--color-accent-soft);
   cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.mover[data-dragging] {
-  z-index: 1;
+.plate[data-side='left'] {
+  justify-self: start;
+}
+
+.plate[data-side='right'] {
+  justify-self: end;
+}
+
+/* まん中に着いたおさらは、列のまん中側に寄せる */
+.plate[data-side='left'][data-arrived] {
+  justify-self: end;
+}
+
+.plate[data-side='right'][data-arrived] {
+  justify-self: start;
+}
+
+.plate[data-dragging] {
+  z-index: 2;
   cursor: grabbing;
 }
 
-.mover:focus-visible {
+.plate[data-arrived],
+.together {
+  cursor: default;
+}
+
+.plate:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;
 }
 
-/* 1まいのおさらの中で、2つのまとまりを少し間をあけて並べる */
-.clusters {
+.pieces {
   display: flex;
-  align-items: start;
-  gap: calc(var(--gap) * 2.5);
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  /* 左右のおさらは3こずつ、1つにまとめたおさらは5こずつ並べる（5のまとまりが見えて数えやすい） */
+  width: calc(var(--piece) * 3 + 12px);
+  min-height: var(--piece);
 }
 
-/* まとまり：3こずつ並べる（--cols は、3こより少ないときの列の数） */
-.pieces {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 3), var(--piece));
-  gap: var(--gap);
-  min-height: var(--piece);
+.together {
+  padding: 1.25rem 1rem 0.6rem;
+}
+
+.together .pieces {
+  width: calc(var(--piece) * 5 + 24px);
 }
 
 .count {
@@ -77,15 +115,23 @@
   color: var(--color-muted);
 }
 
-/* 左へ動かせることを示す、小さな矢印 */
+/* まん中へ動かせることを示す、小さな矢印 */
 .chevron {
   position: absolute;
   top: 50%;
-  left: -18px;
   width: 16px;
   height: 16px;
   margin-top: -8px;
   color: var(--color-faint);
+}
+
+.plate[data-side='left'] .chevron {
+  right: -20px;
+}
+
+.plate[data-side='right'] .chevron {
+  left: -20px;
+  transform: scaleX(-1);
 }
 
 /* おはじき：縁取り・影のない平たい丸。台本の図と同じ赤と青 */
@@ -142,7 +188,7 @@ button.piece:focus-visible {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .mover:not([data-dragging]) .chevron {
+  .plate:not([data-arrived]) .chevron {
     animation: nudge 1.4s ease-in-out infinite;
   }
 
@@ -156,7 +202,7 @@ button.piece:focus-visible {
       translate: 0 0;
     }
     50% {
-      translate: -3px 0;
+      translate: 3px 0;
     }
   }
 

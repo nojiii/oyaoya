@@ -1,4 +1,4 @@
-import type { CounterProblem } from './counterModel'
+import type { CounterProblem, CounterSide } from './counterModel'
 
 export function counterPrompt(
   problem: CounterProblem | undefined,
@@ -6,16 +6,18 @@ export function counterPrompt(
   total: number,
   showQuestion: boolean,
   apples = false,
-  joined = false,
+  gathered: CounterSide[] = [],
 ) {
   const object = apples ? 'りんご' : 'おはじき'
-  // 10までのたし算は、左のおさらは動かさず、右のおさらをまとまりのまま左へ足して1つにする
+  // 10までのたし算は、2つのおさらを両方まん中へ寄せる（台本の「両手で一緒にまん中へ寄せる」と同じ）
   if (problem?.mode === 'add') {
-    if (joined)
+    if (gathered.length >= 2)
       return showQuestion
-        ? `ぜんぶで ${object}は なんこに なったかな？`
-        : 'ひとつに なったね。'
-    return `${problem.a}こに ${problem.b}こを たしてみよう。`
+        ? `あわせて ${object}は なんこかな？`
+        : 'まん中で ひとつに なったね。'
+    if (gathered.length === 1)
+      return `${gathered[0] === 'left' ? 'みぎ' : 'ひだり'}の ${object}も、まん中へ よせよう。`
+    return `${problem.a}こと ${problem.b}こを、まん中へ よせてみよう。`
   }
   const subtract = problem?.mode === 'sub' || problem?.mode === 'borrow'
   // 繰り上がりのたし算は、左のわくを10こにするところまで動かす
