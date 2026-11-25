@@ -7,6 +7,7 @@ import { ContinueToCheck } from './ContinueToCheck'
 import { CONTINUE_TO_CHECK_TITLE } from './continueToCheckWords'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
+import { ReviewButton } from './ReviewButton'
 import { VisualPlayground } from './VisualPlayground'
 import {
   additionCheck,
@@ -225,15 +226,6 @@ export function AdditionCheck({
       </SpokenWords>
       <ReviewButton onClick={onReview} />
     </div>
-  )
-}
-
-// たしかめの問題が解けなかったときに、解説（問題を読むページ）へ戻るボタン
-function ReviewButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button className={styles.review} type="button" onClick={onClick}>
-      解説にもどる
-    </button>
   )
 }
 

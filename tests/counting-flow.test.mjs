@@ -16,8 +16,9 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     const { loadProblem } = await import('../src/pages/loaders.ts')
     const { default: ProblemDetail } =
       await import('../src/pages/ProblemDetail.tsx')
-    const { countingPages, restoreCountingPage, countingFlowStatus } =
+    const { countingPages, restoreCountingProgress, countingFlowStatus } =
       await import('../src/components/countingFlowState.ts')
+    const restoreCountingPage = (raw, n) => restoreCountingProgress(raw, n).page
     const path = '/problems/counting'
     const render = (element) => {
       const router = createMemoryRouter([{ path, element }], {
@@ -188,4 +189,97 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
     if (previousStorage === undefined) delete globalThis.sessionStorage
     else globalThis.sessionStorage = previousStorage
   }
+})
+
+// 準備の画面の「わかる」で、解説をとばして、たしかめ（反対のはしから数える → 言われた数だけ取る）から始める。
+// 数えられなかったら「解説にもどる」で、問題を読むページへ戻る
+test('counting can start at the check pages and go back to the explanation', async () => {
+  const {
+    checkOnlyCountingProgress: checkOnly,
+    initialCountingProgress: initial,
+    countingPages,
+    countingPagesOf,
+    moveCounting,
+    reviewCounting,
+    restoreCountingProgress,
+    countingFlowStatus,
+  } = await import('../src/components/countingFlowState.ts')
+  assert.deepEqual(countingPagesOf(true), ['recount', 'give'])
+  assert.deepEqual(countingPagesOf(false), countingPages)
+  // たしかめの2ページだけを行き来する
+  assert.deepEqual(moveCounting(checkOnly, -1), checkOnly)
+  const give = moveCounting(checkOnly, 1)
+  assert.deepEqual(give, { page: 'give', checkOnly: true })
+  assert.deepEqual(moveCounting(give, 1), give)
+  assert.deepEqual(moveCounting(give, -1), checkOnly)
+  // 解説にもどると、問題を読むページから（「わかる」で始めたときも、解説から進めてきたときも）
+  for (const from of [
+    checkOnly,
+    give,
+    { page: 'recount', checkOnly: false },
+    { page: 'give', checkOnly: false },
+  ])
+    assert.deepEqual(reviewCounting(from), initial)
+  // たしかめ以外のページからは戻らない
+  for (const page of ['read', 'line', 'count', 'answer', 'more']) {
+    const state = { page, checkOnly: false }
+    assert.deepEqual(reviewCounting(state), state)
+  }
+  // 保存して開き直しても、たしかめから。最後のページまで終えたら、最初から
+  const saved = (progress) => JSON.stringify({ n: 5, ...progress })
+  assert.deepEqual(restoreCountingProgress(saved(checkOnly), 5), checkOnly)
+  assert.equal(countingFlowStatus(saved(checkOnly), 5), 'middle')
+  assert.deepEqual(restoreCountingProgress(saved(give), 5), initial)
+  assert.equal(countingFlowStatus(saved(give), 5), 'finished')
+  // 「わかる」で始めたものに、解説のページは保存されていない
+  assert.deepEqual(
+    restoreCountingProgress(saved({ page: 'count', checkOnly: true }), 5),
+    initial,
+  )
+
+  // 「わかる」で始めたときの、たしかめのページの文。まだ数えていないので、「こんどは」とは言わない
+  const { CountingFlow } = await import('../src/components/CountingFlow.tsx')
+  const { ScriptControls } = await import('../src/components/scriptControls.ts')
+  const path = '/problems/counting'
+  const router = createMemoryRouter(
+    [
+      {
+        path,
+        element: createElement(
+          ScriptControls.Provider,
+          { value: { finish() {}, startFrom: 'check' } },
+          createElement(CountingFlow, { n: 4 }),
+        ),
+      },
+    ],
+    { initialEntries: [path] },
+  )
+  let html
+  try {
+    html = renderToString(createElement(RouterProvider, { router })).replace(
+      /<!-- -->/g,
+      '',
+    )
+  } finally {
+    router.dispose()
+  }
+  const text = (from, to) =>
+    html
+      .slice(html.indexOf(from), to ? html.indexOf(to) : undefined)
+      .replace(/<[^>]*>/g, '')
+  assert.match(html, /data-slide="recount" data-active="true"/)
+  assert.ok(html.includes('1 / 2ページ'))
+  const recount = text('data-slide="recount"', 'data-slide="give"')
+  assert.ok(recount.includes('身近なものを4個、横1列に並べて'))
+  assert.ok(
+    recount.includes('こっちのはしから、1こずつ数えてみよう。全部で何こかな？'),
+  )
+  assert.ok(!recount.includes('こんどは'))
+  assert.ok(recount.includes('「4」と答えたら'))
+  assert.ok(recount.includes('解説にもどる'))
+  const giveText = text('data-slide="give"')
+  assert.ok(giveText.includes('この中から、2こちょうだい。'))
+  assert.ok(giveText.includes('解説にもどる'))
+  assert.ok(giveText.includes('終わる'))
+  assert.ok(!html.includes('\n') && !html.includes('**'))
 })

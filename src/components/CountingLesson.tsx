@@ -45,6 +45,8 @@ export function CountingLesson({ initial }: Props) {
         )
       }
       editor={editor}
+      // 「わかる」で、たしかめ（反対のはしから数える → 言われた数だけ取ってもらう）から始められる
+      skipToCheck
       picture={<CountingLine n={n} />}
       prepare={{
         // 流れは「教え方の流れ」でわかるので、「声かけを先に読んでおく」は出さない

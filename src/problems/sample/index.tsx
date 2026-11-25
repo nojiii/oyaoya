@@ -12,6 +12,7 @@ import { Oyajii } from '../../components/Oyajii'
 import { SpokenWords } from '../../components/SpokenWords'
 import { TeachingPoints } from '../../components/TeachingPoints'
 import { useScriptControls } from '../../components/scriptControls'
+import { ReviewButton } from '../../components/ReviewButton'
 import { ContinueToCheck } from '../../components/ContinueToCheck'
 import {
   CONTINUE_TO_CHECK_TITLE,
@@ -49,6 +50,11 @@ const words = {
     `ひとりでできたね！ ${TOTAL + 1}こから${eat}こ食べると、残りは${TOTAL + 1 - eat}こだね。`,
   aloneWrong:
     'おしい！ さっきと同じように、食べた分をよけて、残りを数えてみよう。',
+  // 準備の画面の「わかる」で、たしかめから始めたとき。解説を聞いていないので、「こんどは」「さっきと同じように」とは言わない
+  checkFirst: (eat: number) =>
+    `あめが${TOTAL + 1}こ あるよ。${eat}こ食べると、残りは何こ？ ひとりでやってみよう。`,
+  // 解けなかったとき。「解説にもどる」で、問題を読むページから一緒に解く
+  stuck: 'だいじょうぶ。いっしょに、はじめから考えてみよう。',
 }
 
 // 答えを聞くページ（count・check）の、教え方のポイントの最後に置く。
@@ -74,10 +80,17 @@ const pages = [
 type Page = (typeof pages)[number]
 type Route = 'physical' | 'picture'
 
+// 準備の画面の「わかる」で始めたときは、解説をとばして、たしかめの問題（ひとりで解く → 答えを確認する）だけにする
+const checkPages = ['check', 'checkAnswer'] as const
+const pagesOf = (checkOnly: boolean): readonly Page[] =>
+  checkOnly ? checkPages : pages
+
 interface Progress {
   eat: number
   route: Route | null
   page: Page
+  // 準備の画面の「わかる」で、たしかめから始めたか
+  checkOnly: boolean
 }
 
 // 進み具合は、同じタブの中で保存する（準備の画面へ戻ると、台本の部品は作り直されるため）。
@@ -87,10 +100,11 @@ const storageKey = (pathname: string) => `sample-flow:v1:${pathname}`
 function readProgress(raw: string | null, eat: number): Progress | null {
   try {
     const saved = JSON.parse(raw ?? 'null') as Partial<Progress> | null
-    const page = pages.find((page) => page === saved?.page)
+    const checkOnly = saved?.checkOnly === true
+    const page = pagesOf(checkOnly).find((page) => page === saved?.page)
     // 食べる数を変えたら、続きは使わない
     if (saved?.eat === eat && page)
-      return { eat, route: saved.route ?? null, page }
+      return { eat, route: saved.route ?? null, page, checkOnly }
   } catch {
     // 古い形式や壊れた保存内容は使わない
   }
@@ -144,11 +158,15 @@ function Equation({
 
 function SampleFlow({ eat }: { eat: number }) {
   // 最後のページの「終わる」で、準備の画面へ戻る。
-  // 準備の画面から開いたときは、最初から（保存した続きは、台本を開いたまま読み直したときだけ使う）
+  // 準備の画面から開いたときは、保存した続きを使わない（「わかる」ならたしかめの問題から、それ以外は最初から）。
+  // 保存した続きは、台本を開いたまま読み直したときだけ使う
   const { finish, startFrom } = useScriptControls()
   const key = storageKey(useLocation().pathname)
   const [progress, setProgress] = useState<Progress>(() => {
-    if (startFrom !== 'saved') return { eat, route: null, page: 'read' }
+    if (startFrom === 'check')
+      return { eat, route: null, page: 'check', checkOnly: true }
+    if (startFrom === 'start')
+      return { eat, route: null, page: 'read', checkOnly: false }
     try {
       const saved = readProgress(sessionStorage.getItem(key), eat)
       // 最後のページまで終えたあとは、最初から
@@ -156,7 +174,7 @@ function SampleFlow({ eat }: { eat: number }) {
     } catch {
       // 読めないときは、最初から
     }
-    return { eat, route: null, page: 'read' }
+    return { eat, route: null, page: 'read', checkOnly: false }
   })
   useEffect(() => {
     try {
@@ -165,10 +183,17 @@ function SampleFlow({ eat }: { eat: number }) {
       // 保存できなくても、この画面で学習を続けられる
     }
   }, [key, progress])
-  const { route, page } = progress
-  const index = pages.indexOf(page)
+  const { route, page, checkOnly } = progress
+  const flowPages = pagesOf(checkOnly)
+  const index = flowPages.indexOf(page)
   const go = (next: Page | undefined) => {
     if (next) setProgress({ ...progress, page: next })
+  }
+  // たしかめの問題が解けなかったら、「解説にもどる」で問題を読むページへ戻る。
+  // 選んだ方法は残す（「わかる」で始めたときは、方法を選ぶところから）。ページの下のほうで押すので、画面を上へ戻す
+  const review = () => {
+    setProgress({ eat, route, page: 'read', checkOnly: false })
+    window.scrollTo(0, 0)
   }
   // 選ぶまでは進めない。最後のページから先はない。それ以外のページは、いつでもスワイプで進む
   const canNext = page === 'choose' ? route !== null : page !== 'checkAnswer'
@@ -346,9 +371,16 @@ function SampleFlow({ eat }: { eat: number }) {
         <div className={flowStyles.answer}>
           <TeachingPoints
             collapsible
-            note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。\n\n${BEFORE_ANSWER}`}
+            note={`親は手を出さず、**見守りましょう**。${eat}個を自分でよけて、残りだけを数えられていれば、解けています。\n\n解き方が分からず手が止まったら、**「解説にもどる」**で、問題を読むところから一緒に解きましょう。\n\n${BEFORE_ANSWER}`}
           />
-          <SpokenWords>{words.check(eat)}</SpokenWords>
+          <SpokenWords>
+            {checkOnly ? words.checkFirst(eat) : words.check(eat)}
+          </SpokenWords>
+          {/* 解けなかったときに、解説（問題を読むページ）へ戻る。控えのセリフを添える */}
+          <SpokenWords title="わからなかったら" minor>
+            {words.stuck}
+          </SpokenWords>
+          <ReviewButton onClick={review} />
         </div>
       ),
     },
@@ -363,16 +395,19 @@ function SampleFlow({ eat }: { eat: number }) {
           <div className={flowStyles.answer}>
             <TeachingPoints
               collapsible
-              note={
-                'お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、**どこでつまずいたか**を見ましょう。食べた分をよけずに数えていたら、よけるところから一緒にやり直します。\n\nひとりでできなくても大丈夫です。今日は**一緒にできたこと**をほめて終わりましょう。'
-              }
+              note={`お子さんが前のページで答えた数に合わせて、声をかけましょう。\n\nちがう数を答えたときは、**どこでつまずいたか**を見ましょう。食べた分をよけずに数えていたら、よけるところから一緒にやり直します。\n\n${
+                checkOnly
+                  ? 'ひとりでできなくても大丈夫です。**「解説にもどる」**で、問題を読むところから一緒に解きましょう。'
+                  : 'ひとりでできなくても大丈夫です。**「解説にもどる」**で問題を読むところから一緒に解き直すか、今日は**一緒にできたこと**をほめて終わりましょう。'
+              }`}
             />
             <SpokenWords title={`「${TOTAL + 1 - eat}」と答えたら`}>
               {words.alone(eat)}
             </SpokenWords>
             <SpokenWords title="ちがう数を答えたら" minor>
-              {words.aloneWrong}
+              {checkOnly ? words.stuck : words.aloneWrong}
             </SpokenWords>
+            <ReviewButton onClick={review} />
           </div>
           <button
             className={flowStyles.finish}
@@ -389,12 +424,12 @@ function SampleFlow({ eat }: { eat: number }) {
   return (
     <LessonSlides
       label="見本の台本"
-      slides={pages.map((page) => slides[page])}
+      slides={flowPages.map((page) => slides[page])}
       currentId={page}
       totalKnown
       canNext={canNext}
-      onNext={() => go(pages[index + 1])}
-      onBack={() => go(pages[index - 1])}
+      onNext={() => go(flowPages[index + 1])}
+      onBack={() => go(flowPages[index - 1])}
     />
   )
 }
@@ -427,6 +462,8 @@ export default function Sample() {
         flowStatus(sessionStorage.getItem(storageKey(location.pathname)), eat)
       }
       editor={editor}
+      // 準備の画面に「わかる」を出す。押すと、解説をとばして、たしかめの問題（check）から始める（SampleFlow の startFrom）
+      skipToCheck
       // 準備の画面のステージに大きく出す図
       picture={<Candies total={TOTAL} />}
       prepare={{
