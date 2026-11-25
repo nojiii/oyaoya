@@ -55,7 +55,7 @@ test('counter results appear only after completion and disappear on undo or rese
   // questionKey は、動かし終えてから少し待って覚えた並び。最初は空
   const check = (problem, pieces, questionKey = '') =>
     counterProgress(problem, pieces, [], questionKey)
-  // 10までのたし算（add）は、おはじきではなく、おさらを寄せる（下のテスト）
+  // 10までのたし算（add）は、おはじきを1こずつまん中のおさらへ寄せる（下のテスト）
   for (const mode of ['carry', 'sub', 'borrow']) {
     const addition = mode === 'add' || mode === 'carry'
     const problem = {
@@ -154,34 +154,46 @@ test('carrying completes when the left frame holds ten, not when everything is g
   assert.equal(counterPrompt(problem, 4, 13, false), '2こ、もどしてみよう。')
 })
 
-// 10までのたし算は、台本の「両手で一緒にまん中へ寄せる」と同じく、片方にもう片方を足さない。
-// 2つのおさらを両方まん中へ寄せたらできあがり。片方だけでは、できあがりにしない
-test('adding within ten completes only after both plates are gathered in the middle', () => {
+// 10までのたし算は、片方にもう片方を足さない。左右のおさらからおはじきを1こずつまん中へ寄せ、
+// 全部がまん中に着いたらできあがり。片方のおさらだけや、1こ残ったままでは、できあがりにしない
+test('adding within ten completes only after every piece is gathered into the middle plate', () => {
   const problem = { mode: 'add', a: 3, b: 4 }
   const pieces = Array.from({ length: 7 }, (_, index) => ({
     id: index,
     green: index >= 3,
     side: index >= 3 ? 'right' : 'left',
   }))
+  // gathered は、まん中へ寄せたおはじきの id（左は 0〜2、右は 3〜6）
   const completedWith = (gathered, counted = []) => {
     const { progressKey } = counterProgress(problem, pieces, [], '', gathered)
     return counterProgress(problem, pieces, counted, progressKey, gathered)
       .completed
   }
   assert.equal(completedWith([]), false)
-  assert.equal(completedWith(['left']), false, 'one plate is not enough')
-  assert.equal(completedWith(['right']), false, 'one plate is not enough')
-  assert.equal(completedWith(['right', 'left']), true)
+  assert.equal(completedWith([0, 1, 2]), false, 'one plate is not enough')
+  assert.equal(completedWith([3, 4, 5, 6]), false, 'one plate is not enough')
+  assert.equal(completedWith([0, 3, 1, 4, 2, 5]), false, 'one piece is left')
+  assert.equal(completedWith([3, 0, 4, 1, 5, 2, 6]), true)
   // 寄せたあとに1こずつ数えても、できあがりのまま
-  assert.equal(completedWith(['left', 'right'], [0, 4, 2]), true)
+  assert.equal(completedWith([0, 1, 2, 3, 4, 5, 6], [0, 4, 2]), true)
 
   const say = (gathered, showQuestion = false) =>
     counterPrompt(problem, gathered.length, 7, showQuestion, false, gathered)
-  assert.equal(say([]), '3こと 4こを、まん中へ よせてみよう。')
-  assert.equal(say(['left']), 'みぎの おはじきも、まん中へ よせよう。')
-  assert.equal(say(['right']), 'ひだりの おはじきも、まん中へ よせよう。')
-  assert.equal(say(['left', 'right']), 'まん中で ひとつに なったね。')
-  assert.equal(say(['left', 'right'], true), 'あわせて おはじきは なんこかな？')
-  // 「みぎから あわせる」（片方に足す）案内は、もう出さない
-  assert.ok(![[], ['left'], ['right']].some((g) => say(g).includes('みぎから')))
+  const start = '3こと 4こを、1こずつ まん中へ よせてみよう。'
+  assert.equal(say([]), start)
+  // 寄せている途中は、寄せた数を出さない（合わせた数は、お子さんがあとで数える）
+  assert.equal(say([0, 4]), start)
+  assert.equal(say([0, 1, 2]), 'みぎの おはじきも、まん中へ よせよう。')
+  assert.equal(say([3, 1, 4, 5, 6]), 'ひだりの おはじきも、まん中へ よせよう。')
+  assert.equal(say([0, 1, 2, 3, 4, 5, 6]), 'まん中で ひとつに なったね。')
+  assert.equal(
+    say([0, 1, 2, 3, 4, 5, 6], true),
+    'あわせて おはじきは なんこかな？',
+  )
+  // 「みぎから あわせる」（片方に足す）案内は、出さない
+  assert.ok(
+    ![[], [0], [0, 1, 2], [3, 4, 5, 6]].some((g) =>
+      say(g).includes('みぎから'),
+    ),
+  )
 })

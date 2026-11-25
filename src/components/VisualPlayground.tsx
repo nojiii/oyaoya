@@ -11,7 +11,6 @@ import {
   counterGroups,
   counterProgress,
   type CounterProblem,
-  type CounterSide,
 } from './counterModel'
 import { CounterGather } from './CounterGather'
 import styles from './VisualPlayground.module.css'
@@ -82,8 +81,8 @@ export function VisualPlayground({
   const [selected, setSelected] = useState<number | null>(null)
   const [countedIds, setCountedIds] = useState<number[]>([])
   const [questionKey, setQuestionKey] = useState('')
-  // 10までのたし算で、まん中へ寄せ終えたおさら
-  const [gathered, setGathered] = useState<CounterSide[]>([])
+  // 10までのたし算で、まん中のおさらへ寄せたおはじきの id（着いた順）
+  const [gathered, setGathered] = useState<number[]>([])
   // もとにもどすたびに増やし、寄せる広場を作り直す（動かしている途中の位置を残さない）
   const [round, setRound] = useState(0)
   const [hasInteracted, setHasInteracted] = useState(false)
@@ -108,7 +107,7 @@ export function VisualPlayground({
   const operationHint = subtraction
     ? 'おはじきを みぎへ うごかしてみよう'
     : gather
-      ? 'おさらを ゆびで まん中へ うごかしてみよう'
+      ? 'おはじきを 1こずつ まん中へ うごかしてみよう'
       : addition
         ? 'みぎの おはじきを ひだりへ うごかしてみよう'
         : 'おはじきを さわって かぞえてみよう'
@@ -472,10 +471,8 @@ export function VisualPlayground({
                 countedIds={countedIds}
                 describedBy={hint}
                 onInteract={() => setHasInteracted(true)}
-                onArrive={(side) =>
-                  setGathered((sides) =>
-                    sides.includes(side) ? sides : [...sides, side],
-                  )
+                onGather={(id) =>
+                  setGathered((ids) => (ids.includes(id) ? ids : [...ids, id]))
                 }
                 onCount={(id) =>
                   setCountedIds((ids) =>

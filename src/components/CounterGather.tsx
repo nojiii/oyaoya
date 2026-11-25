@@ -1,32 +1,38 @@
-import { useRef, type PointerEvent } from 'react'
+import { useRef, type MouseEvent, type PointerEvent } from 'react'
 import { flushSync } from 'react-dom'
-import type { CounterSide } from './counterModel'
 import styles from './CounterGather.module.css'
+
+type Side = 'left' | 'right'
 
 type Drag = {
   pointer: number
   startX: number
-  // まん中の線に着くまでに動ける量（左のおさらは正、右のおさらは負）
-  limit: number
+  startY: number
   dx: number
+  dy: number
+  // 少しでも指をすべらせたら、タップではなくドラッグとして扱う
+  moved: boolean
 }
 
 const SIDE_NAME = { left: 'ひだり', right: 'みぎ' } as const
 const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
+// これより短い動きは、指のぶれとしてタップにする
+const DRAG_THRESHOLD = 6
 
 const reducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-// 10までのたし算の広場。台本の「両手で一緒にまん中へ寄せる」と同じく、
-// a このおさらと b このおさらを、それぞれ指でまん中へ寄せる。片方を、もう片方へ運ぶことはできない。
-// 両方がまん中に着いたら1つのおさらにまとめ、さわった順に 1、2、3… と数字を出す（数えた跡）
+// 10までのたし算の広場。左に a このおさら、右に b このおさら、まん中に空のおさらを置き、
+// おはじきを1こずつ、まん中のおさらへ寄せる（指でまん中まで運んでも、さわるだけでもよい）。
+// 片方を、もう片方のおさらへ運ぶことはできない。
+// 全部がまん中に着いたら1つのおさらにまとまったことにし、さわった順に 1、2、3… と数字を出す（数えた跡）
 export function CounterGather({
   a,
   b,
   apples = false,
   gathered,
   countedIds,
-  onArrive,
+  onGather,
   onCount,
   onInteract,
   describedBy,
@@ -34,66 +40,65 @@ export function CounterGather({
   a: number
   b: number
   apples?: boolean
-  gathered: CounterSide[]
+  // まん中へ寄せたおはじきの id（着いた順）。左のおさらは 0 〜 a−1、右のおさらは a 〜 a+b−1
+  gathered: number[]
   countedIds: number[]
-  onArrive: (side: CounterSide) => void
+  onGather: (id: number) => void
   onCount: (id: number) => void
   onInteract: () => void
   describedBy?: string
 }) {
   const board = useRef<HTMLDivElement>(null)
-  const plates = useRef<Record<CounterSide, HTMLDivElement | null>>({
-    left: null,
-    right: null,
-  })
-  const drags = useRef<Record<CounterSide, Drag | null>>({
-    left: null,
-    right: null,
-  })
-  const merged = gathered.includes('left') && gathered.includes('right')
+  const middle = useRef<HTMLDivElement>(null)
+  const drags = useRef(new Map<number, Drag>())
+  // ドラッグで動かしたあとに続けて届くクリックは、タップとして扱わない
+  const dragged = useRef(new Set<number>())
+  const merged = gathered.length >= a + b
   const object = apples ? 'りんご' : 'おはじき'
-  // 左のおさらは 0 〜 a−1、右のおさらは a 〜 a+b−1
-  const groups: { side: CounterSide; ids: number[] }[] = [
-    { side: 'left', ids: Array.from({ length: a }, (_, i) => i) },
-    { side: 'right', ids: Array.from({ length: b }, (_, i) => a + i) },
-  ]
-
-  const limitOf = (side: CounterSide, plate: HTMLDivElement) => {
-    const area = board.current!.getBoundingClientRect()
-    const rect = plate.getBoundingClientRect()
-    const center = area.left + area.width / 2
-    // おさらどうしの間は、列の間（CSS の column-gap）と同じだけあける
-    const gap = parseFloat(getComputedStyle(board.current!).columnGap) / 2 || 0
-    return side === 'left'
-      ? center - gap - rect.right
-      : center + gap - rect.left
-  }
-
-  const slideBack = (plate: HTMLDivElement, dx: number) => {
-    plate.style.transform = ''
-    if (!dx || reducedMotion()) return
-    plate.animate(
-      [{ transform: `translateX(${dx}px)` }, { transform: 'translateX(0)' }],
-      { duration: 220, easing: EASING },
+  const sideOf = (id: number): Side => (id < a ? 'left' : 'right')
+  const remaining = (from: number, count: number) =>
+    Array.from({ length: count }, (_, i) => from + i).filter(
+      (id) => !gathered.includes(id),
     )
+
+  // おはじきのまん中が、まん中のおさらの手前の端まで来たら、まん中に着いたことにする
+  const reaches = (id: number, node: HTMLElement) => {
+    const target = middle.current?.getBoundingClientRect()
+    if (!target) return false
+    const rect = node.getBoundingClientRect()
+    const center = rect.left + rect.width / 2
+    return sideOf(id) === 'left'
+      ? center >= target.left
+      : center <= target.right
   }
 
-  // まん中に着ける。おさらは CSS の並び（data-arrived）でまん中へ動くので、
-  // 指を離した位置から、着いた位置へすべらせる。両方が着いたら、おはじきを1つのおさらへ集める
-  const arrive = (side: CounterSide) => {
-    const plate = plates.current[side]
-    if (!plate || !board.current) return
+  // まん中のおさらへ移す。おはじきは React が並べ直すので、移す前の位置から、着いた位置へすべらせる。
+  // まわりのおはじき（残ったおはじきの詰め直し）も同じようにすべらせる
+  const gather = (id: number, keyboard: boolean) => {
+    const area = board.current
+    if (!area) return
     const before = new Map<string, DOMRect>()
-    board.current
+    area
       .querySelectorAll<HTMLElement>('[data-piece]')
       .forEach((node) =>
         before.set(node.dataset.piece!, node.getBoundingClientRect()),
       )
-    const plateBefore = plate.getBoundingClientRect()
-    plate.style.transform = ''
-    flushSync(() => onArrive(side))
+    const last = gathered.length + 1 >= a + b
+    flushSync(() => onGather(id))
+    // キーボードで動かしたときは、同じおさらの次のおはじきへ（なければ、もう片方のおさらや数える段へ）フォーカスを移す
+    if (keyboard)
+      (
+        area.querySelector<HTMLElement>(
+          `[data-side="${sideOf(id)}"] [data-piece]`,
+        ) ??
+        area.querySelector<HTMLElement>(
+          '[data-side] [data-piece], [data-middle] button[data-piece]',
+        )
+      )?.focus()
     if (reducedMotion()) return
-    const animate = (node: Element, from: DOMRect, duration: number) => {
+    area.querySelectorAll<HTMLElement>('[data-piece]').forEach((node) => {
+      const from = before.get(node.dataset.piece!)
+      if (!from) return
       const to = node.getBoundingClientRect()
       const dx = from.left - to.left
       const dy = from.top - to.top
@@ -103,93 +108,132 @@ export function CounterGather({
           { transform: `translate(${dx}px, ${dy}px)` },
           { transform: 'translate(0, 0)' },
         ],
-        { duration, easing: EASING },
+        {
+          duration: node.dataset.piece === String(id) ? 300 : 220,
+          easing: EASING,
+        },
       )
-    }
-    if (plate.isConnected) {
-      animate(plate, plateBefore, 240)
-      return
-    }
-    // 1つにまとめたおさら：2つのおさらの大きさから縮め、おはじきは元の場所から集める
-    const together = board.current.querySelector<HTMLElement>('[data-merged]')
-    if (together) {
-      const color = getComputedStyle(together).backgroundColor
-      together.animate(
+    })
+    // 最後の1こが着いたら、まん中のおさらを少しふくらませて、1つにまとまったことを見せる
+    const plate = middle.current
+    if (last && plate) {
+      const color = getComputedStyle(plate).backgroundColor
+      plate.animate(
         [
-          { boxShadow: `0 0 0 24px ${color}` },
+          { boxShadow: `0 0 0 0 ${color}` },
+          { boxShadow: `0 0 0 10px ${color}` },
           { boxShadow: `0 0 0 0 ${color}` },
         ],
-        { duration: 360, easing: EASING },
+        { duration: 420, easing: EASING },
       )
     }
-    board.current
-      .querySelectorAll<HTMLElement>('[data-piece]')
-      .forEach((node) => {
-        const from = before.get(node.dataset.piece!)
-        if (from) animate(node, from, 380)
-      })
   }
 
-  const dragHandlers = (side: CounterSide) => {
-    const done = gathered.includes(side)
-    const end = (event: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
-      const drag = drags.current[side]
+  const slideBack = (node: HTMLElement, dx: number, dy: number) => {
+    node.style.transform = ''
+    if ((!dx && !dy) || reducedMotion()) return
+    node.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px)` },
+        { transform: 'translate(0, 0)' },
+      ],
+      { duration: 220, easing: EASING },
+    )
+  }
+
+  const setOver = (over: boolean) => {
+    if (!middle.current) return
+    if (over) middle.current.dataset.over = 'true'
+    else delete middle.current.dataset.over
+  }
+
+  const sourceHandlers = (id: number) => {
+    const end = (
+      event: PointerEvent<HTMLButtonElement>,
+      cancelled: boolean,
+    ) => {
+      const drag = drags.current.get(id)
       if (!drag || drag.pointer !== event.pointerId) return
-      drags.current[side] = null
-      const plate = event.currentTarget
-      delete plate.dataset.dragging
-      // 半分ほど寄せたら、まん中に着ける
-      if (!cancelled && drag.limit && drag.dx / drag.limit >= 0.5) arrive(side)
-      else slideBack(plate, drag.dx)
+      drags.current.delete(id)
+      setOver(false)
+      // 動かさずに離したときは、続くクリック（タップ）で寄せる
+      if (!drag.moved) return
+      dragged.current.add(id)
+      const node = event.currentTarget
+      if (!cancelled && reaches(id, node)) {
+        gather(id, false)
+        return
+      }
+      delete node.dataset.dragging
+      slideBack(node, drag.dx, drag.dy)
     }
     return {
-      onPointerDown: (event: PointerEvent<HTMLDivElement>) => {
-        if (done || drags.current[side] || event.button !== 0) return
+      onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
+        if (drags.current.has(id) || event.button !== 0) return
         onInteract()
-        const plate = event.currentTarget
-        plate.getAnimations().forEach((animation) => animation.cancel())
-        drags.current[side] = {
+        dragged.current.delete(id)
+        const node = event.currentTarget
+        node.getAnimations().forEach((animation) => animation.cancel())
+        drags.current.set(id, {
           pointer: event.pointerId,
           startX: event.clientX,
-          limit: limitOf(side, plate),
+          startY: event.clientY,
           dx: 0,
-        }
-        plate.dataset.dragging = 'true'
-        plate.setPointerCapture(event.pointerId)
+          dy: 0,
+          moved: false,
+        })
+        node.setPointerCapture(event.pointerId)
       },
-      onPointerMove: (event: PointerEvent<HTMLDivElement>) => {
-        const drag = drags.current[side]
+      onPointerMove: (event: PointerEvent<HTMLButtonElement>) => {
+        const drag = drags.current.get(id)
         if (!drag || drag.pointer !== event.pointerId) return
-        const raw = event.clientX - drag.startX
-        // まん中の線をこえない。外側へも動かない
-        drag.dx =
-          side === 'left'
-            ? Math.min(Math.max(raw, 0), Math.max(drag.limit, 0))
-            : Math.max(Math.min(raw, 0), Math.min(drag.limit, 0))
-        event.currentTarget.style.transform = `translateX(${drag.dx}px)`
+        drag.dx = event.clientX - drag.startX
+        drag.dy = event.clientY - drag.startY
+        if (!drag.moved && Math.hypot(drag.dx, drag.dy) < DRAG_THRESHOLD) return
+        drag.moved = true
+        const node = event.currentTarget
+        node.dataset.dragging = 'true'
+        node.style.transform = `translate(${drag.dx}px, ${drag.dy}px)`
+        setOver(reaches(id, node))
       },
-      onPointerUp: (event: PointerEvent<HTMLDivElement>) => end(event, false),
-      onPointerCancel: (event: PointerEvent<HTMLDivElement>) =>
+      onPointerUp: (event: PointerEvent<HTMLButtonElement>) =>
+        end(event, false),
+      onPointerCancel: (event: PointerEvent<HTMLButtonElement>) =>
         end(event, true),
-      onLostPointerCapture: (event: PointerEvent<HTMLDivElement>) =>
+      onLostPointerCapture: (event: PointerEvent<HTMLButtonElement>) =>
         end(event, true),
+      // さわるだけでも、まん中へ寄せる（Enter・スペースでも同じ）
+      onClick: (event: MouseEvent<HTMLButtonElement>) => {
+        const keyboard = event.detail === 0
+        if (!keyboard && dragged.current.delete(id)) return
+        onInteract()
+        gather(id, keyboard)
+      },
     }
   }
 
-  const piece = (id: number, index: number, interactive: boolean) => {
-    const order = countedIds.indexOf(id)
-    const className = `${styles.piece} ${id >= a ? styles.second : ''} ${apples ? styles.apple : ''}`
-    if (!interactive)
+  const className = (id: number) =>
+    `${styles.piece} ${id >= a ? styles.second : ''} ${apples ? styles.apple : ''}`
+
+  // まん中のおはじき。全部そろうまでは飾り、そろったら数えるボタンにする
+  const middlePiece = (id: number, index: number) => {
+    if (!merged)
       return (
-        <span key={id} className={className} data-piece={id} aria-hidden="true">
+        <span
+          key={id}
+          className={className(id)}
+          data-piece={id}
+          aria-hidden="true"
+        >
           {apples ? '🍎' : ''}
         </span>
       )
+    const order = countedIds.indexOf(id)
     return (
       <button
         type="button"
         key={id}
-        className={className}
+        className={className(id)}
         data-piece={id}
         data-counted={order >= 0 || undefined}
         aria-label={
@@ -205,80 +249,61 @@ export function CounterGather({
     )
   }
 
+  // 左右のおさら。寄せずに残っているおはじきだけを並べる。下の「3こ」は、はじめの数のまま出しておく
+  const plate = (side: Side, count: number, ids: number[]) => (
+    <div
+      className={styles.plate}
+      data-side={side}
+      data-empty={ids.length === 0 || undefined}
+      role="group"
+      aria-label={`${SIDE_NAME[side]}の おさら ${count}こ`}
+    >
+      <div className={styles.pieces}>
+        {ids.map((id) => (
+          <button
+            type="button"
+            key={id}
+            className={className(id)}
+            data-piece={id}
+            aria-label={`${SIDE_NAME[side]}の ${object}。まん中へ よせる`}
+            aria-describedby={describedBy}
+            {...sourceHandlers(id)}
+          >
+            {apples ? '🍎' : ''}
+          </button>
+        ))}
+      </div>
+      <span className={styles.count}>{count}こ</span>
+    </div>
+  )
+
   return (
     <div
       ref={board}
       className={styles.board}
-      data-merged={merged || undefined}
       aria-label={`${object}を まん中へ よせる広場`}
     >
-      {merged ? (
-        <div
-          className={`${styles.plate} ${styles.together}`}
-          data-merged
-          role="group"
-          aria-label={`まん中で ひとつに なった${object}`}
-        >
-          <div className={styles.pieces}>
-            {[...groups[0].ids, ...groups[1].ids].map((id, index) =>
-              piece(id, index, true),
-            )}
-          </div>
-          {/* 合わせた数は、お子さんが数えるので出さない */}
-          <span className={styles.count}>？こ</span>
+      {plate('left', a, remaining(0, a))}
+      <div
+        ref={middle}
+        className={`${styles.plate} ${styles.middle}`}
+        data-middle
+        data-merged={merged || undefined}
+        role="group"
+        aria-label={
+          merged ? `まん中で ひとつに なった${object}` : 'まん中の おさら'
+        }
+      >
+        <span className={styles.middleLabel} aria-hidden="true">
+          まん中
+        </span>
+        <div className={styles.pieces}>
+          {gathered.map((id, index) => middlePiece(id, index))}
         </div>
-      ) : (
-        <>
-          <span className={styles.middle} aria-hidden="true">
-            <span>まん中</span>
-          </span>
-          {groups.map(({ side, ids }) => {
-            const done = gathered.includes(side)
-            return (
-              <div
-                key={side}
-                ref={(node) => {
-                  plates.current[side] = node
-                }}
-                className={styles.plate}
-                data-side={side}
-                data-arrived={done || undefined}
-                role={done ? 'group' : 'button'}
-                tabIndex={done ? undefined : 0}
-                aria-label={`${SIDE_NAME[side]}の ${object} ${ids.length}こ${done ? '（まん中に よせた）' : '。まん中へ よせる'}`}
-                aria-describedby={describedBy}
-                onKeyDown={(event) => {
-                  if (done || (event.key !== 'Enter' && event.key !== ' '))
-                    return
-                  event.preventDefault()
-                  onInteract()
-                  arrive(side)
-                }}
-                {...dragHandlers(side)}
-              >
-                <div className={styles.pieces}>
-                  {ids.map((id, index) => piece(id, index, false))}
-                </div>
-                <span className={styles.count}>{ids.length}こ</span>
-                {!done && (
-                  <svg
-                    className={styles.chevron}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m9 6 6 6-6 6" />
-                  </svg>
-                )}
-              </div>
-            )
-          })}
-        </>
-      )}
+        {/* 合わせた数は、お子さんが数えるので出さない */}
+        <span className={styles.count}>？こ</span>
+      </div>
+      {plate('right', b, remaining(a, b))}
     </div>
   )
 }

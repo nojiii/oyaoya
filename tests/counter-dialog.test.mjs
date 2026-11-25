@@ -92,24 +92,30 @@ test('the counter dialog closes only through close(), which runs the follow-up o
   }
 })
 
-// 10までのたし算：おさらを指でまん中へ寄せる。半分より手前で離すと戻り、両方を寄せたら1つにまとめて数える
-test('adding within ten gathers both plates into the middle before counting', () => {
+// 10までのたし算：左右のおさらから、おはじきを1こずつまん中のおさらへ寄せる。
+// 指でまん中まで運んでも、さわるだけでもよい。手前で離すと戻る。全部寄せたら1つにまとめて数える
+test('adding within ten gathers the pieces one by one into the middle plate before counting', () => {
   stubAnimations()
   stubPointerCapture()
-  // 広場は 0〜400px、左のおさらは 0〜100px、右のおさらは 300〜400px（まん中の線まで、それぞれ100px動かせる）
+  // 広場は 0〜400px。まん中のおさらは 150〜250px。左のおはじきは 0〜30px、右のおはじきは 370〜400px にあり、
+  // 指で動かした分（style.transform の translate）だけずれる
   stub(Element.prototype, 'getBoundingClientRect', function () {
-    const side = this.dataset?.side
-    const [left, right] =
-      side === 'left' ? [0, 100] : side === 'right' ? [300, 400] : [0, 400]
+    let [left, right] = [0, 400]
+    if (this.dataset?.middle !== undefined) [left, right] = [150, 250]
+    else if (this.dataset?.piece !== undefined)
+      [left, right] = Number(this.dataset.piece) < 3 ? [0, 30] : [370, 400]
+    const dx = Number(
+      /translate\((-?[\d.]+)px/.exec(this.style?.transform ?? '')?.[1] ?? 0,
+    )
     return {
-      x: left,
+      x: left + dx,
       y: 0,
-      left,
-      right,
+      left: left + dx,
+      right: right + dx,
       top: 0,
-      bottom: 100,
+      bottom: 30,
       width: right - left,
-      height: 100,
+      height: 30,
     }
   })
   vi.useFakeTimers()
@@ -126,46 +132,70 @@ test('adding within ten gathers both plates into the middle before counting', ()
       ),
     )
     fireEvent.click(container.querySelector('[aria-haspopup="dialog"]'))
-    const plate = (name) =>
-      screen.getByRole('button', {
-        name: new RegExp(`^${name}の おはじき`),
+    const sources = (side) =>
+      screen.queryAllByRole('button', {
+        name: `${side}の おはじき。まん中へ よせる`,
         hidden: true,
       })
+    const middle = () => container.querySelector('[data-middle]')
+    const inMiddle = () => middle().querySelectorAll('[data-piece]').length
     const prompt = () =>
       container.querySelector('[aria-live="polite"] span').textContent
-    assert.equal(prompt(), '3こと 4こを、まん中へ よせてみよう。')
+    const start = '3こと 4こを、1こずつ まん中へ よせてみよう。'
+    assert.equal(prompt(), start)
+    assert.equal(sources('ひだり').length, 3)
+    assert.equal(sources('みぎ').length, 4)
+    assert.equal(inMiddle(), 0)
 
-    // 左のおさらを少しだけ（40px）動かして離すと、元に戻る
-    const left = plate('ひだり')
-    fireEvent.pointerDown(left, { pointerId: 1, button: 0, clientX: 50 })
-    fireEvent.pointerMove(left, { pointerId: 1, clientX: 90 })
-    assert.equal(left.style.transform, 'translateX(40px)')
-    fireEvent.pointerUp(left, { pointerId: 1, clientX: 90 })
-    assert.equal(left.style.transform, '')
-    assert.equal(left.hasAttribute('data-arrived'), false)
+    // 左のおはじきを少しだけ（40px）運んで離すと、元に戻る。続くクリックでも寄せない
+    let piece = sources('ひだり')[0]
+    fireEvent.pointerDown(piece, { pointerId: 1, button: 0, clientX: 10 })
+    fireEvent.pointerMove(piece, { pointerId: 1, clientX: 50 })
+    assert.equal(piece.style.transform, 'translate(40px, 0px)')
+    assert.equal(middle().hasAttribute('data-over'), false)
+    fireEvent.pointerUp(piece, { pointerId: 1, clientX: 50 })
+    fireEvent.click(piece, { detail: 1 })
+    assert.equal(piece.style.transform, '')
+    assert.equal(sources('ひだり').length, 3)
+    assert.equal(inMiddle(), 0)
 
-    // 外側へは動かない。まん中の線もこえない
-    fireEvent.pointerDown(left, { pointerId: 2, button: 0, clientX: 50 })
-    fireEvent.pointerMove(left, { pointerId: 2, clientX: 0 })
-    assert.equal(left.style.transform, 'translateX(0px)')
-    fireEvent.pointerMove(left, { pointerId: 2, clientX: 400 })
-    assert.equal(left.style.transform, 'translateX(100px)')
-    fireEvent.pointerUp(left, { pointerId: 2, clientX: 400 })
-    // 寄せ終えたおさらは、もう押せない（ボタンではなくなる）
-    const leftPlate = container.querySelector('[data-side="left"]')
-    assert.equal(leftPlate.hasAttribute('data-arrived'), true)
-    assert.equal(leftPlate.getAttribute('role'), 'group')
+    // まん中のおさらまで運ぶと、おさらの色が変わり、離すとまん中へ入る
+    piece = sources('ひだり')[0]
+    fireEvent.pointerDown(piece, { pointerId: 2, button: 0, clientX: 10 })
+    fireEvent.pointerMove(piece, { pointerId: 2, clientX: 150 })
+    assert.equal(middle().hasAttribute('data-over'), true)
+    fireEvent.pointerUp(piece, { pointerId: 2, clientX: 150 })
+    assert.equal(middle().hasAttribute('data-over'), false)
+    assert.equal(sources('ひだり').length, 2)
+    assert.equal(inMiddle(), 1)
+    // 寄せている途中は、寄せた数を出さない
+    assert.equal(prompt(), start)
+
+    // さわるだけでも（指をほとんど動かさずに離すと）、まん中へ入る
+    piece = sources('ひだり')[0]
+    fireEvent.pointerDown(piece, { pointerId: 3, button: 0, clientX: 10 })
+    fireEvent.pointerMove(piece, { pointerId: 3, clientX: 12 })
+    fireEvent.pointerUp(piece, { pointerId: 3, clientX: 12 })
+    fireEvent.click(piece, { detail: 1 })
+    assert.equal(sources('ひだり').length, 1)
+    assert.equal(inMiddle(), 2)
+
+    // キーボード（Enter）でも寄せられ、フォーカスは次のおはじきへ移る
+    fireEvent.click(sources('ひだり')[0])
+    assert.equal(sources('ひだり').length, 0)
+    assert.equal(document.activeElement, sources('みぎ')[0])
     assert.equal(prompt(), 'みぎの おはじきも、まん中へ よせよう。')
 
-    // 片方だけでは、できあがりにしない
+    // 左だけでは、できあがりにしない
     act(() => vi.advanceTimersByTime(1000))
     assert.equal(
       screen.queryByRole('button', { name: /答えを確認する/, hidden: true }),
       null,
     )
 
-    // 右のおさらは、キーボードでも寄せられる。両方そろうと、1つのおさらにまとまる
-    fireEvent.keyDown(plate('みぎ'), { key: 'Enter' })
+    // 右のおはじきも全部寄せると、まん中で1つにまとまる
+    for (const node of sources('みぎ')) fireEvent.click(node, { detail: 1 })
+    assert.equal(inMiddle(), 7)
     assert.equal(
       screen
         .getByRole('group', {
@@ -183,22 +213,24 @@ test('adding within ten gathers both plates into the middle before counting', ()
     // さわった順に 1、2、3… と数字が出る。同じおはじきは2回数えない
     const pieces = () =>
       screen.getAllByRole('button', { name: /おはじき$/, hidden: true })
+    assert.equal(pieces().length, 7)
     fireEvent.click(pieces()[5])
     fireEvent.click(pieces()[0])
     fireEvent.click(pieces()[0])
     assert.deepEqual(
-      pieces().map((piece) => piece.textContent),
+      pieces().map((node) => node.textContent),
       ['2', '', '', '', '', '1', ''],
     )
     // 数えても、できあがりのまま
     screen.getByRole('button', { name: /答えを確認する/, hidden: true })
 
-    // もとにもどすと、2つのおさらに戻る
+    // もとにもどすと、おはじきは左右のおさらに戻る
     fireEvent.click(
       screen.getByRole('button', { name: 'もとにもどす', hidden: true }),
     )
-    assert.equal(plate('ひだり').hasAttribute('data-arrived'), false)
-    assert.equal(plate('みぎ').hasAttribute('data-arrived'), false)
+    assert.equal(sources('ひだり').length, 3)
+    assert.equal(sources('みぎ').length, 4)
+    assert.equal(inMiddle(), 0)
   } finally {
     vi.useRealTimers()
   }
