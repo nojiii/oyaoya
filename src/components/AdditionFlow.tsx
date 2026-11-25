@@ -93,7 +93,7 @@ function CounterTogether({ a, b }: { a: number; b: number }) {
 // アプリのおはじき画面を開くボタンの中身（押せるのは、まわりの VisualPlayground）。
 // tone は置く場所の色：stage は白いステージの中（橙の面）、page は台本の橙の上（白い面）。
 // 橙の上に橙のボタンを置くと、ボタンに見えず文字だけに見えるので、置く場所で色を変える
-function OpenCounters({
+export function OpenCounters({
   tone,
   children,
 }: {

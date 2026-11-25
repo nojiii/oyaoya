@@ -9,8 +9,8 @@ export function arithmetic(mode: ArithmeticMode, a: number, b: number) {
         '最初の数は11〜19、引く数は1〜9で、一の位より大きい数にしてください。',
       )
   } else if (mode === 'sub') {
-    if (a < 0 || a > 20 || b < 0 || b > a)
-      throw new Error('最初の数は0〜20、引く数は0〜最初の数にしてください。')
+    if (a < 0 || a > 10 || b < 0 || b > a)
+      throw new Error('最初の数は0〜10、引く数は0〜最初の数にしてください。')
   } else if (mode === 'add') {
     // 合計が10を超えるたし算は、繰り上がり（carry）で扱う
     if (a < 0 || b < 0 || a + b > 10)
