@@ -11,12 +11,14 @@ import './domStubs.mjs'
 test('leaving the script with the browser back button opens the preparation next time', async () => {
   const started = 'teaching-started:/lesson'
   const progress = 'teaching-progress:/lesson:もんだいを読もう'
-  const steps = JSON.stringify([
-    { turn: 0, beat: 0 },
-    { turn: 1, beat: 0 },
-  ])
   sessionStorage.setItem(started, 'true')
-  sessionStorage.setItem(progress, steps)
+  sessionStorage.setItem(
+    progress,
+    JSON.stringify([
+      { turn: 0, beat: 0 },
+      { turn: 1, beat: 0 },
+    ]),
+  )
   // 使い方のページは出さない
   localStorage.setItem('oyaoya:script-guide:v2', 'done')
   const router = createMemoryRouter(
@@ -44,11 +46,13 @@ test('leaving the script with the browser back button opens the preparation next
   await act(() => router.navigate(-1))
   await screen.findByRole('heading', { name: '単元一覧' })
   assert.equal(sessionStorage.getItem(started), 'false')
-  // 台本の進み具合は残す
-  assert.equal(sessionStorage.getItem(progress), steps)
 
-  // 同じ単元をもう一度開くと、準備の画面から。続きへ戻るボタンを出す
+  // 同じ単元をもう一度開くと、準備の画面から。続きへ戻るボタンは出さない
   await act(() => router.navigate('/lesson'))
-  await screen.findByRole('button', { name: '途中から台本にもどる' })
+  await screen.findByRole('button', { name: '台本をはじめる' })
+  assert.equal(
+    screen.queryByRole('button', { name: '途中から台本にもどる' }),
+    null,
+  )
   assert.equal(screen.queryByRole('region', { name: '声かけの台本' }), null)
 })

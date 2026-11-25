@@ -69,16 +69,22 @@ test('「わかる」 starts the addition script at the check problem, and 「�
   assert.equal(saved().page, 'read')
 })
 
-test('「台本をはじめる」 still resumes where the script was left, not at the check problem', async () => {
+test('「台本をはじめる」 starts from the first page even after leaving the script in the middle', async () => {
   sessionStorage.setItem(
     additionStorageKey('/lesson', 3, 4),
     JSON.stringify({ route: 'physical', page: 'count', appComplete: false }),
   )
   renderLesson({ mode: 'add', initial: [3, 4], additionFlow: true })
-  fireEvent.click(
-    await screen.findByRole('button', { name: '途中から台本にもどる' }),
+  // 途中でやめていても、「途中から台本にもどる」は出さない
+  fireEvent.click(await screen.findByRole('button', { name: '台本をはじめる' }))
+  assert.equal(
+    screen.queryByRole('button', { name: '途中から台本にもどる' }),
+    null,
   )
-  assert.equal(activeSlide().getAttribute('data-slide'), 'count')
+  // 続き（count）でも、たしかめの問題でもなく、問題を読むページから
+  assert.equal(activeSlide().getAttribute('data-slide'), 'read')
+  assert.equal(saved().page, 'read')
+  assert.equal(saved().route, null)
 })
 
 test('「わかる」 is hidden while the numbers need fixing, and on scripts without a check problem', async () => {

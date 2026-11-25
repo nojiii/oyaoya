@@ -143,10 +143,12 @@ function Equation({
 }
 
 function SampleFlow({ eat }: { eat: number }) {
-  // 最後のページの「終わる」で、準備の画面へ戻る
-  const { finish } = useScriptControls()
+  // 最後のページの「終わる」で、準備の画面へ戻る。
+  // 準備の画面から開いたときは、最初から（保存した続きは、台本を開いたまま読み直したときだけ使う）
+  const { finish, startFrom } = useScriptControls()
   const key = storageKey(useLocation().pathname)
   const [progress, setProgress] = useState<Progress>(() => {
+    if (startFrom !== 'saved') return { eat, route: null, page: 'read' }
     try {
       const saved = readProgress(sessionStorage.getItem(key), eat)
       // 最後のページまで終えたあとは、最初から

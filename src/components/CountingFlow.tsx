@@ -34,10 +34,12 @@ export function CountingLine({ n }: { n: number }) {
 
 // 数える数は準備の画面で選ぶ。台本の中では変えない
 export function CountingFlow({ n }: { n: number }) {
-  const { finish } = useScriptControls()
+  // 準備の画面から開いたときは、最初のページから。保存した続きは、台本を開いたまま読み直したときだけ使う
+  const { finish, startFrom } = useScriptControls()
   const location = useLocation()
   const storageKey = countingStorageKey(location.pathname)
   const [page, setPage] = useState<CountingPage>(() => {
+    if (startFrom !== 'saved') return 'read'
     try {
       return restoreCountingPage(sessionStorage.getItem(storageKey), n)
     } catch {
