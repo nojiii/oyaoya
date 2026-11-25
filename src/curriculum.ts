@@ -67,7 +67,9 @@ export const curriculum: Group[] = [
           unit('たし算・ひき算', 'addition-within-10', '10までのたし算', [
             'addition-within-10',
           ]),
-          unit('たし算・ひき算', 'subtraction-within-10', '10までのひき算'),
+          unit('たし算・ひき算', 'subtraction-within-10', '10までのひき算', [
+            'subtraction-within-10',
+          ]),
           unit('たし算・ひき算', 'three-numbers', '3つの数を計算しよう'),
           unit(
             'たし算・ひき算',

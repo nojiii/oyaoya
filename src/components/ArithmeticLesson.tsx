@@ -6,6 +6,11 @@ import styles from './TeachingScript.module.css'
 import { LessonVisual } from './LessonVisual'
 import { AdditionFlow, CounterGroups } from './AdditionFlow'
 import { additionFlowStatus, additionStorageKey } from './additionFlowState'
+import { SubtractionFlow, SubtractionCounters } from './SubtractionFlow'
+import {
+  subtractionFlowStatus,
+  subtractionStorageKey,
+} from './subtractionFlowState'
 
 interface Props {
   mode: ArithmeticMode
@@ -32,6 +37,8 @@ export function ArithmeticLesson({
   const [a, b] = values
   const model = arithmetic(mode, a, b)
   const isSubtract = mode === 'sub' || mode === 'borrow'
+  const subtractionFlow = mode === 'sub'
+  const pagedFlow = additionFlow || subtractionFlow
   const symbol = isSubtract ? '−' : mode === 'times' ? '×' : '+'
   const applyNumbers = () => {
     try {
@@ -226,22 +233,33 @@ export function ArithmeticLesson({
   return (
     <TeachingScript
       flow={
-        additionFlow ? <AdditionFlow a={a} b={b} carry={carry} /> : undefined
+        subtractionFlow ? (
+          <SubtractionFlow key={`${a}-${b}`} a={a} b={b} />
+        ) : additionFlow ? (
+          <AdditionFlow a={a} b={b} carry={carry} />
+        ) : undefined
       }
       flowStatus={
-        additionFlow
+        subtractionFlow
           ? () =>
-              additionFlowStatus(
+              subtractionFlowStatus(
                 sessionStorage.getItem(
-                  additionStorageKey(location.pathname, a, b),
+                  subtractionStorageKey(location.pathname, a, b),
                 ),
-                carry,
               )
-          : undefined
+          : additionFlow
+            ? () =>
+                additionFlowStatus(
+                  sessionStorage.getItem(
+                    additionStorageKey(location.pathname, a, b),
+                  ),
+                  carry,
+                )
+            : undefined
       }
       editor={renderEditor()}
-      // たし算（ページを分けた台本）では、「わかる」で、たしかめの問題から始められる
-      skipToCheck={additionFlow}
+      // たし算・引き算（ページを分けた台本）では、「わかる」で、たしかめの問題から始められる
+      skipToCheck={pagedFlow}
       // 範囲外の数を入れたままでは、台本へ進まない。押されたら、警告まで画面を動かして見せ直す
       startBlocked={error !== ''}
       onStartBlocked={() => {
@@ -250,23 +268,33 @@ export function ArithmeticLesson({
           .getElementById(id + '-error')
           ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
       }}
-      picture={additionFlow ? <CounterGroups a={a} b={b} /> : undefined}
+      picture={
+        subtractionFlow ? (
+          <SubtractionCounters a={a} />
+        ) : additionFlow ? (
+          <CounterGroups a={a} b={b} />
+        ) : undefined
+      }
       counters={{ mode, a, b }}
       renderVisual={(step) => (
         <LessonVisual problem={{ mode, a, b }} step={step} />
       )}
       prepare={{
         // たし算（ページを分けた台本）では、「声かけを先に読んでおく」を出さない
-        sayPreview: !additionFlow,
+        sayPreview: !pagedFlow,
         goal: `${model.equation} の解き方を、おはじきを動かしながら教えます。`,
         // おはじきは台本でアプリのものも選べるので、実物は使うときだけ
         materials: [
           `おはじきやブロックを${isSubtract ? a : mode === 'times' ? a * b : a + b}こ（アプリのおはじきを使うときは、いりません）`,
         ],
-        steps: additionFlow
+        steps: pagedFlow
           ? [
               '問題を読む',
-              carry ? '10のまとまりを作る' : 'おはじきを合わせる',
+              subtractionFlow
+                ? '引く数だけ取り、残りを数える'
+                : carry
+                  ? '10のまとまりを作る'
+                  : 'おはじきを合わせる',
               '答えを確かめる',
               '考え方を話してもらう',
               'ひとりで解く',
@@ -275,7 +303,9 @@ export function ArithmeticLesson({
         point:
           mode === 'carry'
             ? `まず${a}を10にします。${b}を${10 - a}と${b - (10 - a)}に分けると考えやすくなります。`
-            : 'おはじきを一緒に動かして、数がどう変わるかを確かめます。',
+            : subtractionFlow
+              ? '引く数だけ取り、残ったものだけを数えます。取ったものは離して置き、残りと区別しましょう。'
+              : 'おはじきを一緒に動かして、数がどう変わるかを確かめます。',
       }}
       question={{
         say: question,

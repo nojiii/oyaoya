@@ -13,6 +13,7 @@ export const problems = {
   'addition-making-ten': lesson('addition-making-ten'),
   'addition-within-10': lesson('addition-within-10'),
   counting: lesson('counting'),
+  'subtraction-within-10': lesson('subtraction-within-10'),
 
   // アルファベット順の位置に新しい問題を追加
   // 台本とデザインの見本。一覧（curriculum.ts）には置かない
