@@ -9,7 +9,7 @@ import ProblemDetail from '../src/pages/ProblemDetail.tsx'
 import { stub, stubAnimations, stubSize } from './domStubs.mjs'
 
 // 答えのあと、たしかめに進むかを決めるページ（ContinueToCheck）。「ここで終わる」で準備の画面へ戻り、
-// 最後まで終えたときと同じく、次は最初のページから（「途中から台本にもどる」を出さない）
+// 最後まで終えたときと同じく、保存した進み具合を消す
 const lessons = [
   {
     path: '/problems/addition-within-10',
@@ -77,10 +77,6 @@ async function endHere({ path, flowKey, progress }, { reducedMotion }) {
     { timeout: 3000 },
   )
   assert.equal(sessionStorage.getItem(flowKey), null)
-  assert.equal(
-    screen.queryByRole('button', { name: '途中から台本にもどる' }),
-    null,
-  )
 }
 
 for (const lesson of lessons)

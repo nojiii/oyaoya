@@ -300,8 +300,8 @@ export function AdditionFlow({
 }) {
   // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）。
   // たしかめの前の「ここで終わる」は、ContinueToCheck が受け持つ。
-  // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめの問題から始める
-  const { finish, startAtCheck } = useScriptControls()
+  // 準備の画面から開いたときは、保存した続きを使わない（「わかる」ならたしかめの問題から、それ以外は最初のページから）
+  const { finish, startFrom } = useScriptControls()
   const location = useLocation()
   const storageKey = additionStorageKey(location.pathname, a, b)
   const [progress, dispatch] = useReducer(
@@ -309,9 +309,12 @@ export function AdditionFlow({
       advanceAddition(state, action, carry),
     storageKey,
     (key) => {
-      if (startAtCheck) return { ...checkOnlyAdditionProgress }
+      if (startFrom === 'check') return { ...checkOnlyAdditionProgress }
       try {
-        return restoreAdditionProgress(sessionStorage.getItem(key), carry)
+        return restoreAdditionProgress(
+          startFrom === 'saved' ? sessionStorage.getItem(key) : null,
+          carry,
+        )
       } catch {
         return restoreAdditionProgress(null, carry)
       }

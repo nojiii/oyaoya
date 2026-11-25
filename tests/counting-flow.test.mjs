@@ -110,7 +110,7 @@ test('counting renders every page, lets the parent pick 1 to 10 and follows one 
       'recount',
       'give',
     ])
-    // たしかめに進むかを決めるページで抜けたら、準備の画面から「途中から」で戻れる
+    // たしかめに進むかを決めるページは、まだ途中（台本を開いたまま読み直すと、このページから）
     assert.equal(
       countingFlowStatus(JSON.stringify({ n: 5, page: 'more' }), 5),
       'middle',

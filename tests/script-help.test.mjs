@@ -64,7 +64,7 @@ test('the help sheet shows one line to say for the chosen trouble, and the probl
   screen.getByRole('region', { name: '声かけの台本' })
 })
 
-test('stopping for today from the help sheet returns to the preparation and keeps the progress', async () => {
+test('stopping for today from the help sheet returns to the preparation, and the script starts over next time', async () => {
   // 動きを減らす設定にして、幕を出さずにすぐ切り替える
   stub(window, 'matchMedia', () => ({
     matches: true,
@@ -87,6 +87,13 @@ test('stopping for today from the help sheet returns to the preparation and keep
   )
   fireEvent.click(screen.getByRole('button', { name: '今日はここまでにする' }))
 
-  await screen.findByRole('button', { name: '途中から台本にもどる' })
+  const start = await screen.findByRole('button', { name: '台本をはじめる' })
   assert.equal(screen.queryByRole('region', { name: '声かけの台本' }), null)
+
+  // もう一度はじめると、続きではなく最初のページから
+  fireEvent.click(start)
+  await screen.findByRole('region', { name: '声かけの台本' })
+  assert.ok(
+    screen.getByRole('img', { name: /^台本の進み具合 1 \/ \d+ページ$/ }),
+  )
 })

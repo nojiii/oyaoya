@@ -71,8 +71,9 @@ test('saved progress decides whether the preparation or the script opens', async
   }
 })
 
-// ページを分けた台本（flow）の単元では、flow の進み具合で準備の画面とボタンの文字が決まる
-test('flow lessons resume in the middle and start over from preparation after finishing', async () => {
+// ページを分けた台本（flow）の単元では、台本を開いたまま読み直すと続きから。
+// 準備の画面には、途中でやめていても「台本をはじめる」だけを出す（最初から始める）
+test('flow lessons resume on reload, and the preparation always offers to start over', async () => {
   const storage = new Map()
   globalThis.sessionStorage = {
     getItem: (key) => storage.get(key) ?? null,
@@ -129,13 +130,14 @@ test('flow lessons resume in the middle and start over from preparation after fi
       storage.set(started, 'true')
       assert.ok((await render(path)).includes('data-script-running'), path)
 
-      // 途中のページ → 台本の続き。準備に戻ると「途中から台本にもどる」
+      // 途中のページ → 台本の続き。準備に戻ると「台本をはじめる」（「途中から台本にもどる」は出さない）
       storage.set(flow, progress(middle))
       assert.ok((await render(path)).includes('data-script-running'), path)
       storage.set(started, 'false')
       let html = await render(path)
       assert.ok(!html.includes('data-script-running'), path)
-      assert.ok(html.includes('途中から台本にもどる'), path)
+      assert.ok(html.includes('台本をはじめる'), path)
+      assert.ok(!html.includes('途中から台本にもどる'), path)
 
       // 答えのページはまだ途中（このあとに、たしかめがある）
       storage.set(started, 'true')
