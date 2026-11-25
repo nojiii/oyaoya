@@ -6,15 +6,21 @@ import { LessonSlides, type LessonSlide } from './LessonSlides'
 import { ContinueToCheck } from './ContinueToCheck'
 import { CONTINUE_TO_CHECK_TITLE } from './continueToCheckWords'
 import { useScriptControls } from './scriptControls'
+import { ReviewButton } from './ReviewButton'
 import styles from './AdditionFlow.module.css'
 import countingStyles from './CountingLesson.module.css'
 import {
+  checkOnlyCountingProgress,
   countingGiveCount,
-  countingPages,
+  countingPagesOf,
   countingStorageKey,
   countingWords,
-  restoreCountingPage,
+  initialCountingProgress,
+  moveCounting,
+  restoreCountingProgress,
+  reviewCounting,
   type CountingPage,
+  type CountingProgress,
 } from './countingFlowState'
 
 // 1列に並べたおはじき。台本の並べる・数えるページのステージと、準備の画面の図に使う
@@ -34,24 +40,31 @@ export function CountingLine({ n }: { n: number }) {
 
 // 数える数は準備の画面で選ぶ。台本の中では変えない
 export function CountingFlow({ n }: { n: number }) {
-  const { finish } = useScriptControls()
+  // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめから始める
+  const { finish, startAtCheck } = useScriptControls()
   const location = useLocation()
   const storageKey = countingStorageKey(location.pathname)
-  const [page, setPage] = useState<CountingPage>(() => {
+  const [progress, setProgress] = useState<CountingProgress>(() => {
+    if (startAtCheck) return { ...checkOnlyCountingProgress }
     try {
-      return restoreCountingPage(sessionStorage.getItem(storageKey), n)
+      return restoreCountingProgress(sessionStorage.getItem(storageKey), n)
     } catch {
-      return 'read'
+      return { ...initialCountingProgress }
     }
   })
+  const { page, checkOnly } = progress
   useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify({ n, page }))
+      sessionStorage.setItem(storageKey, JSON.stringify({ n, page, checkOnly }))
     } catch {
       // 保存できなくても、この画面で学習を続けられる。
     }
-  }, [n, page, storageKey])
-  const index = countingPages.indexOf(page)
+  }, [n, page, checkOnly, storageKey])
+  // たしかめで数えられなかったら、問題を読むページへ戻る。ページの下のほうで押すので、画面を上へ戻す
+  const review = () => {
+    setProgress(reviewCounting(progress))
+    window.scrollTo(0, 0)
+  }
   const line = <CountingLine n={n} />
   const give = countingGiveCount(n)
   // 各ページ：上のステージに見るもの、下に見出し → 教え方のポイント → セリフ
@@ -124,7 +137,8 @@ export function CountingFlow({ n }: { n: number }) {
       title: CONTINUE_TO_CHECK_TITLE,
       content: <ContinueToCheck storageKey={storageKey} />,
     },
-    // ここから「たしかめ」。数え方が身についたかを、向きを変えて数える・言われた数だけ取る、で確かめる
+    // ここから「たしかめ」。数え方が身についたかを、向きを変えて数える・言われた数だけ取る、で確かめる。
+    // 準備の画面の「わかる」で始めたとき（checkOnly）は、まだ数えていないので、並べるところから書く
     recount: {
       id: 'recount',
       section: 'たしかめ',
@@ -135,16 +149,30 @@ export function CountingFlow({ n }: { n: number }) {
           <TeachingPoints
             collapsible
             note={
-              '手前にずらしたものを、**もう一度1列に戻して**から数えます。\n\n数える向きを変えても、**全部の数は変わらない**ことが分かっているかを見ます。同じ数を答えられたら、数え方が身についています。'
+              checkOnly
+                ? `身近なものを**${n}個**、横1列に並べて、お子さんの前に置きましょう。\n\nいつもと**反対のはし**（お子さんから見て右のはし）を指さして、そこから数えてもらいます。**1個ずつ指でさしながら**数え、最後に言った数を「全部で何個」と答えられたら、数え方が身についています。\n\n数えられなかったら、**「解説にもどる」**で、1列に並べて数えるところから一緒にやりましょう。`
+                : '手前にずらしたものを、**もう一度1列に戻して**から数えます。\n\n数える向きを変えても、**全部の数は変わらない**ことが分かっているかを見ます。同じ数を答えられたら、数え方が身についています。\n\n数え直してもちがう数になるときは、**「解説にもどる」**で、1列に並べて数えるところから一緒にやり直しましょう。'
             }
           />
-          <SpokenWords>{countingWords.recount}</SpokenWords>
-          <SpokenWords title="同じ数になったら">
-            {countingWords.recountSame}
-          </SpokenWords>
+          {checkOnly ? (
+            <>
+              <SpokenWords>{countingWords.recountFirst}</SpokenWords>
+              <SpokenWords title={`「${n}」と答えたら`}>
+                {countingWords.confirm}
+              </SpokenWords>
+            </>
+          ) : (
+            <>
+              <SpokenWords>{countingWords.recount}</SpokenWords>
+              <SpokenWords title="同じ数になったら">
+                {countingWords.recountSame}
+              </SpokenWords>
+            </>
+          )}
           <SpokenWords title="ちがう数になったら" minor>
             {countingWords.recountDifferent}
           </SpokenWords>
+          <ReviewButton onClick={review} />
         </div>
       ),
     },
@@ -157,12 +185,13 @@ export function CountingFlow({ n }: { n: number }) {
         <div className={styles.answer}>
           <TeachingPoints
             collapsible
-            note={`お子さんが**数えながら1個ずつ**取り、**${give}個で止められるか**を見ます。\n\n全部渡してしまったり、数えずにつかんだりしたときは、まだ「最後に言った数が、全部の数」がつかめていないかもしれません。今日はここまでにして、次は**1列に並べて数える**ところから、もう一度一緒にやりましょう。`}
+            note={`お子さんが**数えながら1個ずつ**取り、**${give}個で止められるか**を見ます。\n\n全部渡してしまったり、数えずにつかんだりしたときは、まだ「最後に言った数が、全部の数」がつかめていないかもしれません。**「解説にもどる」**で、**1列に並べて数える**ところから、もう一度一緒にやりましょう。疲れていたら、今日はここまでにしても大丈夫です。`}
           />
           <SpokenWords>{countingWords.give(give)}</SpokenWords>
           <SpokenWords title="渡してくれたら">
             {countingWords.given}
           </SpokenWords>
+          <ReviewButton onClick={review} />
           {/* 終わると準備の画面へ戻る。次に台本を開くと、最初のページから */}
           <button
             className={styles.finish}
@@ -178,12 +207,12 @@ export function CountingFlow({ n }: { n: number }) {
   return (
     <LessonSlides
       label="数える台本"
-      slides={countingPages.map((id) => slides[id])}
+      slides={countingPagesOf(checkOnly).map((id) => slides[id])}
       currentId={page}
       totalKnown
       canNext={page !== 'give'}
-      onNext={() => setPage(countingPages[index + 1] ?? page)}
-      onBack={() => setPage(countingPages[index - 1] ?? page)}
+      onNext={() => setProgress(moveCounting(progress, 1))}
+      onBack={() => setProgress(moveCounting(progress, -1))}
     />
   )
 }

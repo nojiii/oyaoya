@@ -5,13 +5,15 @@ import { createElement } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { ArithmeticLesson } from '../src/components/ArithmeticLesson.tsx'
+import { CountingLesson } from '../src/components/CountingLesson.tsx'
+import Sample from '../src/problems/sample/index.tsx'
 import {
   additionCheck,
   additionStorageKey,
 } from '../src/components/additionFlowState.ts'
 import { stub } from './domStubs.mjs'
 
-function renderLesson(props) {
+function renderLesson(props, component = ArithmeticLesson) {
   // 幕と、ページを送る動きは出さない（動きを減らす設定）。台本の使い方のページは、もう見たことにする
   stub(window, 'matchMedia', () => ({
     matches: true,
@@ -27,7 +29,7 @@ function renderLesson(props) {
       {
         path: '/lesson',
         loader: () => ({ crumbs: [] }),
-        element: createElement(ArithmeticLesson, props),
+        element: createElement(component, props),
       },
     ],
     { initialEntries: ['/lesson'] },
@@ -104,3 +106,25 @@ test('scripts without pages (subtraction) have no 「わかる」', async () => 
     null,
   )
 })
+
+// 数える単元と、見本（新しい問題のコピー元）にも「わかる」を置く
+for (const { name, component, props, first } of [
+  {
+    name: 'counting',
+    component: CountingLesson,
+    props: { initial: 5 },
+    first: 'recount',
+  },
+  { name: 'sample', component: Sample, props: {}, first: 'check' },
+])
+  test(`「わかる」 and 「解説にもどる」 also work on ${name}`, async () => {
+    renderLesson(props, component)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'わかる（たしかめ問題へ）' }),
+    )
+    assert.equal(activeSlide().getAttribute('data-slide'), first)
+    assert.ok(screen.getByText('1 / 2ページ'))
+    assert.ok(!activeSlide().textContent.includes('こんどは'))
+    fireEvent.click(screen.getByRole('button', { name: '解説にもどる' }))
+    assert.equal(activeSlide().getAttribute('data-slide'), 'read')
+  })
