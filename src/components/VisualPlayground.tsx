@@ -114,8 +114,8 @@ export function VisualPlayground({
         : 'おはじきを さわって かぞえてみよう'
   // 寄せて1つにまとめたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
   const readyToCount = gather && completed
-  // 繰り上がりでは、10を作るまでの数は見せる（答えになる、10を超えた数だけ隠す）
-  const hideLeftCount = carry && orangeCount > 10
+  // 引き算の残りはお子さんが数える。繰り上がりでは10を超える答えだけ隠す。
+  const hideLeftCount = subtraction || (carry && orangeCount > 10)
   useEffect(() => {
     onCompleteChange?.(completed)
   }, [completed, onCompleteChange])
@@ -511,7 +511,9 @@ export function VisualPlayground({
                         aria-live="polite"
                         aria-label={
                           hideLeftCount
-                            ? '左のわく'
+                            ? subtraction
+                              ? 'のこりをかぞえよう'
+                              : '左のわく'
                             : `${subtraction ? 'のこり' : '左のわく'} ${orangeCount}こ`
                         }
                       >
@@ -673,21 +675,8 @@ export function VisualPlayground({
                 aria-label="かぞえたあとの おはなし"
               >
                 <div className={styles.countingWords} role="status">
-                  {/* たし算の答えは、お子さんが数えて、おうちのひとに伝える */}
-                  <p>
-                    {subtraction ? (
-                      <>
-                        のこりは{' '}
-                        <strong>
-                          {orangeCount}
-                          <small>こ</small>
-                        </strong>
-                        だね。
-                      </>
-                    ) : (
-                      'かぞえたら、おうちのひとに こたえを おしえてね。'
-                    )}
-                  </p>
+                  {/* 答えは、お子さんが数えて、おうちのひとに伝える */}
+                  <p>かぞえたら、おうちのひとに こたえを おしえてね。</p>
                 </div>
                 <div className={styles.continueGuide}>
                   <button type="button" onClick={() => close(onReviewAnswer)}>

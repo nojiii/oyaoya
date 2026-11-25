@@ -18,6 +18,11 @@ type Unit = {
 
 export const units = [
   {
+    id: 'subtraction-within-10',
+    title: '10までのひき算',
+    arithmetic: { mode: 'sub', initial: [7, 3] },
+  },
+  {
     id: 'counting',
     title: '数を正しく数えよう',
     counting: { initial: 5 },
