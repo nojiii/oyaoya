@@ -8,7 +8,7 @@ import { Oyajii } from './Oyajii'
 import { ScriptGuideSlide } from './ScriptGuide'
 import { GUIDE_TITLE, useScriptGuide } from './scriptGuideState'
 import { NextPageButton, PageEdges } from './ScriptPaging'
-import { ScriptControls } from './scriptControls'
+import { ScriptControls, type StartFrom } from './scriptControls'
 import { ScriptCurtain, type Curtain } from './ScriptCurtain'
 import { ScriptHelp, type ScriptHelpContent } from './ScriptHelp'
 import { TeachingStep, type TeachingStepContent } from './TeachingStep'
@@ -50,7 +50,7 @@ export type FlowStatus = 'start' | 'middle' | 'finished'
 
 interface Props {
   flow?: ReactNode
-  // flow の進み具合を、保存した内容から読む。準備の画面を出すか、続きから始めるかを決める
+  // flow の進み具合を、保存した内容から読む。台本を開いたまま読み直したとき、最後まで終えていたら準備の画面を出す
   flowStatus?: () => FlowStatus
   // ステップごとに出す図（おはじき（counters）を使うときは出さない）
   renderVisual?: (step: number) => ReactNode
@@ -72,7 +72,7 @@ interface Props {
   startBlocked?: boolean
   onStartBlocked?: () => void
   // 準備の画面に「わかる」を出すか（flow を渡したときだけ）。押すと、解説をとばして、たしかめの問題から台本を始める。
-  // どこから始めるかは、flow が ScriptControls の startAtCheck を読んで決める
+  // どこから始めるかは、flow が ScriptControls の startFrom を読んで決める
   skipToCheck?: boolean
 }
 
@@ -157,7 +157,6 @@ function PrepareView({
   question,
   turns,
   onStart,
-  resume,
   startButton,
   startBlocked = false,
   onStartBlocked,
@@ -166,7 +165,6 @@ function PrepareView({
   onStart: (button: HTMLButtonElement) => void
   // 「わかる」を押したとき。なければ「わかる」を出さない
   onSkip?: (button: HTMLButtonElement) => void
-  resume?: boolean
   // 「終わる」の幕が縮んでいく先
   startButton?: Ref<HTMLButtonElement>
 }) {
@@ -273,11 +271,7 @@ function PrepareView({
             startBlocked ? onStartBlocked?.() : onStart(event.currentTarget)
           }
         >
-          {startBlocked
-            ? '数を直すと、台本をはじめられます'
-            : resume
-              ? '途中から台本にもどる'
-              : '台本をはじめる'}
+          {startBlocked ? '数を直すと、台本をはじめられます' : '台本をはじめる'}
         </button>
       </div>
     </div>
@@ -413,8 +407,9 @@ export function TeachingScript({
   )
   // 戻るボタンのために、通ってきた位置をすべて覚えておく
   const [history, setHistory] = useState<Position[]>(saved.history)
-  // 準備の画面の「わかる」で台本を開いたか。開き直すたびに、押したボタンで決め直す
-  const [startAtCheck, setStartAtCheck] = useState(false)
+  // 台本をどこから始めるか。台本を開いたまま読み直したときは、保存した続きから。
+  // 準備の画面から開くときは、押したボタンで決め直す（「台本をはじめる」は最初から、「わかる」はたしかめの問題から）
+  const [startFrom, setStartFrom] = useState<StartFrom>('saved')
   // 準備の画面で問題の数字を変えたら、その問題の進み具合を読み直す。
   // 部品ごと作り直すと、準備の画面で開いていた折りたたみの欄が閉じてしまうため
   const [historyKey, setHistoryKey] = useState(keys.history)
@@ -490,7 +485,7 @@ export function TeachingScript({
       // プライベートブラウズなどで保存できないときは、続きから再開できないだけなので何もしない
     }
   }, [keys.started, keys.history, started, history])
-  // 戻るボタンなどでほかの画面へ移ったら、次に開いたときは準備の画面から（台本の進み具合は残す）。
+  // 戻るボタンなどでほかの画面へ移ったら、次に開いたときは準備の画面から（台本は最初のページから始め直す）。
   // 再読み込みでは部品が外れないので、台本を開いたまま読み直せる
   useEffect(() => {
     const key = keys.started
@@ -587,7 +582,7 @@ export function TeachingScript({
     }
   }
 
-  // 準備の画面へ戻る（台本の進み具合は残る）
+  // 準備の画面へ戻る（次に「台本をはじめる」を押すと、最初のページから）
   const toPrepare = () => {
     setStarted(false)
     window.scrollTo(0, 0)
@@ -630,18 +625,20 @@ export function TeachingScript({
       </svg>
     </button>
   )
-  // 台本の右上の「困ったら」。「今日はここまで」は、「終わる」と同じ幕で準備の画面へ戻る（進み具合は残す）
+  // 台本の右上の「困ったら」。「今日はここまで」は、「終わる」と同じ幕で準備の画面へ戻る
   const helpButton = (
     <ScriptHelp help={help} point={prepare.point} onStop={() => finish()} />
   )
 
-  // 準備の画面から台本を開く。atCheck は「わかる」で、たしかめの問題から始めるとき
+  // 準備の画面から台本を開く。途中でやめていても、続きからではなく、最初のページから始める。
+  // atCheck は「わかる」で、たしかめの問題から始めるとき
   const start = (button: HTMLButtonElement, atCheck: boolean) =>
     play({
       kind: 'start',
       from: button,
       swap: () => {
-        setStartAtCheck(atCheck)
+        setStartFrom(atCheck ? 'check' : 'start')
+        setHistory([START])
         setStarted(true)
         window.scrollTo(0, 0)
       },
@@ -665,7 +662,6 @@ export function TeachingScript({
           onSkip={
             flow && skipToCheck ? (button) => start(button, true) : undefined
           }
-          resume={flow ? readFlowStatus() === 'middle' : history.length > 1}
         />
       </div>
     )
@@ -682,7 +678,7 @@ export function TeachingScript({
         <ScriptControls.Provider
           value={{
             finish: (options) => finish(options?.reset),
-            startAtCheck,
+            startFrom,
           }}
         >
           {flow}

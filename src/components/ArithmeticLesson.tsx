@@ -223,24 +223,6 @@ export function ArithmeticLesson({
     : model.question
   // 繰り上がりのたし算（10をつくって、たし算する）も、たし算と同じページを分けた台本で教える
   const carry = mode === 'carry'
-  // 数の欄に書きかけの数。数は欄から離れたときに確定するので、書いてすぐ「途中から台本にもどる」を押すと、
-  // 押した瞬間に新しい数の台本（最初のページから）に変わってしまう。範囲内の数なら、確定を待たずに、
-  // その数で「台本をはじめる」か「途中から台本にもどる」かを決める（範囲外の数は確定できないので、今の数のまま）
-  const typed = (() => {
-    const normalized = draft.map((value) => value.normalize('NFKC').trim())
-    if (normalized.some((value) => !/^\d+$/.test(value))) return null
-    const next: [number, number] = [
-      Number(normalized[0]),
-      Number(normalized[1]),
-    ]
-    try {
-      arithmetic(mode, ...next)
-      return next
-    } catch {
-      return null
-    }
-  })()
-  const [nextA, nextB] = typed ?? values
   return (
     <TeachingScript
       flow={
@@ -251,7 +233,7 @@ export function ArithmeticLesson({
           ? () =>
               additionFlowStatus(
                 sessionStorage.getItem(
-                  additionStorageKey(location.pathname, nextA, nextB),
+                  additionStorageKey(location.pathname, a, b),
                 ),
                 carry,
               )

@@ -40,12 +40,14 @@ export function CountingLine({ n }: { n: number }) {
 
 // 数える数は準備の画面で選ぶ。台本の中では変えない
 export function CountingFlow({ n }: { n: number }) {
-  // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめから始める
-  const { finish, startAtCheck } = useScriptControls()
+  // 準備の画面から開いたときは、保存した続きを使わない（「わかる」ならたしかめから、それ以外は最初のページから）。
+  // 保存した続きは、台本を開いたまま読み直したときだけ使う
+  const { finish, startFrom } = useScriptControls()
   const location = useLocation()
   const storageKey = countingStorageKey(location.pathname)
   const [progress, setProgress] = useState<CountingProgress>(() => {
-    if (startAtCheck) return { ...checkOnlyCountingProgress }
+    if (startFrom === 'check') return { ...checkOnlyCountingProgress }
+    if (startFrom === 'start') return { ...initialCountingProgress }
     try {
       return restoreCountingProgress(sessionStorage.getItem(storageKey), n)
     } catch {

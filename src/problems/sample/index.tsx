@@ -158,12 +158,15 @@ function Equation({
 
 function SampleFlow({ eat }: { eat: number }) {
   // 最後のページの「終わる」で、準備の画面へ戻る。
-  // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめの問題から始める
-  const { finish, startAtCheck } = useScriptControls()
+  // 準備の画面から開いたときは、保存した続きを使わない（「わかる」ならたしかめの問題から、それ以外は最初から）。
+  // 保存した続きは、台本を開いたまま読み直したときだけ使う
+  const { finish, startFrom } = useScriptControls()
   const key = storageKey(useLocation().pathname)
   const [progress, setProgress] = useState<Progress>(() => {
-    if (startAtCheck)
+    if (startFrom === 'check')
       return { eat, route: null, page: 'check', checkOnly: true }
+    if (startFrom === 'start')
+      return { eat, route: null, page: 'read', checkOnly: false }
     try {
       const saved = readProgress(sessionStorage.getItem(key), eat)
       // 最後のページまで終えたあとは、最初から
@@ -459,7 +462,7 @@ export default function Sample() {
         flowStatus(sessionStorage.getItem(storageKey(location.pathname)), eat)
       }
       editor={editor}
-      // 準備の画面に「わかる」を出す。押すと、解説をとばして、たしかめの問題（check）から始める（SampleFlow の startAtCheck）
+      // 準備の画面に「わかる」を出す。押すと、解説をとばして、たしかめの問題（check）から始める（SampleFlow の startFrom）
       skipToCheck
       // 準備の画面のステージに大きく出す図
       picture={<Candies total={TOTAL} />}
