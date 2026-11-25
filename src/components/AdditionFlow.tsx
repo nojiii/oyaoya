@@ -3,6 +3,8 @@ import { useLocation } from 'react-router'
 import { TeachingPoints } from './TeachingPoints'
 import { SpokenWords } from './SpokenWords'
 import { LessonSlides, type LessonSlide } from './LessonSlides'
+import { ContinueToCheck } from './ContinueToCheck'
+import { CONTINUE_TO_CHECK_TITLE } from './continueToCheckWords'
 import { Oyajii } from './Oyajii'
 import { useScriptControls } from './scriptControls'
 import { VisualPlayground } from './VisualPlayground'
@@ -297,6 +299,7 @@ export function AdditionFlow({
   carry?: boolean
 }) {
   // たしかめの最後のページの「終わる」で、準備の画面へ戻る（次に台本を開くと、最初のページから）。
+  // たしかめの前の「ここで終わる」は、ContinueToCheck が受け持つ。
   // 準備の画面の「わかる」で開いたとき（startAtCheck）は、保存した続きではなく、たしかめの問題から始める
   const { finish, startAtCheck } = useScriptControls()
   const location = useLocation()
@@ -538,6 +541,12 @@ export function AdditionFlow({
       ),
       content: <AdditionAnswer a={a} b={b} carry={carry} />,
     },
+    // 答えのあと、たしかめに進むか、ここで終わるかを決める（「ここで終わる」は、最後まで終えたときと同じく、次は最初のページから）
+    more: {
+      id: 'more',
+      title: CONTINUE_TO_CHECK_TITLE,
+      content: <ContinueToCheck storageKey={storageKey} />,
+    },
     // ここから「たしかめ」。答えが合っただけでなく、合わせ方が分かっているかを確かめる
     explain: {
       id: 'explain',
@@ -598,7 +607,7 @@ export function AdditionFlow({
         <AdditionCheckAnswer
           a={c}
           b={d}
-          onFinish={finish}
+          onFinish={() => finish()}
           onReview={review}
           carry={carry}
           checkOnly={progress.checkOnly}

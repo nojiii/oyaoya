@@ -680,7 +680,10 @@ export function TeachingScript({
         {close}
         {helpButton}
         <ScriptControls.Provider
-          value={{ finish: () => finish(), startAtCheck }}
+          value={{
+            finish: (options) => finish(options?.reset),
+            startAtCheck,
+          }}
         >
           {flow}
         </ScriptControls.Provider>

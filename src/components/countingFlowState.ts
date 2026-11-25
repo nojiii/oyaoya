@@ -1,11 +1,13 @@
 import type { FlowStatus } from './TeachingScript'
 
-// answer のあとの recount・give が「たしかめ」
+// answer のあとの recount・give が「たしかめ」。
+// その前の more は、ほめてから、たしかめに進むか、ここで終わるかを決めるページ（ContinueToCheck）
 export const countingPages = [
   'read',
   'line',
   'count',
   'answer',
+  'more',
   'recount',
   'give',
 ] as const
