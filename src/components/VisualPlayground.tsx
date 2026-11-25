@@ -11,9 +11,8 @@ import {
   counterGroups,
   counterProgress,
   type CounterProblem,
-  type CounterSide,
 } from './counterModel'
-import { CounterGather } from './CounterGather'
+import { CounterJoin } from './CounterJoin'
 import styles from './VisualPlayground.module.css'
 import { visualSlots, nearestEmptySlot } from './visualSlots'
 import { counterPrompt } from './counterPrompt'
@@ -82,9 +81,9 @@ export function VisualPlayground({
   const [selected, setSelected] = useState<number | null>(null)
   const [countedIds, setCountedIds] = useState<number[]>([])
   const [questionKey, setQuestionKey] = useState('')
-  // 10までのたし算で、まん中へ寄せ終えたおさら
-  const [gathered, setGathered] = useState<CounterSide[]>([])
-  // もとにもどすたびに増やし、寄せる広場を作り直す（動かしている途中の位置を残さない）
+  // 10までのたし算で、右のおさらを左のおさらへ足して1つにしたか
+  const [joined, setJoined] = useState(false)
+  // もとにもどすたびに増やし、足す広場を作り直す（動かしている途中の位置を残さない）
   const [round, setRound] = useState(0)
   const [hasInteracted, setHasInteracted] = useState(false)
   const {
@@ -100,7 +99,7 @@ export function VisualPlayground({
     progressKey,
     wrongSide,
     completed,
-  } = counterProgress(problem, pieces, countedIds, questionKey, gathered)
+  } = counterProgress(problem, pieces, countedIds, questionKey, joined)
   const interactive = !!problem || apples
   const invitationPiece = addition
     ? pieces.find((piece) => piece.green)
@@ -108,11 +107,11 @@ export function VisualPlayground({
   const operationHint = subtraction
     ? 'おはじきを みぎへ うごかしてみよう'
     : gather
-      ? 'おさらを ゆびで まん中へ うごかしてみよう'
+      ? 'みぎの おさらを ひだりへ うごかしてみよう'
       : addition
         ? 'みぎの おはじきを ひだりへ うごかしてみよう'
         : 'おはじきを さわって かぞえてみよう'
-  // 寄せて1つにまとめたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
+  // 足して1つにしたあと、1こずつ数えるよう促す（繰り上がりでは、10のかたまりと残りを合わせるので促さない）
   const readyToCount = gather && completed
   // 繰り上がりでは、10を作るまでの数は見せる（答えになる、10を超えた数だけ隠す）
   const hideLeftCount = carry && orangeCount > 10
@@ -127,7 +126,7 @@ export function VisualPlayground({
         pieces.length,
         questionKey === progressKey,
         apples,
-        gathered,
+        joined,
       )
   useEffect(() => {
     if (!interactive || moved !== targetCount) return
@@ -162,7 +161,7 @@ export function VisualPlayground({
   )
   const reset = () => {
     setCountedIds([])
-    setGathered([])
+    setJoined(false)
     setRound((value) => value + 1)
     setQuestionKey('')
     const groups =
@@ -463,20 +462,16 @@ export function VisualPlayground({
               </button>
             </div>
             {gather && problem ? (
-              <CounterGather
+              <CounterJoin
                 key={round}
                 a={problem.a}
                 b={problem.b}
                 apples={apples}
-                gathered={gathered}
+                joined={joined}
                 countedIds={countedIds}
                 describedBy={hint}
                 onInteract={() => setHasInteracted(true)}
-                onArrive={(side) =>
-                  setGathered((sides) =>
-                    sides.includes(side) ? sides : [...sides, side],
-                  )
-                }
+                onJoin={() => setJoined(true)}
                 onCount={(id) =>
                   setCountedIds((ids) =>
                     ids.includes(id) ? ids : [...ids, id],
